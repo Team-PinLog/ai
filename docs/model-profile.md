@@ -73,17 +73,19 @@ Profile은 세 지점에서 비교됩니다. 각각 동작이 다릅니다.
 
 저장된 Embedding이 이전 Profile로 만들어진 경우입니다.
 
-- 재사용하지 않습니다([partial-resume.md](partial-resume.md) §2 조건 4).
+- 재사용하지 않습니다([partial-resume.md](partial-resume.md) §2 조건 2).
 - `embedding_status`가 PENDING이면 새 Profile로 다시 생성합니다.
   Profile 변경은 재생성 대상 판별의 기준입니다.
 - `embedding_status`가 COMPLETED인데 Profile이 다르면 FastAPI가 스스로 재생성하지 않습니다.
   COMPLETED에서 PROCESSING으로 전이할 권한이 없기 때문입니다.
   이 경우 Keyword 판정을 수행할 수 없으므로 §3.3과 동일하게 처리합니다.
-  Profile 전환 배포 시 재처리 대상을 PENDING으로 초기화하는 것은 Spring의 운영 작업입니다.
+  Context는 불변이고 **기존 State를 PENDING으로 되돌리는 전이도 존재하지 않으므로**
+  (계약 §6.3), Profile 전환 배포에서 기존 Context를 어떻게 재처리할지는 Spring의 운영 결정이며
+  ai 레포의 판단 범위 밖입니다. FastAPI는 어떤 경우에도 스스로 재처리를 시작하지 않습니다.
 
 ### 3.3 Context Embedding Profile ≠ Preset Profile (Keyword 판정)
 
-- 판정을 중단합니다(검증 시나리오 9).
+- 판정을 중단합니다(검증 시나리오 13).
 - LLM을 호출하지 않고 `ai.context_keyword`에 아무것도 쓰지 않습니다.
 - "Keyword 없음"으로 COMPLETED 처리하지 **않습니다.** 판정 불가와 판정 결과 0개는 다릅니다.
 - 영구 오류로 분류합니다([failure-recovery.md](failure-recovery.md)).
@@ -116,7 +118,12 @@ Profile은 "이 벡터를 저 벡터와 비교해도 되는가"를 판별하는 
   단 `description`·`examples` 변경은 Preset Embedding 재생성 대상입니다.
 
 Profile 접미사를 올리면 기존 Context Embedding과 Preset Embedding이 모두 재생성 대상이 됩니다.
-재생성 범위와 시점은 배포 운영 결정이며, 대상 Context를 PENDING으로 초기화하는 주체는 Spring입니다.
+재생성 범위와 시점은 배포 운영 결정이며, 그 결정과 실행의 주체는 Spring입니다.
+FastAPI는 요청받은 Context만 처리합니다.
+
+Profile 문자열의 버전 표기는 모델·전처리 구성을 식별하는 값이며 **Context와 무관합니다**
+(계약 §7.1). Preset의 `version`도 프리셋 목록의 개정 번호일 뿐이며 마찬가지로 Context와
+무관합니다. Context 본문에는 버전 개념이 없습니다.
 
 ## 5. 차원 검증
 

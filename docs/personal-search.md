@@ -44,10 +44,11 @@ MVP는 **정확 cosine 검색**을 사용합니다.
 user_id 일치
 → is_deleted = false
 → embedding_status = COMPLETED
-→ Embedding Version == State Version
 → Embedding Profile 일치
 → (여기까지 좁힌 뒤) exact cosine 계산
 ```
+
+필터 목록은 계약 §9.3과 동일합니다. Context가 불변이므로 본문 버전을 대조하는 조건은 없습니다.
 
 ANN 인덱스가 없으므로 순서를 바꾸면 사용자 전체 벡터를 스캔하게 됩니다.
 Query를 작성할 때 필터 조건이 벡터 연산 아래로 내려가지 않도록, 필터를 CTE로 분리하거나
@@ -66,7 +67,6 @@ WITH candidate AS (
       AND e.is_deleted = false
       AND e.embedding_profile = :embedding_profile
       AND s.embedding_status = 'COMPLETED'
-      AND s.context_version = e.context_version
 ),
 scored AS (
     SELECT record_id,
@@ -85,10 +85,9 @@ LIMIT :limit;
 
 | 조건 | 역할 |
 |---|---|
-| `e.user_id = :user_id` | 검색 범위를 본인 Context로 한정. 타인 데이터 차단(검증 시나리오 13) |
+| `e.user_id = :user_id` | 검색 범위를 본인 Context로 한정. 타인 데이터 차단(검증 시나리오 19) |
 | `e.is_deleted = false` | 삭제된 AI 파생 데이터 제외. Spring만 이 값을 변경 |
 | `s.embedding_status = 'COMPLETED'` | 미완료·실패·CANCELLED 제외 |
-| `s.context_version = e.context_version` | 수정 직후 구 Embedding 제외(검증 시나리오 2) |
 | `e.embedding_profile = :embedding_profile` | 차원·거리 기준이 다른 벡터 제외 |
 
 `<=>`는 pgvector의 cosine distance 연산자이며, 유사도는 `1 - distance`로 환산합니다.
@@ -97,12 +96,25 @@ LIMIT :limit;
 `CANCELLED` 제외는 `embedding_status = 'COMPLETED'` 조건에 이미 포함됩니다.
 `is_deleted`와 CANCELLED는 서로를 대체하지 않는 두 개의 방어선이므로 두 조건을 모두 유지합니다.
 
+### 수정으로 대체된 구 Context
+
+Context 수정은 구 Context 삭제와 신 Context 생성의 조합이므로(계약 §4.2, §5.3),
+구 Context는 위 두 조건 **모두**에 걸려 검색에서 제외됩니다.
+
+```text
+구 Context: is_deleted = true  AND  embedding_status = CANCELLED
+신 Context: 새 context_id로 별도 행이 생기고, 자신의 처리가 끝나면 검색 대상이 됨
+```
+
+본문 버전을 대조하는 조건은 두지 않습니다. 같은 `context_id`에 두 가지 본문이 존재할 수
+없으므로 검사할 대상이 없습니다(검증 시나리오 3).
+
 ## 5. Record 단위 집계
 
 유사도는 Context 단위로 계산하고 사용자에게는 **Record 단위**로 반환합니다.
 
 - `GROUP BY record_id`로 중복을 제거합니다. 한 Record의 여러 Context가 매칭되어도
-  Record는 한 번만 반환됩니다(검증 시나리오 14).
+  Record는 한 번만 반환됩니다(검증 시나리오 20).
 - Record 유사도는 그 Record에 속한 Context 유사도 중 **최댓값**을 사용합니다.
   평균이나 합계를 쓰지 않습니다. Context는 서로 독립적인 저장 이유이므로,
   하나만 강하게 일치해도 그 Record는 사용자가 찾는 대상입니다.

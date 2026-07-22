@@ -44,9 +44,11 @@ WHERE active = true
   "Keyword 없음"으로 정상 완료시켜 조용히 데이터를 망칩니다.
 - `BLOCKED` Preset은 후보 집합에서 제외합니다. `BLOCKED`는 본인 제공·타인 공개·개인화 Profile·
   Feed 특징 어디에도 쓰이지 않으므로 판정 대상으로 삼을 이유가 없습니다.
-  Spring 응답 조립에서도 다시 제외되므로 이중 방어가 됩니다(검증 시나리오 11).
+  Spring 응답 조립에서도 다시 제외되므로 이중 방어가 됩니다(검증 시나리오 15).
 
 `preset_version`으로 저장할 값은 판정에 사용한 Preset 세트의 버전입니다.
+이는 `ai.keyword_preset.version`, 즉 **프리셋 목록의 개정 번호**이며 Context와 무관합니다
+(계약 §8.2, §12.1).
 Cache 적재 시 스냅샷 버전을 함께 확정해 두고, 그 요청 처리 전체에서 같은 값을 사용합니다.
 후보 검색과 저장 사이에 Cache가 재적재되어 버전이 섞이는 일이 없도록, 파이프라인은
 Cache 스냅샷 객체를 한 번 잡아 끝까지 들고 갑니다.
@@ -67,7 +69,7 @@ Context Embedding을 질의 벡터로 사용해 Preset 중 상위 K개를 뽑습
 ### Profile 불일치
 
 Context Embedding의 Profile과 Preset의 Profile이 다르면 **판정을 중단**합니다
-(계약 §7.3, 검증 시나리오 9).
+(계약 §7.3, 검증 시나리오 13).
 
 - LLM을 호출하지 않습니다.
 - `ai.context_keyword`에 아무것도 쓰지 않습니다.
@@ -126,17 +128,29 @@ DELETE FROM ai.context_keyword
 WHERE context_id = :context_id;
 
 INSERT INTO ai.context_keyword
-    (context_id, context_version, keyword_id, confidence, preset_version)
+    (context_id, keyword_id, confidence, preset_version)
 VALUES (...);   -- 0건일 수 있음
 ```
 
-이유: Context와 Keyword는 1:N이고, 재판정 결과는 이전보다 **적을 수도** 있습니다.
-UPSERT는 사라져야 할 이전 Keyword를 남깁니다. 특히 "이전엔 3개, 이번엔 0개"인 경우
-UPSERT로는 구 Keyword가 그대로 공개됩니다(검증 시나리오 3).
+`ai.context_keyword`의 Primary Key는 `context_id + keyword_id`입니다(계약 §12.4).
+Context 본문 버전을 나타내는 컬럼은 없습니다. 같은 `context_id`는 항상 같은 본문이므로
+한 Context의 Keyword 집합은 언제나 하나입니다.
+
+이유: Context와 Keyword는 1:N이고, 같은 Context를 재시도로 다시 판정한 결과는 이전보다
+**적을 수도** 있습니다. UPSERT는 사라져야 할 이전 Keyword를 남깁니다. 특히
+"이전엔 3개, 이번엔 0개"인 경우 UPSERT로는 구 Keyword가 그대로 공개됩니다.
 
 저장 순서와 트랜잭션 경계는 [context-processing.md](context-processing.md) §4.7을 따릅니다.
-`SELECT ... FOR UPDATE` 재검사 → DELETE → INSERT → `keyword_status = COMPLETED`가
-하나의 트랜잭션 안에서 이루어집니다.
+`SELECT ... FOR UPDATE` 재검사(`embedding_status = COMPLETED` AND `keyword_status = PROCESSING`)
+→ DELETE → INSERT → `keyword_status = COMPLETED`가 하나의 트랜잭션 안에서 이루어집니다.
+
+### 삭제·수정된 Context의 Keyword
+
+Keyword 조회는 AI State를 조인해 `keyword_status = COMPLETED`로 판단합니다(계약 §8.4).
+구 Context는 삭제·수정 시 `keyword_status`가 `CANCELLED`가 되므로 조회 대상에서 자동으로
+제외되며, 따라서 **`ai.context_keyword` 행을 즉시 물리 삭제할 필요가 없습니다**
+(검증 시나리오 4). FastAPI는 다른 Context의 Keyword 행을 지우지 않습니다.
+위 delete-insert의 삭제 범위는 언제나 **지금 판정 중인 그 `context_id`** 하나입니다.
 
 ### 5.1 빈 결과는 정상 COMPLETED
 
@@ -144,7 +158,7 @@ UPSERT로는 구 Keyword가 그대로 공개됩니다(검증 시나리오 3).
 - 이를 FAILED나 PENDING으로 두지 않습니다. 재스캔이 계속 같은 Context를 다시 판정하게 됩니다.
 - "Keyword 없음"과 "아직 처리 안 됨"은 애플리케이션이 반드시 구분해야 하는 두 상태이며,
   그 구분을 담당하는 것이 `keyword_status`입니다.
-- 화면과 API 응답은 Keyword가 비어 있는 상태를 정상으로 취급합니다(계약 §5.2, 검증 시나리오 10, 15).
+- 화면과 API 응답은 Keyword가 비어 있는 상태를 정상으로 취급합니다(계약 §5.2, 검증 시나리오 14, 21).
 
 ### 5.2 unmatchedConcepts
 
@@ -152,7 +166,6 @@ UPSERT로는 구 Keyword가 그대로 공개됩니다(검증 시나리오 3).
 
 ```text
 context_id
-context_version
 preset_version
 unmatched_concepts
 model_profile
