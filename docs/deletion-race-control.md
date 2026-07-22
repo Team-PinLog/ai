@@ -24,12 +24,17 @@ Context는 불변 엔티티입니다. 본문이 한 글자라도 바뀌면 **새
 Context**가 되고, 구 Context는 소프트 삭제됩니다(계약 §4.2, §5.3).
 
 ```text
-구 Context 소프트 삭제
+새 Context INSERT → 새 context_id → 새 AI State PENDING
+→ 구 Context 소프트 삭제
 → 구 embedding_status = CANCELLED
 → 구 keyword_status   = CANCELLED
 → 존재하는 구 Embedding is_deleted = true
-→ 새 Context INSERT → 새 context_id → 새 AI State PENDING
 ```
+
+Spring 쪽에서 INSERT가 삭제보다 먼저 오는 이유는 Core의 "활성 Record는 활성 Context
+1개 이상" 가드 때문입니다(계약 §5.3). FastAPI 관점에서는 순서와 무관하게, 구
+`context_id`의 상태가 `CANCELLED`가 되고 신 `context_id`의 상태가 `PENDING`으로
+생성된다는 결과만 관측됩니다.
 
 따라서 **수정 경합을 위한 별도 방어 장치가 없습니다.** 수정 경합은 위 흐름을 통해
 전부 삭제 경합으로 흡수됩니다. 이는 방어를 약화한 것이 아니라, 방어해야 할
