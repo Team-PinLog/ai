@@ -20,7 +20,7 @@
 | [P1](P1-immutable-context.md) | Context 불변 모델 (버전 컬럼 제거) | Accepted | AI |
 | [P4](P4-is-deleted-cancelled.md) | 즉시 파기 대신 `is_deleted` + `CANCELLED` 마커 | Accepted | AI |
 | [P5](P5-exact-cosine.md) | 정확 cosine 검색 (HNSW/IVFFlat 미도입) | Accepted | AI |
-| [P26](P26-keyword-preset-judgment.md) | Keyword 프리셋 구성·후보 하한·판정 프롬프트 | Accepted (판정 모델은 M4 진행 중) | AI |
+| [P26](P26-keyword-preset-judgment.md) | Keyword 프리셋 구성·후보 하한·판정 프롬프트 | Accepted | AI |
 
 ## 제안 — 전수 (Accepted)
 
@@ -66,7 +66,7 @@
 | M1 | 탈퇴/삭제 시 AI 파생 데이터 물리 삭제 시점(즉시(안 A)/유예/소프트) | 공용(개인정보) | 미결 |
 | M2 | Context 목록 `created_at` 기준(최초 vs 현재), `origin_context_id` 계보 — core V2~ blocker | 공용 | 미결 |
 | M3 | Embedding Profile 전환 재처리 경로(§6.3 좁히기 + §7.3 운영 절) | AI | 미결 |
-| M4 | eval 판정 LLM 모델 확정(C-2 모델 비교) | AI | 미결(진행 중, 타 세션) |
+| M4 | eval 판정 LLM 모델 확정(C-2 모델 비교) | AI | 확정 — `gemini-2.5-flash`(thinkingBudget=0), C-2 5지표 최적 ([ai#3](https://github.com/Team-PinLog/ai/pull/3)) |
 | M5 | `09_유저플로우` draft/static 중복 정리 | 공용 | 미결 |
 | M6 | `FOLLOWUP_IMPLEMENTATION.md` staleness(version 개념 잔존) | AI | 미결(경미) |
 | **M7** | **검색 장소·시간 필터 — 매칭 테스트 후 최우선 고려**(Spring 내부 Place 텍스트 사전 매칭 방식, FastAPI·프론트 무변경) | 백엔드(AI 협의) | 미결 |
