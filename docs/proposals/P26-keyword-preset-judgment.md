@@ -1,8 +1,8 @@
 # P26: Keyword 프리셋 구성·후보 하한·판정 프롬프트
 
-- **상태**: Accepted (판정 모델 최종 확정은 진행 중 — 아래 §영향)
+- **상태**: Accepted
 - **날짜**: 2026-07-23
-- **관련 PR/커밋**: [ai#2](https://github.com/Team-PinLog/ai/pull/2) (`de6e995` preset seed), eval 브랜치 `test/keyword-matching-eval` (`3279497`, `be29bf5`, `0d23118`)
+- **관련 PR/커밋**: [ai#2](https://github.com/Team-PinLog/ai/pull/2) (`de6e995` preset seed), [ai#3](https://github.com/Team-PinLog/ai/pull/3) eval 하네스(`test/keyword-matching-eval`, C-2 판정 모델 확정)
 - **주도(Driver)**: AI 파트
 - **근거 리포트**: [reports/2026-07-23-keyword-matching-eval.md](../implements/2026-07-23-keyword-matching-eval.md)
 
@@ -31,6 +31,7 @@ Context 본문에 붙일 Keyword를 고정 프리셋에서 고른다. 세 가지
 - **커버리지 건전** — 테스트 B: 미매칭율 2.9%, 쏠림 max-share 10%·Gini 0.286, 사각지대 0. top-1 분포상 진짜 매칭은 대체로 0.45+, 무관 입력은 0.30 부근에서 갈림.
 - **하한 0.30 유지** — 0.35로 올리면 "시험기간에 살다시피"(간접 표현, STUDY_WORK) 같은 약한 임베딩(0.30~0.35)이 유실된다. 하한을 올리는 대신 **프롬프트로 정밀도를 보완**한다.
 - **판정 계층이 임베딩 노이즈를 교정** — 테스트 C-1: "여자친구랑…"에서 top-1 후보가 `WITH_FAMILY`(0.485)였으나 판정이 기각하고 `WITH_PARTNER` 선택. 스키마 위반·파싱 실패·과잉 선택(>3) 각 0건.
+- **판정 모델 확정 — 테스트 C-2**: 확정 프롬프트로 3사 4모델 비교(35샘플). 정확도(스키마·선택 분포)는 4모델 사실상 동일 → 태스크가 "후보에서 고르기"라 경량 tier로 충분. `gemini-2.5-flash`(thinkingBudget=0)가 최속(1.12s)·최소 토큰(25314)으로 최우수. gpt-5-nano 탈락(최장 지연·최다 토큰). confidence는 전 모델 변별력 낮음.
 
 ## 버린 대안
 
@@ -41,7 +42,7 @@ Context 본문에 붙일 Keyword를 고정 프리셋에서 고른다. 세 가지
 
 - 확정 프롬프트는 eval 브랜치 `tools/keyword_eval/prompts/keyword_judgment.md`. E 구현의 `/context/process` 판정부에 그대로 투입한다.
 - 후보 검색 하한·TOP-K는 `/search` 및 키워드 후보 생성에 반영.
-- **판정 모델은 미확정**: 하한·프롬프트는 C-1까지 확정됐고, 실제 판정 모델(gpt-5-mini / gpt-5-nano / gemini-flash 등)은 **테스트 C-2 모델 비교**에서 최종 확정한다(별도 세션 진행 중). 관찰상 태스크가 "후보에서 고르기"라 경량 tier로 충분한지 먼저 검증한다.
+- **판정 모델 확정: `gemini-2.5-flash`(thinkingBudget=0)** — 테스트 C-2 5개 지표(스키마·선택 분포·confidence·지연·토큰) 기준 최적. 차선은 `gpt-5-mini`(안정하나 reasoning으로 느림), `claude-haiku-4-5`(빠르나 입력 토큰 큼). 호출 방식은 responseSchema(네이티브 구조화 출력) — function-calling은 2.5-flash에서 malformed. E 구현 `/context/process` 판정부에 이 모델 + 확정 프롬프트를 투입한다(ai#6에서 반영).
 
 ## 검증
 
