@@ -14,3 +14,4 @@
 | 2026-07-23 | FastAPI 서버 scaffold + 개인 검색(`/search`) + Preset 부트스트랩 + 운영 비용 추정 (ai#5) | [spec/personal-search.md](spec/personal-search.md), [spec/cost-estimate.md](spec/cost-estimate.md) |
 | 2026-07-23 | `/context/process` 처리 파이프라인 + 상태머신(부분 재개·저장 불변식·gemini-2.5-flash 판정) (ai#6) | [spec/context-processing.md](spec/context-processing.md), [spec/state-machine.md](spec/state-machine.md) |
 | 2026-07-23 | FastAPI 구현 리포트(I19) + spec 9종 "구현 반영" 표시 갱신 (ai#7) | [implements](implements/2026-07-23-fastapi-implementation.md), [spec/](spec/) |
+| 2026-07-23 | 문서 gap 마감 — eval 리포트 C-2 반영 + 구현 트러블슈팅 T16~T18 등재 (ai#8) | [implements](implements/2026-07-23-keyword-matching-eval.md), [troubleshooting](troubleshooting/2026-07-23-fastapi-local-verification.md) |

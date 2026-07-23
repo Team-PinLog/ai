@@ -7,6 +7,7 @@
 | 문서 | 내용 |
 |---|---|
 | [mermaid-headless-validation.md](mermaid-headless-validation.md) | Mermaid 다이어그램 브라우저리스 문법 검증 (T7·T8) |
+| [2026-07-23-fastapi-local-verification.md](2026-07-23-fastapi-local-verification.md) | FastAPI 로컬 검증 중 런타임/드라이버 이슈 (T16~T18) |
 
 ## 문제 해결 — 전수 (AI 소유)
 
@@ -25,5 +26,8 @@
 | T13 | docs `11_개발_컨벤션.md` 삭제 부작용(pgvector 검토 유일 출처) | 소실 내용 식별·고지 |
 | T14 | `docs/ai-architecture-diagrams` 브랜치가 eval 하네스 커밋 위에 오정렬 | main 기준 재정렬(`rebase --onto`) |
 | T15 | back ADR "소유 파트: AI 파트" 혼란(표준 ADR엔 소유파트 필드 없음) | 주도(Driver)로 격하 + 레포 스코프 명시(P36) |
+| T16 | `.env` UTF-8 BOM으로 첫 키(`DATABASE_URL`) 파싱 실패 | BOM 없이 기록(`UTF8Encoding($false)`), 첫 3바이트 확인 |
+| T17 | pgvector가 VECTOR 컬럼을 `Vector` 객체로 반환 → `np.asarray` TypeError | `to_numpy()`/`to_list()` 변환(디코드 방향만) |
+| T18 | asyncpg `now() - $2` interval 타입 추론 실패(`timestamptz < interval`) | `$2::interval` 명시 캐스트 |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.
