@@ -33,11 +33,11 @@ Cache 위치와 수명은 [architecture.md](architecture.md) §4에 정의되어
 SELECT id, code, display_name, category, description, examples,
        visibility, version, embedding
 FROM ai.keyword_preset
-WHERE active = true
+WHERE is_active = true
   AND embedding_profile = :embedding_profile;
 ```
 
-- 폐기된 Preset은 행 삭제가 아니라 `active = false`이므로 적재 시 제외합니다.
+- 폐기된 Preset은 행 삭제가 아니라 `is_active = false`이므로 적재 시 제외합니다.
 - 현재 Profile과 다른 Preset은 애초에 적재하지 않습니다. 비교가 성립하지 않는 벡터를
   후보 집합에 두면 §3의 Profile 검사가 무의미해집니다.
 - 적재 결과가 0건이면 기동을 실패로 처리합니다. Preset 없이 뜬 서버는 모든 Context를
