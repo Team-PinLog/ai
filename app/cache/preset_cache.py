@@ -38,6 +38,7 @@ class Preset:
 @dataclass(frozen=True)
 class PresetSnapshot:
     presets: tuple[Preset, ...]
+    version: int  # 판정에 사용한 Preset 세트의 개정 번호(context_keyword.preset_version)
 
     def as_dicts(self) -> list[dict]:
         """LLM 판정 입력 구성을 위한 dict 뷰(id/display_name/category/description/examples)."""
@@ -74,7 +75,8 @@ class PresetCache:
             for r in rows
             if r["visibility"] != _BLOCKED
         ]
-        self._snapshot = PresetSnapshot(presets=tuple(presets))
+        version = max((p.version for p in presets), default=1)
+        self._snapshot = PresetSnapshot(presets=tuple(presets), version=version)
         return len(presets)
 
     def snapshot(self) -> PresetSnapshot:

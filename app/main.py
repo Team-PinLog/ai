@@ -13,12 +13,16 @@ from fastapi.responses import JSONResponse
 
 from app.cache.preset_cache import PresetCache
 from app.client.embedding_client import EmbeddingClient
+from app.client.llm_client import LLMClient
 from app.core.config import get_settings
 from app.core.db import Database
 from app.core.errors import ProfileMismatchError
 from app.core.logging import configure_logging, get_logger
 from app.core.security import SharedSecretMiddleware
 from app.repository import keyword_preset_repo
+from app.service.context_processing import ContextProcessingService
+from app.service.embedding_service import EmbeddingService
+from app.service.keyword_service import KeywordService
 from app.service.search_service import SearchService
 
 log = get_logger("app.main")
@@ -38,6 +42,11 @@ async def lifespan(app: FastAPI):
         model=settings.embedding_model,
         dimension=settings.embedding_dimension,
     )
+    llm_client = LLMClient(
+        gms_base_url=settings.gms_base_url,
+        api_key=settings.gms_api_key,
+        model=settings.judge_model,
+    )
 
     preset_cache = PresetCache()
     async with db.acquire() as conn:
@@ -50,11 +59,18 @@ async def lifespan(app: FastAPI):
         )
     log.info("preset cache loaded: %d presets", loaded)
 
+    embedding_service = EmbeddingService(db, embedding_client, settings)
+    keyword_service = KeywordService(db, llm_client, preset_cache, settings)
+
     app.state.settings = settings
     app.state.db = db
     app.state.embedding_client = embedding_client
+    app.state.llm_client = llm_client
     app.state.preset_cache = preset_cache
     app.state.search_service = SearchService(db, embedding_client, settings)
+    app.state.context_processing_service = ContextProcessingService(
+        db, embedding_service, keyword_service
+    )
 
     try:
         yield
@@ -90,9 +106,10 @@ def create_app() -> FastAPI:
     async def health():
         return {"status": "ok"}
 
-    from app.api.internal.v1 import search
+    from app.api.internal.v1 import context, search
 
     app.include_router(search.router, prefix="/internal/v1")
+    app.include_router(context.router, prefix="/internal/v1")
 
     return app
 
