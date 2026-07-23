@@ -8,7 +8,8 @@
 |---|---|
 | [2026-07-23-keyword-preset-seed.md](2026-07-23-keyword-preset-seed.md) | Keyword Preset 27개 산출·검증 (ai#2) |
 | [2026-07-23-architecture-diagrams.md](2026-07-23-architecture-diagrams.md) | architecture.md 구조도(Mermaid) 4종 (ai#4) |
-| [2026-07-23-keyword-matching-eval.md](2026-07-23-keyword-matching-eval.md) | Keyword 매칭 평가 A/B/C-1 요약·포인터 (진행 중) |
+| [2026-07-23-keyword-matching-eval.md](2026-07-23-keyword-matching-eval.md) | Keyword 매칭 평가 A/B/C 요약·포인터 (판정 모델 gemini-2.5-flash 확정) |
+| [2026-07-23-fastapi-implementation.md](2026-07-23-fastapi-implementation.md) | FastAPI scaffold + /context/process + /search 구현·검증 (ai#5·#6) |
 
 ## 구현·산출 — 전수 (AI 소유)
 
@@ -28,5 +29,6 @@
 | I16 | AI 작업기록 문서(구조도+ADR 4+트러블슈팅+리포트 3) | 이 트리 |
 | I17 | 문서화 규약 메모리 | (로컬 메모리) |
 | I18 | 누적 계획 파일 | (로컬 plans) |
+| I19 | FastAPI 구현(scaffold + `/context/process` + `/search` + Preset 부트스트랩) | [FastAPI 리포트](2026-07-23-fastapi-implementation.md) |
 
 > I6·I7·I8은 백엔드 아티팩트라 **back 레포** `docs/ai/implements`에 있습니다.

@@ -13,3 +13,4 @@
 | 2026-07-23 | eval C-2 3사 모델 비교 완료 — 판정 모델 `gemini-2.5-flash`(thinkingBudget=0) 확정, M4 종결 (ai#3) | [implements](implements/2026-07-23-keyword-matching-eval.md), [P26](proposals/P26-keyword-preset-judgment.md) |
 | 2026-07-23 | FastAPI 서버 scaffold + 개인 검색(`/search`) + Preset 부트스트랩 + 운영 비용 추정 (ai#5) | [spec/personal-search.md](spec/personal-search.md), [spec/cost-estimate.md](spec/cost-estimate.md) |
 | 2026-07-23 | `/context/process` 처리 파이프라인 + 상태머신(부분 재개·저장 불변식·gemini-2.5-flash 판정) (ai#6) | [spec/context-processing.md](spec/context-processing.md), [spec/state-machine.md](spec/state-machine.md) |
+| 2026-07-23 | FastAPI 구현 리포트(I19) + spec 9종 "구현 반영" 표시 갱신 (ai#7) | [implements](implements/2026-07-23-fastapi-implementation.md), [spec/](spec/) |
