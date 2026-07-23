@@ -1,0 +1,82 @@
+# 임시 샘플 맥락 (테스트 B/C 참고용)
+#
+# ⚠️ 내가 작성한 임시 데이터입니다. 프리셋을 알고 쓴 self-reference 편향이 있어
+#    커버리지 수치는 "경향"으로만 해석합니다. 팀이 프리셋 안 보고 쓴 30~50개로
+#    교체하면 유효한 측정이 됩니다.
+#
+# 규칙: 실제 저장 이유처럼 짧고 구어체. 여러 의미가 섞인 문장 포함(실제 입력이 그러함).
+# expect: 눈으로 본 의도 프리셋 code(0~3개). Recall 참고용이며 정답 보증 아님.
+# 프리셋 미매칭 의도(사각 확인용) 샘플은 expect: [].
+
+samples:
+  - text: "친구들이랑 늦게까지 맥주 마시면서 수다 떤 곳"
+    expect: [WITH_FRIENDS, DRINK]
+  - text: "여자친구랑 기념일에 분위기 잡고 저녁 먹음"
+    expect: [WITH_PARTNER, ANNIVERSARY, MEAL]
+  - text: "부모님 모시고 조용한 데서 한식 먹었다"
+    expect: [WITH_FAMILY, QUIET, MEAL]
+  - text: "노트북 들고 가서 반나절 작업함. 콘센트 많고 오래 앉아 있어도 눈치 안 봄"
+    expect: [STUDY_WORK]
+  - text: "혼자 밥 먹기 좋은 1인석 있는 곳"
+    expect: [ALONE, MEAL]
+  - text: "팀 회식으로 갔는데 룸 있어서 편했음"
+    expect: [WITH_COLLEAGUES, GATHERING, DRINK]
+  - text: "케이크 먹으러 일부러 찾아간 디저트 맛집"
+    expect: [DESSERT]
+  - text: "비 오는 날 실내에서 시간 때우기 좋았다"
+    expect: [RAINY_DAY]
+  - text: "창가 자리에서 야경 보면서 한잔"
+    expect: [VIEW_GOOD, DRINK]
+  - text: "애기 데리고 갔는데 유아 의자 있고 넓어서 편함"
+    expect: [WITH_KIDS, SPACIOUS]
+  - text: "데이트 코스로 걷다가 들른 감성 카페"
+    expect: [DATE_COURSE, WALK, TRENDY]
+  - text: "합격 턱 쏘려고 다 같이 모인 자리"
+    expect: [CELEBRATION, GATHERING]
+  - text: "잠깐 들러서 포장만 후딱 했다"
+    expect: [QUICK_STOP]
+  - text: "사람 없어서 진짜 조용하고 집중 잘 됐다"
+    expect: [QUIET, STUDY_WORK]
+  - text: "전시 보러 갔는데 볼거리 많아서 시간 금방 감"
+    expect: [EXHIBITION]
+  - text: "물건 구경하다가 선물 하나 샀음"
+    expect: [SHOPPING]
+  - text: "밥 먹고 근처 천천히 한 바퀴 돌기 좋은 길"
+    expect: [WALK]
+  - text: "옛날 감성 물씬 나는 노포. 정겨웠다"
+    expect: [RETRO]
+  - text: "천장 높고 자리 간격 넓어서 답답하지 않았음"
+    expect: [SPACIOUS]
+  - text: "북적북적 활기차고 시끌시끌한 분위기"
+    expect: [LIVELY]
+  - text: "조명 따뜻하고 소파 편해서 계속 앉아 있고 싶었다"
+    expect: [COZY]
+  - text: "커피 한잔하면서 오랜만에 친구랑 근황 토크"
+    expect: [COFFEE_CHAT, WITH_FRIENDS]
+  - text: "여럿이 단체로 예약하고 갔다"
+    expect: [GATHERING]
+  - text: "둘이 오붓하게 있기 좋았던 곳"
+    expect: [WITH_PARTNER]
+  - text: "생일이라 특별하게 챙기고 싶어서 예약함"
+    expect: [ANNIVERSARY]
+  - text: "어른들이랑 오기 편한 차분한 분위기"
+    expect: [WITH_FAMILY, QUIET]
+  - text: "사진 찍기 좋아서 어디를 찍어도 그림 나옴"
+    expect: [TRENDY]
+  - text: "가볍게 한잔하기 좋고 안주도 괜찮았다"
+    expect: [DRINK]
+  - text: "제대로 한 끼 하고 싶어서 갔는데 든든했음"
+    expect: [MEAL]
+  - text: "시험기간에 여기서 살다시피 했다"
+    expect: [STUDY_WORK]
+  # ── 프리셋 사각 확인용 (의도적으로 안 맞는/애매한 입력) ──
+  - text: "주차가 넓어서 차 대기 편했다"
+    expect: []
+  - text: "가격이 좀 비쌌지만 그만한 값어치"
+    expect: []
+  - text: "웨이팅이 너무 길어서 한참 기다림"
+    expect: []
+  - text: "화장실이 깨끗해서 좋았음"
+    expect: []
+  - text: "직원이 친절하고 응대가 빨랐다"
+    expect: []
