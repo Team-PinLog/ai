@@ -79,9 +79,16 @@ selected = [s for s in result.selected if s.keywordId in candidate_ids]
 - 중복 `keywordId`는 하나로 접는다(최댓값 confidence 유지).
 - confidence는 `ai.context_keyword.confidence`(NUMERIC(4,3))로 저장한다.
 
-## 검증 항목 (테스트 C)
+## 검증 (테스트 C, 2단계)
 
+판정 모델은 계약상 **미확정**(GMS: GPT-5.x / Gemini / Claude). 테스트 C가 프롬프트 검증 + 판정 모델 선택을 겸한다.
+
+**C-1 프롬프트 안정화** (모델 1개, 세션 Claude 무방 — 프롬프트 결함은 모델 무관):
 - 스키마 위반: 후보 밖 id 반환 시 폐기되어 크래시 없이 처리되는가
 - 과잉 선택: 근거 약한데 3개 초과로 고르는 사례
 - 과소 선택: 명백히 맞는데 0개인 사례
 - confidence 분포가 근거 강도와 대체로 일치하는가
+
+**C-2 모델 비교** (확정 프롬프트, **GMS 경로**, 경량 tier 우선):
+- ①스키마 준수율 ②선택 개수 분포 ③confidence 변별력 ④응답 지연 ⑤토큰·크레딧
+- → 판정 모델 확정, `REPORT.md`에 근거 기록. 태스크가 "후보에서 고르기"라 경량 모델로 충분한지 먼저 확인.

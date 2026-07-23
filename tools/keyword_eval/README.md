@@ -26,10 +26,17 @@ PINLOG_JUDGE_MODEL=claude-sonnet-5
 ## 실행
 
 ```bash
-python test_a_selfdup.py                 # 프리셋 자기 중복 (임베딩 27회)
+python test_a_selfdup.py                        # 프리셋 자기 중복 (임베딩 27회)
 python test_b_coverage.py --k 10 --floor 0.30   # 커버리지 (샘플 임베딩)
-python test_c_judge.py --k 10 --floor 0.30      # LLM 판정 + 프롬프트 검증
+
+# 테스트 C — 2단계
+python test_c_judge.py --provider anthropic --model claude-haiku-4-5   # C-1 프롬프트 안정화
+python test_c_judge.py --compare                                       # C-2 모델 비교(GMS, MODELS 목록)
 ```
+
+판정 모델은 계약상 미확정입니다. C-1은 접근 편한 모델 1개로 프롬프트를 잡고(세션 Claude 무방),
+C-2는 확정 프롬프트로 GMS 후보 모델을 비교해 판정 모델을 정합니다. `test_c_judge.py`의 `MODELS`
+목록을 GMS 실제 모델명으로 맞추세요.
 
 임베딩 결과는 `.cache/`에 캐시되어 재호출을 막습니다.
 
