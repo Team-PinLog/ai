@@ -1,4 +1,4 @@
-> 현재 코드가 없는 구현 예정 명세입니다.
+> 구현 반영됨(ai#5·#6, `app/`). 이 문서는 계약 명세이며 구현이 이를 따른다. 리포트: [implements/2026-07-23-fastapi-implementation.md](../implements/2026-07-23-fastapi-implementation.md).
 > 공용 계약은 Team-PinLog/docs의 `static/05_AI_설계.md`를 따릅니다.
 
 # State Machine 구현
