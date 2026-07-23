@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# venv
+.venv/
+venv/
+env/
+
+# secrets / local
+.env
+.cache/
+
+# tools/keyword_eval (평가 하네스는 test 브랜치 소유)
+tools/keyword_eval/.env
+tools/keyword_eval/.cache/
+tools/keyword_eval/compare_out.txt
