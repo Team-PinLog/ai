@@ -37,15 +37,38 @@
 - confidence가 과신 경향(mean 0.94, std 0.03~0.06) → **변별력 낮음**. MVP에서 confidence를 강한 랭킹 신호로 쓰지 않는 게 안전.
 - 지연 mean ~4s/call(추론 모델). 비동기 처리라 파이프라인엔 무해하나, C-2에서 경량 비추론 모델과 지연·크레딧 비교 가치 있음.
 
+## 테스트 C-2 — 판정 모델 비교
+
+확정 프롬프트로 3사 4모델 비교. 35샘플, K=10, floor 0.30. 각 벤더 GMS 네이티브 인증(OpenAI=Bearer, Anthropic=x-api-key, Gemini=x-goog-api-key). Gemini는 function-calling이 malformed 되어 **responseSchema + thinkingBudget=0**로 호출.
+
+| 모델 | 스키마위반 | 파싱실패 | 과잉 | 선택 mean | conf std | 지연 mean/p90 | 토큰 in/out/total | 호출당 |
+|---|---|---|---|---|---|---|---|---|
+| openai:gpt-5-mini | 0 | 0 | 0 | 1.32 | 0.03 | 4.73/6.30s | 30110/12669/42779 | 1258 |
+| openai:gpt-5-nano | 0 | 0 | 0 | 1.38 | 0.10 | 6.31/8.86s | 30110/31457/61567 | 1810 |
+| anthropic:claude-haiku-4-5-20251001 | 0 | 0 | 0 | 1.35 | 0.05 | 1.52/2.24s | 66222/2081/68303 | 2008 |
+| **gemini:gemini-2.5-flash** | 0 | 0 | 0 | 1.29 | 0.06 | **1.12/1.35s** | 24398/916/**25314** | **744** |
+
+판독:
+- **정확도(스키마·과잉·선택 분포)는 4모델 사실상 동일** — 태스크가 "후보에서 고르기"라 경량 모델로 충분함이 확인됨.
+- **gpt-5-nano 탈락**: 최장 지연(6.31s) + 최다 토큰(61567, reasoning 출력 31k). 이득 없음.
+- **gemini-2.5-flash 최우수**: 최속(1.12s) + 최소 토큰(25314). thinking off로 비추론 경량 동작.
+- **haiku**: 빠르나(1.52s) 입력 토큰 2배(66222)로 총 토큰 최다.
+- **confidence는 전 모델 변별력 낮음**(std 0.03~0.10) → 랭킹 신호로 쓰지 않음(MVP).
+- 크레딧(원가)은 GMS 모델별 단가 × 토큰. 단가표는 별도지만 토큰 총량 기준 **gemini < gpt-5-mini < gpt-5-nano ≈ haiku**.
+
+**판정 모델 권고: `gemini-2.5-flash` (thinkingBudget=0)** — 정확도 동급에 지연·토큰 모두 최소. 차선은 `gpt-5-mini`(reasoning으로 느리나 안정), `claude-haiku`(빠르나 입력 토큰 큼).
+
+주의: C-2는 집계 지표 비교다. 트리키 케이스(여자친구→WITH_PARTNER 오답 회피, 주차→부대시설 기각)의 모델별 개별 검증은 C-1에서 gpt-5-mini만 확인했다. 팀 실제 샘플 확보 시 선정 모델로 재확인 권장.
+
 ## 결론
 
 - **프리셋 보정 불필요**(A/B 건전, 병합·삭제 대상 없음).
 - **프롬프트 확정**: `prompts/keyword_judgment.md`(부대시설 규칙 포함).
 - **후보 검색 파라미터**: `KEYWORD_CANDIDATE_TOP_K=10`, **하한 0.30**.
-- **판정 모델**: gpt-5-mini로 안정 동작 확인. 최종 확정은 **C-2 모델 비교**(gpt-5-mini / gpt-5-nano / gemini-flash 등, 5개 지표)에서.
+- **판정 모델 확정: `gemini-2.5-flash`(thinking off)** — C-2 5개 지표 기준 최적. E의 `/context/process` LLM 호출부에 이 모델 + 확정 프롬프트를 투입.
 
-## 남은 것 (C-2)
+## 남은 것
 
-- Gemini는 네이티브 `generateContent` 포맷이라 별도 어댑터 필요(현재 openai provider는 GPT 계열만).
-- GMS 실제 모델 id 확인 후 `test_c_judge.py`의 `MODELS` 목록 확정.
-- 팀 실제 샘플로 B/C 재측정 시 Recall이 유효해짐.
+- 팀 실제 샘플(프리셋 안 보고 작성)로 B/C 재측정 → Recall·트리키 케이스 유효 검증.
+- GMS 모델별 단가표로 토큰→크레딧 환산(운영 비용 확정).
+- Gemini responseSchema 경로가 확정 모델이므로 E 구현 시 이 호출 방식(thinking off) 사용.
