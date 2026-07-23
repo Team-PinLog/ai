@@ -1,10 +1,10 @@
-# ADR-004: Keyword 프리셋 구성·후보 하한·판정 프롬프트
+# P26: Keyword 프리셋 구성·후보 하한·판정 프롬프트
 
-- **상태**: 채택 (판정 모델 최종 확정은 진행 중 — 아래 §영향)
+- **상태**: Accepted (판정 모델 최종 확정은 진행 중 — 아래 §영향)
 - **날짜**: 2026-07-23
 - **관련 PR/커밋**: [ai#2](https://github.com/Team-PinLog/ai/pull/2) (`de6e995` preset seed), eval 브랜치 `test/keyword-matching-eval` (`3279497`, `be29bf5`, `0d23118`)
-- **소유 파트**: AI 파트
-- **근거 리포트**: [reports/2026-07-23-keyword-matching-eval.md](../reports/2026-07-23-keyword-matching-eval.md)
+- **주도(Driver)**: AI 파트
+- **근거 리포트**: [reports/2026-07-23-keyword-matching-eval.md](../implements/2026-07-23-keyword-matching-eval.md)
 
 ## 맥락
 

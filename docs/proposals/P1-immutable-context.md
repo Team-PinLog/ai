@@ -1,9 +1,9 @@
-# ADR-001: Context 불변 모델 (버전 컬럼 제거)
+# P1: Context 불변 모델 (버전 컬럼 제거)
 
-- **상태**: 채택
+- **상태**: Accepted
 - **날짜**: 2026-07-23
 - **관련 PR/커밋**: [ai#1](https://github.com/Team-PinLog/ai/pull/1) (`cbd776d` align immutable), 공용 계약 [docs#2](https://github.com/Team-PinLog/docs/pull/2) `static/05` §4.2
-- **소유 파트**: AI 파트
+- **주도(Driver)**: AI 파트
 
 ## 맥락
 
@@ -25,7 +25,7 @@ Context를 **불변(immutable) 엔티티**로 정의한다.
 ## 근거
 
 - **방어해야 할 가변 상태 자체를 없앤다.** 같은 `context_id`가 항상 같은 본문이면, "이 임베딩이 최신 본문 것인가"라는 질문이 성립하지 않는다. 버전 비교 로직이 통째로 사라진다.
-- **stale 결과 차단을 한 곳으로 모은다.** 수정으로 무효가 된 진행 중 작업은 `ai.context_ai_state`의 `CANCELLED`로 걸러진다([ADR-002](ADR-002-is-deleted-cancelled.md)) — 버전이 아니라 상태로.
+- **stale 결과 차단을 한 곳으로 모은다.** 수정으로 무효가 된 진행 중 작업은 `ai.context_ai_state`의 `CANCELLED`로 걸러진다([P4](P4-is-deleted-cancelled.md)) — 버전이 아니라 상태로.
 - **"마지막 Context는 삭제 불가" 가드를 우회 없이 통과한다.** 신 Context를 삭제보다 먼저 넣으면, 삭제 시점에 Context가 최소 하나 남아 가드가 자연히 만족된다. 가드에 수정 경로 특례를 두지 않아도 된다.
 
 ## 버린 대안
@@ -36,7 +36,7 @@ Context를 **불변(immutable) 엔티티**로 정의한다.
 ## 영향
 
 - 모든 `ai` 테이블에서 버전 컬럼 제거([back#3 마이그레이션](https://github.com/Team-PinLog/back/pull/3)이 반영).
-- FastAPI 구현: 저장 불변식이 `status == PROCESSING`으로 단순화, 검색 SQL·키워드 저장에서 버전 조건 삭제([deletion-race-control.md](../deletion-race-control.md)).
+- FastAPI 구현: 저장 불변식이 `status == PROCESSING`으로 단순화, 검색 SQL·키워드 저장에서 버전 조건 삭제([deletion-race-control.md](../spec/deletion-race-control.md)).
 - Front: Context 수정 시 응답의 `context_id`가 바뀐다 → 새 id 반영, 구 id 캐시키 금지(`docs/static/06` §1).
 
 ## 검증

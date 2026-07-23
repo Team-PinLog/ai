@@ -21,7 +21,7 @@
 - **B 커버리지**(K=10, floor 0.30): 미매칭율 2.9%, 쏠림 max-share 10%·Gini 0.286, 사각지대 0.
 - **C-1 프롬프트 안정화**(gpt-5-mini): 스키마 위반·파싱 실패·과잉 선택 각 0. 판정이 임베딩 후보 노이즈를 교정(`WITH_FAMILY`→`WITH_PARTNER`). **부대시설 제외 규칙 추가**, **하한 0.30 유지** 확정.
 
-→ 확정 사항은 [ADR-004](../decisions/ADR-004-keyword-preset-judgment.md)에 반영.
+→ 확정 사항은 [P26](../proposals/P26-keyword-preset-judgment.md)에 반영.
 
 ## 남은 것 (C-2, 진행 중)
 
@@ -31,6 +31,6 @@
 
 ## 관련
 
-- [ADR-004 프리셋·후보 하한·판정 프롬프트](../decisions/ADR-004-keyword-preset-judgment.md)
+- [P26 프리셋·후보 하한·판정 프롬프트](../proposals/P26-keyword-preset-judgment.md)
 - [preset seed 리포트](2026-07-23-keyword-preset-seed.md)
-- 구현 계약: [`keyword-preset.md`](../keyword-preset.md), [`model-profile.md`](../model-profile.md)
+- 구현 계약: [`keyword-preset.md`](../spec/keyword-preset.md), [`model-profile.md`](../spec/model-profile.md)

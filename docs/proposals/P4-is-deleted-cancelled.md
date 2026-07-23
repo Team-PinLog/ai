@@ -1,9 +1,9 @@
-# ADR-002: 즉시 파기 대신 `is_deleted` + `CANCELLED` 마커
+# P4: 즉시 파기 대신 `is_deleted` + `CANCELLED` 마커
 
-- **상태**: 채택
+- **상태**: Accepted
 - **날짜**: 2026-07-23
 - **관련 PR/커밋**: [ai#1](https://github.com/Team-PinLog/ai/pull/1), 공용 계약 [docs#2](https://github.com/Team-PinLog/docs/pull/2) `static/05`
-- **소유 파트**: AI 파트
+- **주도(Driver)**: AI 파트
 
 ## 맥락
 
@@ -40,5 +40,5 @@ Context·Record가 삭제되거나 수정으로 구 Context가 무효화될 때,
 
 ## 검증
 
-- 구현 명세에서 삭제·수정 경합이 `CANCELLED` 중심으로 재작성됨([deletion-race-control.md](../deletion-race-control.md)).
+- 구현 명세에서 삭제·수정 경합이 `CANCELLED` 중심으로 재작성됨([deletion-race-control.md](../spec/deletion-race-control.md)).
 - 계약·draft에서 "즉시 파기"·"HNSW" 잔존 0건 확인.

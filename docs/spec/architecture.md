@@ -162,7 +162,7 @@ Keyword Preset은 25~30개 규모의 준정적 데이터이고 Preset 변경은 
 
 - 위치: `app/cache/preset_cache.py`. `service`가 소유하고 `keyword_service`만 소비합니다.
 - 적재 시점: `main.py`의 lifespan startup에서 `keyword_preset_repo`를 통해 1회 적재.
-- 적재 범위: `active = true`이고 현재 Embedding Profile과 일치하는 행.
+- 적재 범위: `is_active = true`이고 현재 Embedding Profile과 일치하는 행.
 - 보관 내용: `id`, `code`, `display_name`, `category`, `description`, `examples`,
   `visibility`, `version`, `embedding`.
 - 무효화: TTL 기반 재적재(기본 주기 설정값) + 프로세스 재시작. Preset 변경이 배포로만

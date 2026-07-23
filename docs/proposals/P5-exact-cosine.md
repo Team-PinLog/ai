@@ -1,9 +1,9 @@
-# ADR-003: 정확 cosine 검색 (HNSW/IVFFlat 미도입)
+# P5: 정확 cosine 검색 (HNSW/IVFFlat 미도입)
 
-- **상태**: 채택
+- **상태**: Accepted
 - **날짜**: 2026-07-23
 - **관련 PR/커밋**: [ai#1](https://github.com/Team-PinLog/ai/pull/1), 공용 계약 [docs#2](https://github.com/Team-PinLog/docs/pull/2) `static/05` §9
-- **소유 파트**: AI 파트
+- **주도(Driver)**: AI 파트
 
 ## 맥락
 

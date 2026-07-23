@@ -1,56 +1,31 @@
-> 현재 코드가 없는 구현 예정 명세입니다.
-> 공용 계약은 Team-PinLog/docs의 `static/05_AI_설계.md`를 따릅니다.
+# PinLog AI 파트 문서
 
-# AI 파트 구현 문서
+FastAPI AI 서버의 **설계·결정·구현 기록**입니다. 공용 계약의 단일 원본은 `Team-PinLog/docs`의 `static/05_AI_설계.md`이며, 여기서는 계약을 참조만 하고 구현 방법을 다룹니다.
 
-FastAPI AI 서버의 내부 구현 명세입니다. 공용 계약은 여기서 정의하지 않고 참조만 합니다.
-
-## 문서 목록
-
-| 문서 | 내용 |
-|---|---|
-| [architecture.md](architecture.md) | FastAPI 모듈·계층 구조, Preset Cache 위치, DB 세션 경계 |
-| [context-processing.md](context-processing.md) | `POST /internal/v1/context/process` 파이프라인 구현 |
-| [state-machine.md](state-machine.md) | 두 status 컬럼의 조건부 UPDATE 구현과 FastAPI 허용 전이 |
-| [deletion-race-control.md](deletion-race-control.md) | 삭제·수정 경합 방어, 사전 검사와 저장 직전 `FOR UPDATE` 검사 |
-| [partial-resume.md](partial-resume.md) | Embedding 재사용과 Keyword 단계 재개 |
-| [personal-search.md](personal-search.md) | `POST /internal/v1/search` 벡터 검색 Query 구현 |
-| [keyword-preset.md](keyword-preset.md) | Preset Cache, 후보 TOP-K, LLM 구조화 출력, 결과 저장 |
-| [model-profile.md](model-profile.md) | 모델 설정과 Embedding Profile 주입 |
-| [failure-recovery.md](failure-recovery.md) | 오류 분류와 복구, Spring 재스캔과의 관계 |
-| [integration-tests.md](integration-tests.md) | 필수 검증 시나리오 매핑과 Fixture 전략 |
-
-## 작업 기록 (제안·트러블슈팅·리포트)
-
-위 명세가 **무엇을 구현하는가**라면, 아래는 그것을 만들며 **왜 그렇게 정했고 무슨 문제를 어떻게 넘겼는가**를 커밋·PR과 연결해 남깁니다(복기용).
-
-| 구분 | 위치 | 내용 |
-|---|---|---|
-| 결정(ADR) | [`decisions/`](decisions/) | Context 불변 모델, `is_deleted`+`CANCELLED`, 정확 cosine, 프리셋·판정 정책 |
-| 트러블슈팅 | [`troubleshooting/`](troubleshooting/) | Mermaid 브라우저리스 문법 검증 |
-| 리포트 | [`reports/`](reports/) | Preset seed(ai#2), 구조도 보강, Keyword 매칭 평가(진행 중) |
-
-## 공용 계약
-
-파트 간 계약의 단일 원본은 `Team-PinLog/docs` 레포의 `static/05_AI_설계.md`입니다.
-
-각 문서 상단에는 해당 문서가 근거로 삼는 계약 절을 표기합니다. 구현 명세와 계약이
-어긋나면 계약이 우선하며, 계약을 바꿔야 하는 경우 이 레포가 아니라 docs 레포에서 바꿉니다.
-
-모든 문서가 공유하는 전제는 **Context 불변성**입니다(계약 §4.2).
+모든 문서가 공유하는 전제는 **Context 불변성**입니다(계약 §4.2):
 
 ```text
 동일한 context_id는 항상 동일한 Context 본문을 의미한다.
 ```
 
-Context 수정은 구 Context 삭제와 신 Context 생성의 조합이며, 신 Context는 새 `context_id`를
-받습니다. 따라서 이 레포의 구현 명세에는 본문 세대를 구분하는 버전 개념이 존재하지 않고,
-수정 경합은 삭제 경합 방어로 흡수됩니다([deletion-race-control.md](deletion-race-control.md)).
+수정은 구 Context 삭제와 신 Context 생성의 조합이며 새 `context_id`를 받습니다. 따라서 본문 세대를 구분하는 버전 개념이 없고, 수정 경합은 삭제 경합 방어로 흡수됩니다.
 
-## 읽는 순서
+## 구역
 
-1. `architecture.md` — 어디에 무엇이 있는지
-2. `context-processing.md` — 주 파이프라인
-3. `state-machine.md`, `deletion-race-control.md`, `partial-resume.md` — 정합성 3종
-4. `keyword-preset.md`, `personal-search.md`, `model-profile.md` — 기능별 상세
-5. `failure-recovery.md`, `integration-tests.md` — 운영과 검증
+| 구역 | 내용 |
+|---|---|
+| [`spec/`](spec/) | 설계·구현 명세 — "무엇을 만들 것인가" |
+| [`proposals/`](proposals/) | 제안·결정(P 번호) + 미결 — "왜 그렇게 정했나" |
+| [`implements/`](implements/) | 구현 리포트 — "어떻게 만들었나" |
+| [`troubleshooting/`](troubleshooting/) | 문제 해결 |
+| [`WORKLOG.md`](WORKLOG.md) | 시간순 작업 로그 |
+
+## spec — 읽는 순서 (구현 예정 명세)
+
+1. [architecture.md](spec/architecture.md) — 어디에 무엇이 있는지 (모듈·계층·DB 세션 경계, 구조도)
+2. [context-processing.md](spec/context-processing.md) — 주 파이프라인 `POST /internal/v1/context/process`
+3. [state-machine.md](spec/state-machine.md) · [deletion-race-control.md](spec/deletion-race-control.md) · [partial-resume.md](spec/partial-resume.md) — 정합성 3종
+4. [keyword-preset.md](spec/keyword-preset.md) · [personal-search.md](spec/personal-search.md) · [model-profile.md](spec/model-profile.md) — 기능별 상세
+5. [failure-recovery.md](spec/failure-recovery.md) · [integration-tests.md](spec/integration-tests.md) — 운영과 검증
+
+> 구현 명세와 계약이 어긋나면 계약이 우선하며, 계약 변경은 이 레포가 아니라 docs 레포에서 합니다.
