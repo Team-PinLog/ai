@@ -64,7 +64,7 @@
 | M | 쟁점 | Driver | 상태 |
 |---|---|---|---|
 | M1 | 탈퇴/삭제 시 AI 파생 데이터 물리 삭제 시점(즉시(안 A)/유예/소프트) | 공용(개인정보) | 미결 |
-| M2 | Context 목록 `created_at` 기준(최초 vs 현재), `origin_context_id` 계보 — core V2~ blocker | 공용 | 미결 |
+| M2 | Context 목록 `created_at` 기준, `origin_context_id` 계보 | 백엔드 | ✅ 종결 — **A안**(수정 시 새 행의 `created_at` 그대로 사용, 승계·계보 필드 없음). core.context DDL 무변경·AI 파이프라인 무영향 → 백엔드 V2~ 블로커 해소 |
 | M3 | Embedding Profile 전환 재처리 경로(§6.3 좁히기 + §7.3 운영 절) | AI | 미결 |
 | M4 | eval 판정 LLM 모델 확정(C-2 모델 비교) | AI | 확정 — `gemini-2.5-flash`(thinkingBudget=0), C-2 5지표 최적 ([ai#3](https://github.com/Team-PinLog/ai/pull/3)) |
 | M5 | `09_유저플로우` draft/static 중복 정리 | 공용 | 미결 |
