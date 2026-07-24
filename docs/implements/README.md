@@ -16,7 +16,7 @@
 | I | 산출 | 반영처 |
 |---|---|---|
 | I1 | AI 공용 설계 단일 원본 `static/05_AI_설계.md`(836줄, 21 테스트 시나리오) | docs#2 |
-| I2 | `static/06` 파트간 요구사항(front/infra) | docs#3 |
+| I2 | `static/05-1` 파트간 요구사항(front/infra) | docs#3 |
 | I3 | API 상세명세 `draft/11`(디자인 화면→엔드포인트) | docs#4·#5 |
 | I4 | AI 구현 명세 10문서 | [spec/](../spec/) |
 | I5 | `version-race-control` → `deletion-race-control` 리네임·재작성 | [spec/deletion-race-control.md](../spec/deletion-race-control.md) |
