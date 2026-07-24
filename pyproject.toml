@@ -1,3 +1,10 @@
+[project]
+name = "pinlog-ai"
+version = "0.1.0"
+# 챗봇/GraphRAG 합류 대비 3.12로 고정(torch/transformers 등 wheel 안전판).
+# 상한은 3.13 지원 확산 시 완화 재검토.
+requires-python = ">=3.12,<3.13"
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
@@ -11,3 +18,4 @@ select = ["E", "F", "W", "I"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+asyncio_mode = "auto"

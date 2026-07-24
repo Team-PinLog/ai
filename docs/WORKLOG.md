@@ -17,3 +17,4 @@
 | 2026-07-23 | 문서 gap 마감 — eval 리포트 C-2 반영 + 구현 트러블슈팅 T16~T18 등재 (ai#8) | [implements](implements/2026-07-23-keyword-matching-eval.md), [troubleshooting](troubleshooting/2026-07-23-fastapi-local-verification.md) |
 | 2026-07-23 | M2 종결 — Context 목록 `created_at` A안 확정(백엔드 V2~ 블로커 해소) | [proposals](proposals/README.md) |
 | 2026-07-23 | `/search` 응답에 `contextId` 추가(DISTINCT ON) — Spring matchedContext 조립용, 구현+spec 동반 | [spec/personal-search.md](spec/personal-search.md) |
+| 2026-07-23 | E3-PR1 — 테스트 하네스(Testcontainers)+저수준 27케이스+Dockerfile+ai-ci 정비(Jira/lock)+Python 3.12 통일 | [tests/](tests/README.md), [Dockerfile](../Dockerfile) |
