@@ -1,5 +1,6 @@
 # Mermaid 다이어그램을 브라우저 없이 문법 검증하기
 
+- **상태**: 해결됨
 - **날짜**: 2026-07-23
 - **관련**: [architecture.md 구조도 커밋](https://github.com/Team-PinLog/ai) (`210f90c`), [reports/2026-07-23-architecture-diagrams.md](../implements/2026-07-23-architecture-diagrams.md)
 - **레이어**: 문서 도구

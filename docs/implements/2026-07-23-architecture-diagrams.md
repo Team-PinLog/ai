@@ -1,5 +1,6 @@
 # 작업 리포트 — architecture.md 구조도(Mermaid) 보강
 
+- **상태**: 완료
 - **날짜**: 2026-07-23
 - **커밋**: `210f90c` — `docs: architecture.md에 구조도(Mermaid) 4종 추가`
 - **브랜치**: `docs/ai-work-records` ← `main`

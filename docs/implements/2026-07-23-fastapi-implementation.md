@@ -1,5 +1,6 @@
 # FastAPI 구현 — scaffold + /context/process + /search
 
+- **상태**: 완료
 - **날짜**: 2026-07-23
 - **관련 PR**: [ai#5](https://github.com/Team-PinLog/ai/pull/5)(scaffold + `/search` + Preset 부트스트랩), [ai#6](https://github.com/Team-PinLog/ai/pull/6)(`/context/process` 파이프라인 + 상태머신)
 - **근거 계약**: `static/05_AI_설계.md`, [spec/](../spec/) 전 문서
