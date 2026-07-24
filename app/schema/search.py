@@ -13,6 +13,7 @@ class SearchRequest(BaseModel):
 
 class SearchResultItem(BaseModel):
     recordId: int
+    contextId: int
     similarity: float
 
 

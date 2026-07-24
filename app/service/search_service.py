@@ -40,6 +40,10 @@ class SearchService:
             )
 
         return [
-            {"recordId": r["record_id"], "similarity": round(float(r["similarity"]), 4)}
+            {
+                "recordId": r["record_id"],
+                "contextId": r["context_id"],
+                "similarity": round(float(r["similarity"]), 4),
+            }
             for r in rows
         ]

@@ -9,12 +9,17 @@ from __future__ import annotations
 
 import asyncpg
 
-# personal-search.md §4. 필터를 CTE로 분리해 벡터 연산이 필터 아래로 내려가지 않게 한다.
-# 정확 cosine 검색(ANN 인덱스 없음). GROUP BY record_id + MAX(similarity)로 Record 단위 집계.
+# personal-search.md §4. 정확 cosine 검색(ANN 인덱스 없음).
+# DISTINCT ON (record_id)로 Record별 최고 유사도 Context 1행을 고른다 — 그 대표 Context의
+# context_id를 함께 반환해 Spring이 core에서 본문을 조회·조립할 수 있게 한다(body는 미반환).
+# 안쪽은 record_id별 최댓값 선택(ORDER BY record_id, similarity DESC), 바깥에서 유사도 정렬·LIMIT.
 _SEARCH = """
-WITH candidate AS (
-    SELECT e.record_id,
-           e.embedding
+SELECT record_id, context_id, similarity
+FROM (
+    SELECT DISTINCT ON (e.record_id)
+           e.record_id,
+           e.context_id,
+           1 - (e.embedding <=> $3) AS similarity
     FROM ai.context_embedding e
     JOIN ai.context_ai_state s
       ON s.context_id = e.context_id
@@ -22,16 +27,8 @@ WITH candidate AS (
       AND e.is_deleted = false
       AND e.embedding_profile = $2
       AND s.embedding_status = 'COMPLETED'
-),
-scored AS (
-    SELECT record_id,
-           1 - (embedding <=> $3) AS similarity
-    FROM candidate
-)
-SELECT record_id,
-       MAX(similarity) AS similarity
-FROM scored
-GROUP BY record_id
+    ORDER BY e.record_id, similarity DESC
+) t
 ORDER BY similarity DESC
 LIMIT $4
 """
