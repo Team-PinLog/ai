@@ -1,0 +1,13 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# tools/는 팀이 실제 샘플로 재실행하는 실험 하네스(별도 브랜치 소유), data/는 YAML 시드.
+# 실제 서비스 코드(app/)만 lint 대상으로 둔다.
+extend-exclude = ["tools", "data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
