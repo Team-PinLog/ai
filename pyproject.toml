@@ -19,3 +19,5 @@ select = ["E", "F", "W", "I"]
 testpaths = ["tests"]
 addopts = "-q"
 asyncio_mode = "auto"
+# 루트를 sys.path에 넣어 app·tests 패키지를 import한다(CI에서 PYTHONPATH 없이 동작).
+pythonpath = ["."]
