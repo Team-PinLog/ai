@@ -1,5 +1,6 @@
 # FastAPI 로컬 검증 중 겪은 문제 (T16~T18)
 
+- **상태**: 해결됨
 - **날짜**: 2026-07-23
 - **맥락**: FastAPI 구현(ai#5·#6)을 로컬 pgvector + 실제 GMS로 end-to-end 검증하는 과정
 - **관련**: [implements/2026-07-23-fastapi-implementation.md](../implements/2026-07-23-fastapi-implementation.md)

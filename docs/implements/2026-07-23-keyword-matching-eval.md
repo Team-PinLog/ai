@@ -1,5 +1,6 @@
 # 작업 리포트 — Keyword 매칭 평가 (요약·포인터)
 
+- **상태**: 완료
 - **날짜**: 2026-07-23
 - **관련 PR**: [ai#3](https://github.com/Team-PinLog/ai/pull/3) — 하네스 + A/B/C 실행 + 판정 모델 확정
 - **상세 원본**: `tools/keyword_eval/REPORT.md` (수치·비교표 원본, ai#3로 병합됨)

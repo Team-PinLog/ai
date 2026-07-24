@@ -1,5 +1,6 @@
 # 작업 리포트 — Keyword Preset seed 초안
 
+- **상태**: 완료
 - **날짜**: 2026-07-23
 - **PR**: [ai#2](https://github.com/Team-PinLog/ai/pull/2) — `feat: Keyword Preset seed 초안 (keyword_preset.yaml)`
 - **주요 커밋**: `de6e995` (merge `f69883f`)
