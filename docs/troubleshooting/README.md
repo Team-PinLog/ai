@@ -18,6 +18,7 @@
 |---|---|
 | [mermaid-headless-validation.md](mermaid-headless-validation.md) | Mermaid 다이어그램 브라우저리스 문법 검증 (T7·T8) |
 | [2026-07-23-fastapi-local-verification.md](2026-07-23-fastapi-local-verification.md) | FastAPI 로컬 검증 중 런타임/드라이버 이슈 (T16~T18) |
+| [2026-07-24-e3-ci-and-search-path.md](2026-07-24-e3-ci-and-search-path.md) | E3 CI·런타임 이슈 — lock 플랫폼 종속·pytest pythonpath·search_path (T19~T21) |
 
 ## 문제 해결 — 전수 (AI 소유)
 
@@ -39,5 +40,8 @@
 | T16 | `.env` UTF-8 BOM으로 첫 키(`DATABASE_URL`) 파싱 실패 | BOM 없이 기록(`UTF8Encoding($false)`), 첫 3바이트 확인 |
 | T17 | pgvector가 VECTOR 컬럼을 `Vector` 객체로 반환 → `np.asarray` TypeError | `to_numpy()`/`to_list()` 변환(디코드 방향만) |
 | T18 | asyncpg `now() - $2` interval 타입 추론 실패(`timestamptz < interval`) | `$2::interval` 명시 캐스트 |
+| T19 | Windows `uv pip compile` lock이 마커 없이 `pywin32` 고정 → ubuntu CI 설치 실패 | `uv pip compile --universal`(sys_platform 마커) |
+| T20 | CI 러너에서 pytest가 `app`/`tests` import 실패(로컬은 PYTHONPATH 우회) | `pyproject [tool.pytest.ini_options] pythonpath=["."]` |
+| T21 | `search_path=ai` 단독이 public 제외 → VECTOR 타입·`register_vector`가 멀티 커넥션에서 실패 | `ai, public`으로 확장(public=vector 확장 소재, core는 경로 밖 유지) |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.

@@ -1,4 +1,4 @@
-> 현재 코드가 없는 구현 예정 명세입니다.
+> 하네스와 저수준 계층(단위·저장소·API)은 ai#14·#16으로 **구현 완료**([../../tests/README.md](../../tests/README.md), 27케이스). 파이프라인 계층(§3 시나리오, `test_pipeline.py`)은 **E3-PR2로 미착수**. 리포트: [implements/2026-07-24-e3-test-harness.md](../implements/2026-07-24-e3-test-harness.md).
 > 공용 계약은 Team-PinLog/docs의 `static/05_AI_설계.md`를 따릅니다.
 
 # AI 파트 통합 테스트

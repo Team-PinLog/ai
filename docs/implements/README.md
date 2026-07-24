@@ -20,6 +20,7 @@
 | [2026-07-23-architecture-diagrams.md](2026-07-23-architecture-diagrams.md) | architecture.md 구조도(Mermaid) 4종 (ai#4) |
 | [2026-07-23-keyword-matching-eval.md](2026-07-23-keyword-matching-eval.md) | Keyword 매칭 평가 A/B/C 요약·포인터 (판정 모델 gemini-2.5-flash 확정) |
 | [2026-07-23-fastapi-implementation.md](2026-07-23-fastapi-implementation.md) | FastAPI scaffold + /context/process + /search 구현·검증 (ai#5·#6) |
+| [2026-07-24-e3-test-harness.md](2026-07-24-e3-test-harness.md) | E3 통합 테스트 하네스 + 저수준 27케이스 + Dockerfile + ai-ci 정비 (ai#14·#16) |
 
 ## 구현·산출 — 전수 (AI 소유)
 
@@ -40,5 +41,6 @@
 | I17 | 문서화 규약 메모리 | (로컬 메모리) |
 | I18 | 누적 계획 파일 | (로컬 plans) |
 | I19 | FastAPI 구현(scaffold + `/context/process` + `/search` + Preset 부트스트랩) | [FastAPI 리포트](2026-07-23-fastapi-implementation.md) |
+| I20 | E3 통합 테스트 하네스 + 저수준 27케이스 + Dockerfile + ai-ci 정비(Python 3.12·lock·Jira 검증) | [E3 리포트](2026-07-24-e3-test-harness.md), PR ai#14·#16 |
 
 > I6·I7·I8은 백엔드 아티팩트라 **back 레포** `docs/ai/implements`에 있습니다.
