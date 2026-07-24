@@ -239,7 +239,7 @@ TX1이 통과했더라도 TX3에서 다시 검사해야 하는 이유는 [deleti
 ### 6.3 접속 권한과 스키마
 
 - DB 롤은 `ai` 스키마에 대한 권한만 가집니다. `core.*` 권한을 부여하지 않습니다.
-- 커넥션의 `search_path`를 `ai`로 고정하여 실수로 다른 스키마를 참조하지 못하게 합니다.
+- 커넥션의 `search_path`를 `ai, public`으로 고정합니다. `core`를 경로에서 제외해 실수로 다른 스키마를 참조하지 못하게 하되, `public`은 pgvector VECTOR 타입 해석과 `register_vector`가 의존하는 확장 소재라 포함합니다(빼면 멀티 커넥션에서 타입 해석 실패 — T21).
 - 애플리케이션 기동 시 DDL을 실행하지 않습니다. 테이블이 없으면 기동 실패로 처리하고,
   스키마 생성은 back의 migration을 기다립니다.
 - `ai.context_embedding.is_deleted`는 읽기만 합니다. FastAPI의 UPSERT는 이 컬럼을
