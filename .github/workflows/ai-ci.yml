@@ -1,0 +1,43 @@
+name: ai-ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: ai-ci / check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt ruff pytest
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Compile check
+        run: python -m compileall app tools
+      - name: Tests (pytest — 테스트 없으면 통과)
+        run: |
+          code=0
+          pytest -q || code=$?
+          if [ "$code" -eq 5 ]; then
+            echo "no tests collected — treating as success"
+            exit 0
+          fi
+          exit "$code"
