@@ -28,7 +28,9 @@ class Database:
 
     @staticmethod
     async def _init_connection(conn: asyncpg.Connection) -> None:
-        await conn.execute("SET search_path = ai")
+        # ai 우선 + public(vector 확장 소재). public을 빼면 VECTOR 타입 해석과
+        # register_vector가 실패한다. core는 경로에 없어 실수 참조는 여전히 차단된다.
+        await conn.execute("SET search_path = ai, public")
         await register_vector(conn)
 
     async def disconnect(self) -> None:
