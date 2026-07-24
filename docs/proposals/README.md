@@ -67,6 +67,6 @@
 | M2 | Context 목록 `created_at` 기준, `origin_context_id` 계보 | 백엔드 | ✅ 종결 — **A안**(수정 시 새 행의 `created_at` 그대로 사용, 승계·계보 필드 없음). core.context DDL 무변경·AI 파이프라인 무영향 → 백엔드 V2~ 블로커 해소 |
 | M3 | Embedding Profile 전환 재처리 경로(§6.3 좁히기 + §7.3 운영 절) | AI | 미결 |
 | M4 | eval 판정 LLM 모델 확정(C-2 모델 비교) | AI | 확정 — `gemini-2.5-flash`(thinkingBudget=0), C-2 5지표 최적 ([ai#3](https://github.com/Team-PinLog/ai/pull/3)) |
-| M5 | `09_유저플로우` draft/static 중복 정리 | 공용 | 미결 |
+| M5 | `09_유저플로우` draft/static 중복 정리 | 공용 | ✅ 종결 — draft→static 승격으로 중복 제거. `static/09_유저플로우.md`만 존재하고 README도 이를 참조(2026-07-24) |
 | M6 | `FOLLOWUP_IMPLEMENTATION.md` staleness(version 개념 잔존) | AI | 미결(경미) |
 | **M7** | **검색 장소·시간 필터 — 매칭 테스트 후 최우선 고려**(Spring 내부 Place 텍스트 사전 매칭 방식, FastAPI·프론트 무변경) | 백엔드(AI 협의) | 미결 |
