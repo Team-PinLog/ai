@@ -40,7 +40,7 @@
 | P14 | API 기본 경로 `/api/core/v1` | 공용(AI 주도) | 계약 static/05 |
 | P15 | Conventional Commits + 브랜치 규율(main 직접 커밋 금지) | 공용(AI 주도) | [../WORKLOG.md](../WORKLOG.md) |
 | P16 | `static/05` 단일 원본 통합 | 공용(AI 주도) | docs#2 |
-| P17 | `static/06` 파트간 요구사항 신설 | 공용(AI 주도) | docs#3 |
+| P17 | `static/05-1` 파트간 요구사항 신설 | 공용(AI 주도) | docs#3 |
 | P18 | 수정 UX = 삭제+생성(버튼 유지, 새 contextId) | AI(+front) | [spec/deletion-race-control.md](../spec/deletion-race-control.md) |
 | P19 | draft/06 §7 "AI 워커가 core.context 확인" 제거 → CANCELLED 방어 | AI | [P4](P4-is-deleted-cancelled.md) |
 | P20 | `core.context.updated_at` 제거(불변이라 불필요) | 공용 | 계약 |

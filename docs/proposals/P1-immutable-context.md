@@ -37,7 +37,7 @@ Context를 **불변(immutable) 엔티티**로 정의한다.
 
 - 모든 `ai` 테이블에서 버전 컬럼 제거([back#3 마이그레이션](https://github.com/Team-PinLog/back/pull/3)이 반영).
 - FastAPI 구현: 저장 불변식이 `status == PROCESSING`으로 단순화, 검색 SQL·키워드 저장에서 버전 조건 삭제([deletion-race-control.md](../spec/deletion-race-control.md)).
-- Front: Context 수정 시 응답의 `context_id`가 바뀐다 → 새 id 반영, 구 id 캐시키 금지(`docs/static/06` §1).
+- Front: Context 수정 시 응답의 `context_id`가 바뀐다 → 새 id 반영, 구 id 캐시키 금지(`docs/static/05-1` §1).
 
 ## 검증
 
