@@ -41,16 +41,25 @@ py -V:3.12 -m venv .venv                    # Windows (또는 python3.12 -m venv
 
 ## 로컬 기동
 
+DSN은 아래 pgvector 컨테이너 기준 `pinlog:pinlog@localhost:5433/pinlog`로 통일한다
+(`.env.example` 기본값). back `compose.yaml`은 포트·계정이 다르므로(15432·pinlog-local) 혼용하지 않는다.
+
 ```bash
-# 1. pgvector 기동 (back compose.yaml 또는 직접)
+# 1. pgvector 기동
 docker run -d --name pinlog-pgv -e POSTGRES_USER=pinlog -e POSTGRES_PASSWORD=pinlog \
   -e POSTGRES_DB=pinlog -p 5433:5432 pgvector/pgvector:0.8.1-pg16
 
-# 2. ai 스키마 생성 — back Flyway(V1/V100/V101)를 적용해 ai.* 테이블 마련
-#    (ai 레포는 Migration을 실행하지 않는다)
+# 2. ai 스키마 생성 — back Flyway 마이그레이션을 순차 적용 (ai 레포는 Migration을 실행하지 않는다)
+#    파일 위치: back/src/main/resources/db/migration/
+#    ai.* 테이블은 V1·V100·V101 소관. V102(feed_event)는 core 소관이므로 제외한다.
+#    로컬에 psql 클라이언트가 없으면 컨테이너의 psql로 적용:
+for f in V1__ V100__ V101__; do
+  docker exec -i pinlog-pgv psql -U pinlog -d pinlog \
+    < "$(ls ../back/src/main/resources/db/migration/${f}*.sql)"
+done
 
-# 3. 설정 — .env.example을 .env로 복사하고 DSN·GMS 키 주입
-cp .env.example .env
+# 3. 설정 — .env.example을 .env로 복사 (DSN 기본값이 1단계 컨테이너와 일치, GMS 키만 채운다)
+cp .env.example .env   # GMS_API_KEY · INTERNAL_SHARED_SECRET 등 CHANGME 치환
 
 # 4. Preset 부트스트랩 (임베딩 생성 → ai.keyword_preset)
 python -m app.bootstrap.load_presets
@@ -58,6 +67,8 @@ python -m app.bootstrap.load_presets
 # 5. 기동
 uvicorn app.main:app --port 8000
 ```
+
+DB 조회도 로컬 psql 없이 컨테이너로: `docker exec -it pinlog-pgv psql -U pinlog -d pinlog`.
 
 ## 테스트
 
@@ -71,6 +82,12 @@ pytest                       # Docker 필요 — Testcontainers가 pgvector 0.8.
 
 ```bash
 docker build -t pinlog-ai .  # python:3.12-slim, requirements.lock 설치
+
+# 이미지는 .env를 제외(.dockerignore)하므로 실행 시 env를 주입한다.
+# host의 pgvector 컨테이너(5433)에 접근하려면 host.docker.internal을 쓴다:
+docker run -d --name pinlog-ai -p 8000:8000 --env-file .env \
+  -e DATABASE_URL="postgresql://pinlog:pinlog@host.docker.internal:5433/pinlog" \
+  --add-host=host.docker.internal:host-gateway pinlog-ai
 ```
 
 ## 공용 계약
