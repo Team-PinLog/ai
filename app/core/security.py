@@ -1,7 +1,7 @@
 """서비스 간 공유 시크릿 검증 미들웨어.
 
 /internal/* 경로는 내부 네트워크 전용이며 공유 시크릿 헤더를 요구한다
-(architecture.md §7). User 인증은 판단하지 않는다.
+(architecture.md §8). User 인증은 판단하지 않는다.
 """
 from __future__ import annotations
 

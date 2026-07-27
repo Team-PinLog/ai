@@ -1,7 +1,7 @@
 """ai.context_embedding 접근.
 
 개인 검색 Query와 처리 파이프라인의 UPSERT·조회를 담당한다.
-is_deleted는 읽기만 하며 FastAPI가 변경하지 않는다(architecture.md §5.3).
+is_deleted는 읽기만 하며 FastAPI가 변경하지 않는다(architecture.md §6.3).
 UPSERT의 ON CONFLICT SET 절에 is_deleted를 넣지 않는다 — 삭제된 Context의 Embedding이
 되살아나는 것을 막는다(context-processing.md §4.4).
 """
@@ -46,7 +46,7 @@ async def search(
     )
 
 
-# is_deleted를 SET 절에서 의도적으로 제외한다(architecture.md §5.3).
+# is_deleted를 SET 절에서 의도적으로 제외한다(architecture.md §6.3).
 _UPSERT = """
 INSERT INTO ai.context_embedding
     (context_id, user_id, record_id, embedding, embedding_profile)

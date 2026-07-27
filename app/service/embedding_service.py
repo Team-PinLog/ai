@@ -1,6 +1,6 @@
 """Embedding 생성·재사용·저장.
 
-세션 경계(architecture.md §5): 시작 전이(TX)와 저장(TX3)은 짧고, 외부 API 호출은
+세션 경계(architecture.md §6): 시작 전이(TX)와 저장(TX3)은 짧고, 외부 API 호출은
 트랜잭션 밖에서 한다. 저장 직전 FOR UPDATE로 상태를 재검사한다.
 """
 from __future__ import annotations

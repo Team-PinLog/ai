@@ -1,6 +1,7 @@
 """asyncpg 커넥션 풀과 세션 경계.
 
-- 커넥션마다 search_path를 ai로 고정한다(architecture.md §5.3).
+- 커넥션마다 search_path를 ai, public으로 고정한다(public=vector 확장 소재,
+  core는 경로 밖 유지 — architecture.md §6.3, T21).
 - pgvector 타입을 등록해 VECTOR 컬럼을 파이썬 list/ndarray로 바인딩·수신한다.
 - 기동 시 DDL을 실행하지 않는다. 테이블이 없으면 기동 실패로 드러난다.
 """
