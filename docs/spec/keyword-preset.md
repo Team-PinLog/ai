@@ -119,6 +119,13 @@ selected = [s for s in llm_result.selected if s.keyword_id in candidate_ids]
 - 전부 폐기되어 0개가 되어도 정상 완료입니다.
 - 폐기가 발생한 사실은 로그로 남깁니다. Preset 설명 품질이나 프롬프트 문제를 드러내는 신호입니다.
 
+### 4.4 판정 비결정성
+
+판정 결과는 **결정적이지 않습니다.** 같은 입력이라도 경계 사례는 호출마다 달라질 수 있으며
+(실측 40~60%, `thinkingBudget=0`에도), 저장이 delete-insert(§5)이므로 재처리 시 키워드 집합이
+바뀔 수 있습니다. 이는 **허용되는 동작**입니다 — 재처리 경로가 실제로 드물기 때문입니다(부분
+재개는 `COMPLETED`를 건너뛰고, 수정은 새 `context_id`, 재스캔은 미완료 단계만 다룸).
+
 ## 5. 결과 저장
 
 Keyword 저장은 **delete-insert**입니다. UPSERT가 아닙니다.
