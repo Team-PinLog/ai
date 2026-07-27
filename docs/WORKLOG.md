@@ -26,3 +26,5 @@
 | 2026-07-27 | 전수 조사 갭 정합화 — 절번호 드리프트 3·인덱스·WORKLOG·proposals P40·P41·시나리오5 주석 (ai#19) | 이 트리 |
 | 2026-07-27 | 문서↔코드 정합 감사 + M3 계약 개정 — spec 5종 코드 대조·정정(architecture §6.2·§5 등), M3 `COMPLETED→PENDING` 운영 재처리(state-machine + 계약 §6.3·§7.3) (ai#21·docs#13) | [spec/](spec/), [state-machine.md](spec/state-machine.md) |
 | 2026-07-27 | E2E(-58) 발견 합류 — README 기동 절차(Flyway·DSN·docker run·psql) 정정 + 검색 컷오프 실측 + 판정 비결정성 명시 + implements 유형 컬럼 (ai#22) | [README](../README.md), [spec/keyword-preset.md](spec/keyword-preset.md) |
+| 2026-07-27 | E3-PR2 — 파이프라인 시나리오 20개(`test_pipeline.py`, 19함수/20시나리오) (ai#18) | [spec/integration-tests.md](spec/integration-tests.md) |
+| 2026-07-27 | E3-PR2 완료 반영(리포트·spec 헤더 갱신) + `preset_cache_ttl_sec` dead config 제거(§5 정합) (ai#23) | [implements](implements/2026-07-24-e3-test-harness.md), [spec/integration-tests.md](spec/integration-tests.md) |
