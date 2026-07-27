@@ -39,9 +39,6 @@ class Settings(BaseSettings):
     # PROCESSING 재선점 만료 — Spring 재스캔 만료와 동일 값
     processing_expiry_sec: int = Field(600, alias="PROCESSING_EXPIRY_SEC")
 
-    # Preset 캐시
-    preset_cache_ttl_sec: int = Field(600, alias="PRESET_CACHE_TTL_SEC")
-
     # 서비스 간 인증
     internal_shared_secret: str = Field(alias="INTERNAL_SHARED_SECRET")
 

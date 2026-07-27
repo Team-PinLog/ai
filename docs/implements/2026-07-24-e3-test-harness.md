@@ -1,13 +1,13 @@
 # E3 통합 테스트 하네스 + 저수준 계층 + 인프라 정비
 
-- **상태**: 완료 (E3-PR1). 파이프라인 계층(E3-PR2)은 미착수
-- **날짜**: 2026-07-24
-- **관련 PR**: [ai#14](https://github.com/Team-PinLog/ai/pull/14)(E3-PR1), [ai#16](https://github.com/Team-PinLog/ai/pull/16)(핫픽스)
+- **상태**: 완료 (E3-PR1·PR2)
+- **날짜**: 2026-07-24 (PR2 2026-07-27)
+- **관련 PR**: [ai#14](https://github.com/Team-PinLog/ai/pull/14)(E3-PR1), [ai#16](https://github.com/Team-PinLog/ai/pull/16)(핫픽스), [ai#18](https://github.com/Team-PinLog/ai/pull/18)(E3-PR2 파이프라인 20)
 - **근거 계약**: [spec/integration-tests.md](../spec/integration-tests.md) (§16 검증 시나리오)
 
 ## 무엇을 만들었나
 
-계약 §16 검증 시나리오를 자동 pytest 스위트로 옮기기 위한 **하네스 + 저수준 3계층(단위·저장소·API)**을 구현했다. 파이프라인 시나리오 20개(`test_pipeline.py`, §3)는 E3-PR2로 분리해 미착수. 챗봇/GraphRAG 합류 대비 환경 통일(Python 3.12·lock)도 함께 반영했다. 프로덕션 `app/`은 `db.py` search_path 보정 1건만 변경(T21).
+계약 §16 검증 시나리오를 자동 pytest 스위트로 옮기기 위한 **하네스 + 저수준 3계층(단위·저장소·API)**을 구현했다(E3-PR1). 파이프라인 시나리오 20개(`test_pipeline.py`, §3)는 E3-PR2(ai#18)로 **구현 완료**(19함수/20시나리오, 6·18 공유). 챗봇/GraphRAG 합류 대비 환경 통일(Python 3.12·lock)도 함께 반영했다. 프로덕션 `app/`은 `db.py` search_path 보정 1건만 변경(T21).
 
 ## 하네스 (`tests/`)
 
@@ -50,6 +50,7 @@
 - `pytest -q` **27 passed**(단위·저장소·API), `ruff check .` clean, `docker build`(3.12-slim) 성공.
 - CI: PR #16이 새 워크플로로 Linux 전체 검증(45s, testcontainers pytest 포함) 그린, main push CI 그린.
 
-## 남은 것
+## E3-PR2 (완료, ai#18)
 
-- **E3-PR2**: `test_pipeline.py` — integration-tests.md §3의 파이프라인 시나리오 20개(취소 거부·검색 경계·Keyword·재개/상태·계약위반/경합). 동시성은 `on_call` 훅으로 CANCELLED 주입(sleep 금지). 미착수.
+- `test_pipeline.py` — integration-tests.md §3의 파이프라인 시나리오 20개(취소 거부·검색 경계·Keyword·재개/상태·계약위반/경합), 6·18 공유로 19함수. 동시성은 `on_call` 훅으로 CANCELLED 주입(sleep 금지).
+- `pytest tests/ -q` **46 passed**(저수준 27 + 파이프라인 19), ruff clean. 이로써 E3(하네스·저수준·파이프라인) 전체 완결.
