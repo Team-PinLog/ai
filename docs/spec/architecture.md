@@ -79,7 +79,7 @@ flowchart TB
 app/
 ├── main.py                     # FastAPI 인스턴스, lifespan, 라우터 등록
 ├── bootstrap/
-│   └── load_presets.py         # Preset 부트스트랩 CLI (startup 적재)
+│   └── load_presets.py         # Preset 시드 CLI (수동 실행 — DB 적재)
 ├── api/
 │   └── internal/v1/
 │       ├── context.py          # POST /internal/v1/context/process
@@ -105,7 +105,7 @@ app/
 │   └── llm_client.py           # LLM API
 └── core/
     ├── config.py               # 단일 설정 진입점 (Embedding Profile 포함)
-    ├── db.py                   # 엔진, 세션 팩토리, search_path
+    ├── db.py                   # asyncpg 풀·커넥션 획득(acquire/transaction), search_path
     ├── errors.py               # 오류 분류 타입
     ├── logging.py
     └── security.py             # 내부 공유 시크릿 미들웨어(/internal/*)
@@ -168,8 +168,8 @@ Keyword Preset은 25~30개 규모의 준정적 데이터이고 Preset 변경은 
 - 적재 범위: `is_active = true`이고 현재 Embedding Profile과 일치하는 행.
 - 보관 내용: `id`, `code`, `display_name`, `category`, `description`, `examples`,
   `visibility`, `version`, `embedding`.
-- 무효화: TTL 기반 재적재(기본 주기 설정값) + 프로세스 재시작. Preset 변경이 배포로만
-  이루어지므로 별도 무효화 API를 두지 않습니다.
+- 무효화: **프로세스 재시작으로만** 재적재됩니다. Preset 변경이 배포로만 이루어지므로
+  TTL 재적재나 별도 무효화 API를 두지 않습니다.
 - 다중 워커: 워커별로 독립 Cache를 가집니다. Preset은 읽기 전용이므로 워커 간 동기화가 필요 없습니다.
 
 Cache는 **후보 판정에 필요한 메타데이터 제공**이 목적입니다. 후보 TOP-K 벡터 검색을
@@ -228,10 +228,12 @@ TX1이 통과했더라도 TX3에서 다시 검사해야 하는 이유는 [deleti
 
 ### 6.2 구현 규칙
 
-- 세션 팩토리는 `app/core/db.py`가 소유하고, service가 `async with session_scope()` 형태로
-  필요한 구간에만 엽니다. 요청 전체를 하나의 세션으로 감싸지 않습니다.
-- 요청 단위 DI 세션(`Depends(get_session)`)은 **검색 API에만** 사용합니다. 검색은 읽기 전용
-  단일 Query이므로 하나의 세션으로 충분합니다.
+- 커넥션 풀은 `app/core/db.py`의 `Database`가 소유하고, service가 `async with db.acquire()`
+  (읽기) 또는 `async with db.transaction()`(쓰기 TX)로 필요한 구간에만 엽니다. 요청 전체를
+  하나의 세션으로 감싸지 않습니다.
+- **검색·처리 모두** 서비스가 자신의 세션을 직접 엽니다. 검색 라우터는 `Depends`로 서비스만
+  주입하고(`search.py`), `SearchService`가 `db.acquire()`로 단일 읽기 세션을 엽니다. 요청 스코프
+  DI 세션(`get_session`)은 두지 않습니다.
 - 처리 파이프라인은 백그라운드에서 실행되므로 요청 스코프 세션을 사용할 수 없습니다.
   서비스가 자신의 세션을 직접 열고 닫습니다.
 - TX3은 `SELECT ... FOR UPDATE` → 검증 → 쓰기 → 커밋을 **한 세션에서** 수행합니다.

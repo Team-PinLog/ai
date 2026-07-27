@@ -83,7 +83,7 @@ Context Embedding의 Profile과 Preset의 Profile이 다르면 **판정을 중�
 LLM에 전달하는 것:
 
 - Context 본문
-- 후보 Preset 목록: `keyword_id`, `display_name`, `category`, `description`, `examples`
+- 후보 Preset 목록: `id`, `display_name`, `category`, `description`, `examples`
 
 `description`과 `examples`는 판정 품질을 좌우하므로 반드시 포함합니다.
 후보 목록에 없는 Preset의 정보는 전달하지 않습니다.
