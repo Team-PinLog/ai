@@ -111,6 +111,8 @@ Query에 있는지 확인하는 테스트입니다.
 - FastAPI가 이를 수정으로 해석해 재생성·재판정하거나 State를 되돌리지 **않음**.
 - HTTP 응답은 여전히 `202`. 파이프라인이 예외로 죽지 않음.
 
+> ※ 현재 구현은 `text` 대조를 하지 않아 계약 위반 `WARN` 로그가 없다. 테스트는 핵심 단언(Client 호출 0·State 불변·예외 없음)만 검증한다. 감지 기능 추가는 별도 판단(app 변경 필요).
+
 근거: [deletion-race-control.md](deletion-race-control.md) §2.1, 계약 §13.1
 
 ### 6, 18 — CANCELLED State에 도착한 요청

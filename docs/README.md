@@ -20,7 +20,7 @@ FastAPI AI 서버의 **설계·결정·구현 기록**입니다. 공용 계약�
 | [`troubleshooting/`](troubleshooting/) | 문제 해결 |
 | [`WORKLOG.md`](WORKLOG.md) | 시간순 작업 로그 |
 
-## spec — 읽는 순서 (구현 예정 명세)
+## spec — 읽는 순서 (구현 명세)
 
 1. [architecture.md](spec/architecture.md) — 어디에 무엇이 있는지 (모듈·계층·DB 세션 경계, 구조도)
 2. [context-processing.md](spec/context-processing.md) — 주 파이프라인 `POST /internal/v1/context/process`

@@ -56,6 +56,8 @@
 | P36 | ADR 스코프 = 레포 단위, 파트는 Driver 메타 | 공용(AI 주도) | 이 README |
 | P37 | 분류 3범주 proposals/implements/troubleshooting + spec | 공용(AI 주도) | 이 트리 |
 | P38 | rebase Option B(MINYONG 독립작업 위 재정리) | AI | [troubleshooting](../troubleshooting/) |
+| P40 | `/search` 응답 `contextId` 추가(DISTINCT ON, Spring matchedContext 조립용) | AI | ai#11·docs#10, [spec/personal-search.md](../spec/personal-search.md) |
+| P41 | 툴체인 — Python 3.12 통일·pgvector 0.8.1-pg16·requirements lock | AI | [implements](../implements/2026-07-24-e3-test-harness.md) (ai#14·#16) |
 
 > P10·P13·P21~P25·P33·P39는 백엔드 아티팩트 결정이라 **back 레포** `docs/ai/proposals`에 있습니다.
 

@@ -12,7 +12,7 @@
 
 DB 접근은 **asyncpg + 원시 SQL**(계약 SQL 그대로). ORM을 두지 않았다 — 테이블이 5개이고 guarded UPDATE·`FOR UPDATE`·UPSERT·delete-insert·pgvector 연산이 spec에 이미 SQL로 명시돼 있어, 원시 SQL이 계약과 1:1로 대응한다.
 
-## 구현 파일 (architecture.md §2 계층)
+## 구현 파일 (architecture.md §3 모듈 구조)
 
 | 계층 | 파일 | 역할 |
 |---|---|---|

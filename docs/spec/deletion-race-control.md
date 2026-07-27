@@ -145,7 +145,7 @@ Context가 불변이고 `context_id`가 본문 정체성을 나타내므로, 여
 
 모델 호출을 잠금 안에 넣으면 그 수 초 동안 Spring의 Context 삭제·수정 트랜잭션과
 `FOR UPDATE SKIP LOCKED` 기반 재스캔이 함께 지연됩니다.
-세션·트랜잭션 경계 규칙은 [architecture.md](architecture.md) §5를 참조합니다.
+세션·트랜잭션 경계 규칙은 [architecture.md](architecture.md) §6을 참조합니다.
 
 ## 4. CANCELLED 우선
 

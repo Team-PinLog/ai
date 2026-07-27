@@ -37,7 +37,7 @@
 | I12 | MINYONG 공유 코멘트(결정 4건) | docs#2 |
 | I13 | eval 하네스 A/B/C (`tools/keyword_eval/`) | `test/keyword-matching-eval` |
 | I14 | eval REPORT(A/B/C-1) — 보정 불필요·프롬프트 확정·하한 0.30 | [eval 리포트](2026-07-23-keyword-matching-eval.md) |
-| I16 | AI 작업기록 문서(구조도+ADR 4+트러블슈팅+리포트 3) | 이 트리 |
+| I16 | AI 작업기록 문서(구조도+ADR 4+트러블슈팅+리포트 5) | 이 트리 |
 | I17 | 문서화 규약 메모리 | (로컬 메모리) |
 | I18 | 누적 계획 파일 | (로컬 plans) |
 | I19 | FastAPI 구현(scaffold + `/context/process` + `/search` + Preset 부트스트랩) | [FastAPI 리포트](2026-07-23-fastapi-implementation.md) |

@@ -4,7 +4,7 @@
 - **날짜**: 2026-07-23
 - **관련 PR/커밋**: [ai#2](https://github.com/Team-PinLog/ai/pull/2) (`de6e995` preset seed), [ai#3](https://github.com/Team-PinLog/ai/pull/3) eval 하네스(`test/keyword-matching-eval`, C-2 판정 모델 확정)
 - **주도(Driver)**: AI 파트
-- **근거 리포트**: [reports/2026-07-23-keyword-matching-eval.md](../implements/2026-07-23-keyword-matching-eval.md)
+- **근거 리포트**: [2026-07-23-keyword-matching-eval.md](../implements/2026-07-23-keyword-matching-eval.md)
 
 ## 맥락
 
