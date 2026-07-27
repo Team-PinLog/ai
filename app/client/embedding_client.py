@@ -3,7 +3,7 @@
 tools/keyword_eval/embed.py의 동기 클라이언트를 async로 포팅했다. 파일 캐시는
 평가용이므로 제거하고, httpx.AsyncClient로 요청당 1회 호출한다.
 
-client는 DB를 모른다(architecture.md §3). 차원 불일치는 영구 오류로 분류한다
+client는 DB를 모른다(architecture.md §4). 차원 불일치는 영구 오류로 분류한다
 (model-profile.md §5).
 """
 from __future__ import annotations

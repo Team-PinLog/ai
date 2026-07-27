@@ -1,7 +1,7 @@
 """오류 분류 타입.
 
 client는 외부 호출 실패를 분류해 service까지 올리고, 상태 반영 여부는 service가
-결정한다(architecture.md §3, failure-recovery.md).
+결정한다(architecture.md §4, failure-recovery.md).
 """
 from __future__ import annotations
 
