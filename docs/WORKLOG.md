@@ -23,3 +23,5 @@
 | 2026-07-23 | E3-PR1 — 테스트 하네스(Testcontainers)+저수준 27케이스+Dockerfile+ai-ci 정비(Jira/lock)+Python 3.12 통일 | [tests/](../tests/README.md), [Dockerfile](../Dockerfile) |
 | 2026-07-24 | troubleshooting·implements 기록 보존 원칙 + 상태 헤더 소급 (ai#15) | [implements](implements/README.md), [troubleshooting](troubleshooting/README.md) |
 | 2026-07-24 | ai-ci 핫픽스 — lock 플랫폼 종속(pywin32) 마커 + pytest pythonpath (ai#16) | [troubleshooting](troubleshooting/2026-07-24-e3-ci-and-search-path.md), [implements](implements/2026-07-24-e3-test-harness.md) |
+| 2026-07-27 | 전수 조사 갭 정합화 — 절번호 드리프트 3·인덱스·WORKLOG·proposals P40·P41·시나리오5 주석 (ai#19) | 이 트리 |
+| 2026-07-27 | 문서↔코드 정합 감사 + M3 계약 개정 — spec 5종 코드 대조·정정(architecture §6.2·§5 등), M3 `COMPLETED→PENDING` 운영 재처리(state-machine + 계약 §6.3·§7.3) (ai#21·docs#12) | [spec/](spec/), [state-machine.md](spec/state-machine.md) |

@@ -46,7 +46,7 @@ FastAPI가 **절대 수행하지 않는** 전이:
 
 | 전이 | 주체 | 이유 |
 |---|---|---|
-| `* → PENDING` | Spring | AI State 최초 생성 시에만 부여됩니다. 기존 State를 PENDING으로 되돌리는 전이는 설계에 존재하지 않습니다 |
+| `* → PENDING` | Spring | AI State 최초 생성 시 부여. **수정으로 인한** 되돌림은 없으나, 운영 재처리(Embedding Profile 전환·프리셋 재분류)를 위한 `COMPLETED → PENDING`은 Spring이 명시적으로 수행할 수 있습니다(계약 §7.3) |
 | `* → CANCELLED` | Spring | Context 삭제·수정·회원 탈퇴의 결과. FastAPI는 삭제 사실을 알 수 없음 |
 | `FAILED → PROCESSING` | 없음 | 계약상 금지. `FAILED`는 진짜 종결 상태이며 같은 Context를 다시 처리하는 경로가 없음 |
 | `COMPLETED → *` | 없음(FastAPI 기준) | 완료된 단계를 FastAPI가 되돌리지 않음 |
@@ -85,8 +85,9 @@ Context는 불변 엔티티이므로 본문 수정이 기존 State를 되살리�
 
 - `FAILED`는 진짜 종결 상태입니다. 본문이 수정되어도 그 State는 다시 살아나지 않습니다.
   살아나는 것은 **다른 `context_id`의 새 State**입니다.
-- 기존 State를 `PENDING`으로 초기화하는 경로가 없으므로, 그 전이를 가정한 분기를
-  코드에 두지 않습니다.
+- **수정으로 인한** `PENDING` 초기화 경로는 없으므로, 그 전이를 가정한 분기를
+  코드에 두지 않습니다. 운영 재처리를 위한 Spring의 `COMPLETED → PENDING`(Embedding Profile
+  전환·프리셋 재분류)은 별개의 명시적 배치 경로이며 FastAPI 요청 흐름과 무관합니다(계약 §7.3).
 - 구 Context의 `retry_count`, `COMPLETED`, `FAILED`는 신 Context로 승계되지 않습니다.
 
 ## 3. 조건부 UPDATE

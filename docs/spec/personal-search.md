@@ -12,7 +12,7 @@ POST /internal/v1/search
 ```
 
 요청값: `userId`, `query`, `limit`, `embeddingProfile`
-응답값: `recordId`, `similarity` 목록
+응답값: `recordId`, `contextId`, `similarity` 목록
 
 `userId`는 필수이며 **검색 범위 필터로만** 사용합니다. FastAPI는 인증을 판단하지 않습니다.
 반환된 Record ID는 `ai` 스키마 기준 결과이므로 소유권·삭제 여부·활성 Context 존재 여부는
@@ -139,7 +139,7 @@ Context 수정은 구 Context 삭제와 신 Context 생성의 조합이므로(�
   조립합니다. id가 없으면 어느 Context가 매칭됐는지 알 수 없어 조립이 성립하지 않습니다.
   FastAPI는 id만 반환하고 `core`를 읽지 않으므로 스키마 경계는 유지됩니다.
 - Keyword를 함께 반환하지 않습니다. Keyword Visibility에 따른 노출 판단은 Spring이 합니다.
-- 유사도 하한 컷오프는 서버 설정값으로 두되 기본은 적용하지 않습니다.
+- 검색 결과에 유사도 하한 컷오프를 적용하지 않습니다(검색 전용 컷오프 설정 knob은 두지 않음).
   최종 노출 여부는 Spring이 판단하므로, FastAPI가 임의로 결과를 지우지 않습니다.
 
 ## 7. 하지 않는 것
