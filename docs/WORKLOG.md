@@ -28,3 +28,4 @@
 | 2026-07-27 | E2E(-58) 발견 합류 — README 기동 절차(Flyway·DSN·docker run·psql) 정정 + 검색 컷오프 실측 + 판정 비결정성 명시 + implements 유형 컬럼 (ai#22) | [README](../README.md), [spec/keyword-preset.md](spec/keyword-preset.md) |
 | 2026-07-27 | E3-PR2 — 파이프라인 시나리오 20개(`test_pipeline.py`, 19함수/20시나리오) (ai#18) | [spec/integration-tests.md](spec/integration-tests.md) |
 | 2026-07-27 | E3-PR2 완료 반영(리포트·spec 헤더 갱신) + `preset_cache_ttl_sec` dead config 제거(§5 정합) (ai#23) | [implements](implements/2026-07-24-e3-test-harness.md), [spec/integration-tests.md](spec/integration-tests.md) |
+| 2026-07-27 | E2E 실경로 검증(-58) — 실제 GMS 프리셋 27 적재·파이프라인 8건·검색 품질(분리도 +0.2120)·하네스 동등성 9/10·권한 경계 실증(`-61` 근거) + 검증 드라이버 `tools/e2e/` | [implements](implements/2026-07-27-e2e-verification.md), [troubleshooting](troubleshooting/2026-07-27-e2e-env-issues.md) (T22~T24), [tools/e2e/](../tools/e2e/) |
