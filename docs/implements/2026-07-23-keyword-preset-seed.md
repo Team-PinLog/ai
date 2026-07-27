@@ -38,7 +38,7 @@ Python 점검 스크립트로 확인:
 
 ## 후속 검증(별도 트랙)
 
-이 시드는 문서 규칙만 만족한 상태였다. **실제 임베딩·매칭 품질**은 별도 평가 트랙에서 측정했고, 결과적으로 **보정 불필요**로 확인됐다 → [reports/2026-07-23-keyword-matching-eval.md](2026-07-23-keyword-matching-eval.md), [P26](../proposals/P26-keyword-preset-judgment.md).
+이 시드는 문서 규칙만 만족한 상태였다. **실제 임베딩·매칭 품질**은 별도 평가 트랙에서 측정했고, 결과적으로 **보정 불필요**로 확인됐다 → [2026-07-23-keyword-matching-eval.md](2026-07-23-keyword-matching-eval.md), [P26](../proposals/P26-keyword-preset-judgment.md).
 
 ## 관련
 

@@ -25,7 +25,7 @@ Context Embedding
 ## 2. Preset Cache
 
 Preset은 25~30개 규모이고 변경은 배포 작업으로만 이루어지므로 프로세스 메모리에 캐싱합니다.
-Cache 위치와 수명은 [architecture.md](architecture.md) §4에 정의되어 있습니다.
+Cache 위치와 수명은 [architecture.md](architecture.md) §5에 정의되어 있습니다.
 
 적재 Query:
 

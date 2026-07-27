@@ -78,6 +78,8 @@ flowchart TB
 ```text
 app/
 ├── main.py                     # FastAPI 인스턴스, lifespan, 라우터 등록
+├── bootstrap/
+│   └── load_presets.py         # Preset 부트스트랩 CLI (startup 적재)
 ├── api/
 │   └── internal/v1/
 │       ├── context.py          # POST /internal/v1/context/process
@@ -105,7 +107,8 @@ app/
     ├── config.py               # 단일 설정 진입점 (Embedding Profile 포함)
     ├── db.py                   # 엔진, 세션 팩토리, search_path
     ├── errors.py               # 오류 분류 타입
-    └── logging.py
+    ├── logging.py
+    └── security.py             # 내부 공유 시크릿 미들웨어(/internal/*)
 ```
 
 계층 간 호출은 **한 방향**입니다. 화살표 방향으로만 의존하며, 역방향 의존이나 계층 건너뛰기를 두지 않습니다.
