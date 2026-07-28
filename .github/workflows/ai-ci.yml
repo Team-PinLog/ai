@@ -11,7 +11,8 @@ permissions:
 
 concurrency:
   group: ai-ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # PR 피드백은 최신 실행만 남기되, main image publish는 commit별로 순차 완료한다.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -19,18 +20,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       # PR 제목만 검증(squash 병합이라 제목이 최종 커밋 메시지가 된다).
       # 형식 보증이지 티켓 존재 보증은 아니다(수용).
       - name: Validate PR title
         if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          echo "${{ github.event.pull_request.title }}" | \
-            grep -qE '^(feat|fix|docs|chore|refactor|test|perf)\(S15P11A705-[0-9]+\): ' || \
+          printf '%s\n' "$PR_TITLE" | \
+            grep -qE '^(feat|fix|docs|chore|refactor|test|perf|ci)\(S15P11A705-[0-9]+\): ' || \
             { echo "PR 제목 형식: {type}(S15P11A705-N): 설명"; exit 1; }
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
           cache: pip
@@ -49,3 +54,153 @@ jobs:
       # 통합 테스트는 Testcontainers로 pgvector를 러너 Docker에 띄운다.
       - name: Tests (pytest)
         run: pytest -q
+
+      - name: Set up Docker Buildx for PR image validation
+        if: github.event_name == 'pull_request'
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Validate AI container image
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false
+
+  image-publish:
+    name: ai-image / publish
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    env:
+      SOURCE_REPOSITORY: Team-PinLog/ai
+      SOURCE_SHA: ${{ github.sha }}
+      IMAGE: ghcr.io/team-pinlog/ai
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Validate exact source commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Refuse to overwrite existing commit tag
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          registry_token=$(curl --fail --silent --show-error \
+            --user "${GITHUB_ACTOR}:${GITHUB_TOKEN}" \
+            --get \
+            --data-urlencode 'service=ghcr.io' \
+            --data-urlencode 'scope=repository:team-pinlog/ai:pull,push' \
+            'https://ghcr.io/token' | jq -er '.token')
+
+          set +e
+          http_status=$(curl --silent --show-error \
+            --output /dev/null \
+            --write-out '%{http_code}' \
+            --request HEAD \
+            --header "Authorization: Bearer ${registry_token}" \
+            --header 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json' \
+            "https://ghcr.io/v2/team-pinlog/ai/manifests/${SOURCE_SHA}")
+          curl_status=$?
+          set -e
+
+          if [ "$curl_status" -ne 0 ]; then
+            echo "::error::Registry preflight request failed"
+            exit 1
+          fi
+          case "$http_status" in
+            404)
+              echo "Commit tag is available"
+              ;;
+            200)
+              echo "::error::Commit tag already exists; refusing to overwrite ${IMAGE}:${SOURCE_SHA}"
+              exit 1
+              ;;
+            *)
+              echo "::error::Registry preflight returned unexpected HTTP ${http_status}"
+              exit 1
+              ;;
+          esac
+
+      - name: Build and publish immutable AI image
+        id: publish
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/team-pinlog/ai:${{ github.sha }}
+
+      - name: Verify published image digest
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ steps.publish.outputs.digest }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          REGISTRY_DIGEST=$(docker buildx imagetools inspect "${IMAGE}:${SOURCE_SHA}" \
+            --format '{{.Manifest.Digest}}')
+          [[ "$REGISTRY_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          test "$REGISTRY_DIGEST" = "$IMAGE_DIGEST"
+          docker buildx imagetools inspect "ghcr.io/team-pinlog/ai:${SOURCE_SHA}@${IMAGE_DIGEST}"
+          echo "Published digest: $IMAGE_DIGEST"
+
+      - name: Create verified image provenance
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ steps.publish.outputs.digest }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          test "$SOURCE_REPOSITORY" = "Team-PinLog/ai"
+          test "$IMAGE" = "ghcr.io/team-pinlog/ai"
+
+          temporary=$(mktemp)
+          trap 'rm -f "$temporary"' EXIT
+          jq -n \
+            --arg source_repository "$SOURCE_REPOSITORY" \
+            --arg source_sha "$SOURCE_SHA" \
+            --arg image_repository "$IMAGE" \
+            --arg digest "$IMAGE_DIGEST" \
+            '{source_repository: $source_repository, source_sha: $source_sha, image_repository: $image_repository, digest: $digest}' \
+            > "$temporary"
+          jq -e 'type == "object" and (keys | sort) == ["digest", "image_repository", "source_repository", "source_sha"]' "$temporary" >/dev/null
+          test "$(jq -er '.source_repository' "$temporary")" = "$SOURCE_REPOSITORY"
+          test "$(jq -er '.source_sha' "$temporary")" = "$SOURCE_SHA"
+          test "$(jq -er '.image_repository' "$temporary")" = "$IMAGE"
+          test "$(jq -er '.digest' "$temporary")" = "$IMAGE_DIGEST"
+          mv "$temporary" provenance.json
+
+      - name: Upload verified image provenance
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ai-image-provenance
+          path: provenance.json
+          if-no-files-found: error
+          retention-days: 7
