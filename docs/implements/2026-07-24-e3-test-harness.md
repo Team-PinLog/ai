@@ -53,4 +53,4 @@
 ## E3-PR2 (완료, ai#18)
 
 - `test_pipeline.py` — integration-tests.md §3의 파이프라인 시나리오 20개(취소 거부·검색 경계·Keyword·재개/상태·계약위반/경합), 6·18 공유로 19함수. 동시성은 `on_call` 훅으로 CANCELLED 주입(sleep 금지).
-- `pytest tests/ -q` **46 passed**(저수준 27 + 파이프라인 19), ruff clean. 이로써 E3(하네스·저수준·파이프라인) 전체 완결.
+- `pytest tests/ -q` **52 passed** = AI 검증 46(저수준 27 + 파이프라인 19) + CI 계약 6. CI 계약 6개는 ai#25(인프라 `-20`)가 `tests/`에 추가한 CI 이미지 발행 계약이며, E3 자체는 46으로 완결이고 52는 그 위에 **증가**한 수다. ruff clean.

@@ -3,8 +3,9 @@
 AI 서버 통합 테스트 규칙. 계약 근거는 [`docs/spec/integration-tests.md`](../docs/spec/integration-tests.md).
 
 - **Testcontainers pgvector `0.8.1-pg16`** 사용 (SQLite·H2 금지). 검증 대상이 조건부 UPDATE
-  영향 행 수·`FOR UPDATE`·`<=>`·`ON CONFLICT` SET 절이라 전부 방언 의존적. 태그는 back
-  `compose.yaml`과 일치 유지.
+  영향 행 수·`FOR UPDATE`·`<=>`·`ON CONFLICT` SET 절이라 전부 방언 의존적. ⚠ 태그는 back `compose.yaml`과
+  일치시켜야 하나 **현재 불일치**다 — back은 `0.8.5-pg16`, ai는 `0.8.1-pg16`. 정합은 `conftest.py:23`(`PGVECTOR_IMAGE`)
+  변경이 필요한 코드 작업(별건)이다.
 - **외부 API는 인터페이스 레벨 Fake**([fakes.py](fakes.py)), HTTP mock 아님. **호출 횟수 기록
   필수** — "호출 안 함"/"정확히 한 번"이 여러 시나리오의 핵심 단언.
 - **격리는 TRUNCATE**([conftest.py](conftest.py)). 동시성 테스트가 여러 커넥션을 쓰므로 트랜잭션
@@ -22,6 +23,8 @@ AI 서버 통합 테스트 규칙. 계약 근거는 [`docs/spec/integration-test
 | `test_repo.py` | 조건부 UPDATE rowcount·UPSERT·delete-insert·검색 Query | 실제 |
 | `test_api.py` | 202·검색 형식·422·401 | 실제 |
 | `test_pipeline.py` | §16 시나리오 전체 | 실제 |
+
+> `test_ci_image_publish_contract.py`는 위 §5 계층에 속하지 않는다 — `.github/workflows/ai-ci.yml`을 계약으로 고정하는 **CI 이미지 발행 계약**이며 **인프라 파트(`-20`) 소관**이다. `pytest tests/` 범위엔 포함되나 **DB·Docker가 필요 없다**(`pytest tests/test_ci_image_publish_contract.py`만 따로 돌리면 컨테이너 없이 검증). AI 파트가 `ai-ci.yml`을 바꾸면 이 테스트가 깨지므로 인프라에 요청·조율한다.
 
 ## 실행
 
