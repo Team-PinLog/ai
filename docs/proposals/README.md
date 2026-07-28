@@ -22,7 +22,7 @@
 | [P5](P5-exact-cosine.md) | 정확 cosine 검색 (HNSW/IVFFlat 미도입) | Accepted | AI |
 | [P26](P26-keyword-preset-judgment.md) | Keyword 프리셋 구성·후보 하한·판정 프롬프트 | Accepted | AI |
 | [P43](P43-s1-judgment-recovery.md) | S1 구현 판단 변경·기각 대안 복원 | Accepted | AI |
-| [P42](P42-ai-repository-governance.md) | AI 레포 협업 운영 기준 | Accepted | AI |
+| [P44](P44-ai-repository-governance.md) | AI 레포 협업 운영 기준 | Accepted | AI |
 
 ## 제안 — 전수 (Accepted)
 
@@ -61,7 +61,7 @@
 | P40 | `/search` 응답 `contextId` 추가(DISTINCT ON, Spring matchedContext 조립용) | AI | ai#11·docs#10, [spec/personal-search.md](../spec/personal-search.md) |
 | P41 | 툴체인 — Python 3.12 통일·pgvector 0.8.1-pg16·requirements lock | AI | [implements](../implements/2026-07-24-e3-test-harness.md) (ai#14·#16) |
 | P43 | S1 판단 변경 10·기각 대안 9 복원(search_path 캐스트 원복·pgvector digest 권고·Python 3.12 상한(GraphRAG)·브랜치보호 CI 후 적용 등) | AI | [P43](P43-s1-judgment-recovery.md) |
-| P42 | Jira-first·TDD 증거·리뷰 대화 해결·영구 문서 기반 AI 협업 운영 | AI | [P42](P42-ai-repository-governance.md) |
+| P44 | Jira-first·TDD 증거·리뷰 대화 해결·영구 문서 기반 AI 협업 운영 | AI | [P44](P44-ai-repository-governance.md) |
 
 > P10·P13·P21~P25·P33·P39는 백엔드 아티팩트 결정이라 **back 레포** `docs/ai/proposals`에 있습니다.
 
