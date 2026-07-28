@@ -5,7 +5,7 @@ AI 서버 통합 테스트 규칙. 계약 근거는 [`docs/spec/integration-test
 - **Testcontainers pgvector `0.8.1-pg16`** 사용 (SQLite·H2 금지). 검증 대상이 조건부 UPDATE
   영향 행 수·`FOR UPDATE`·`<=>`·`ON CONFLICT` SET 절이라 전부 방언 의존적. ⚠ 태그는 back `compose.yaml`과
   일치시켜야 하나 **현재 불일치**다 — back은 `0.8.5-pg16`, ai는 `0.8.1-pg16`. 정합은 `conftest.py:23`(`PGVECTOR_IMAGE`)
-  변경이 필요한 코드 작업(별건)이다.
+  변경이 필요한 코드 작업으로 **`S15P11A705-122`로 추적 중**이다.
 - **외부 API는 인터페이스 레벨 Fake**([fakes.py](fakes.py)), HTTP mock 아님. **호출 횟수 기록
   필수** — "호출 안 함"/"정확히 한 번"이 여러 시나리오의 핵심 단언.
 - **격리는 TRUNCATE**([conftest.py](conftest.py)). 동시성 테스트가 여러 커넥션을 쓰므로 트랜잭션
