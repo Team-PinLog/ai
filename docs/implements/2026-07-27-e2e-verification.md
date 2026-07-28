@@ -60,7 +60,7 @@ README에 `docker build`만 있고 `docker run` 예시가 없다. 이미지는 `
 
 `app/core/config.py`·`.env.example`에 존재하고 `spec/architecture.md` §5가 TTL 기반 재적재로 서술하지만, `PresetCache`에 reload 경로가 없다. **프리셋은 프로세스 수명 동안 고정**이다. 문서-구현 불일치.
 
-> **미반영**: ai#22 범위에 들어가지 않았다. -59가 설정·문서·`.env.example`에서 제거하는 방향으로 처리 중이다(구현이 아니라 삭제 — 재적재 경로가 실제로 없으므로).
+> **해결됨(ai#24)**: `preset_cache_ttl_sec`를 `config.py`·`.env.example`에서 제거(ai#24)하고 `architecture.md §5`를 "재시작으로만"으로 정정(ai#21)했다. 문서-구현 정합.
 
 ### 문서대로 작동한 것
 
@@ -294,7 +294,7 @@ ValueError: could not convert string to float: '[0.05609131,0.008399963,...]'
 | F1 README 2단계 절차 없음 | 문서 누락 | -59 → README 2단계에 파일 위치·psql 루프·V102 제외 근거 | **반영됨** (ai#22) |
 | F2 DSN 3중 불일치 | 문서 오류 | -59 → `5433`/`pinlog`로 통일, `.env.example` 일치, 혼용 경고 | **반영됨** (ai#22) |
 | F5 `docker run` 미문서화 | 문서 누락 | -59 → 검증한 명령을 README Docker 절에 추가 | **반영됨** (ai#22) |
-| F6 `PRESET_CACHE_TTL_SEC` 미사용 | 문서-구현 불일치 | -59 → 설정·문서·`.env.example`에서 제거 | **진행 중** (ai#22 범위 밖) |
+| F6 `PRESET_CACHE_TTL_SEC` 미사용 | 문서-구현 불일치 | -59 → 설정·문서·`.env.example`에서 제거(ai#24) | **해결됨** (ai#24) |
 | F4 검색 하한 실측 근거 | 근거 보강 | -59 → `personal-search.md` §6에 0.3143·간격 +0.2120 기재 | **반영됨** (ai#22) |
 | 판정 비결정성 | 계약 명시 필요 | 현행 유지(허용) 결정 + -59 → `keyword-preset.md` §4.4 신설 | **반영됨** (ai#22) |
 | **F2b 권한 경계 미검증** | 인프라 | **`S15P11A705-61`** (ai 전용 DB role) — 근거는 이 문서 | **미해소** |
