@@ -19,6 +19,7 @@ FastAPI AI 서버의 **설계·결정·구현 기록**입니다. 공용 계약�
 | [`implements/`](implements/) | 구현 리포트 — "어떻게 만들었나" |
 | [`troubleshooting/`](troubleshooting/) | 문제 해결 |
 | [`WORKLOG.md`](WORKLOG.md) | 시간순 작업 로그 |
+| [`development/`](development/) | Jira→PR 워크플로와 코드 리뷰 운영 규칙 |
 
 ## spec — 읽는 순서 (구현 명세)
 

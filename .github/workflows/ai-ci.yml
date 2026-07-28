@@ -52,8 +52,24 @@ jobs:
         run: python -m compileall app tools
 
       # 통합 테스트는 Testcontainers로 pgvector를 러너 Docker에 띄운다.
-      - name: Tests (pytest)
-        run: pytest -q
+      - name: Tests and app branch coverage (non-blocking threshold)
+        run: >-
+          pytest
+          --cov=app
+          --cov-branch
+          --cov-report=term-missing
+          --cov-report=xml:coverage.xml
+          --cov-report=html:htmlcov
+
+      - name: Upload app coverage report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ai-app-coverage-${{ github.run_id }}
+          path: |
+            coverage.xml
+            htmlcov/
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Set up Docker Buildx for PR image validation
         if: github.event_name == 'pull_request'
