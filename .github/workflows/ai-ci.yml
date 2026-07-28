@@ -78,6 +78,7 @@ jobs:
       contents: read
       packages: write
     env:
+      SOURCE_REPOSITORY: Team-PinLog/ai
       SOURCE_SHA: ${{ github.sha }}
       IMAGE: ghcr.io/team-pinlog/ai
     steps:
@@ -167,3 +168,39 @@ jobs:
           test "$REGISTRY_DIGEST" = "$IMAGE_DIGEST"
           docker buildx imagetools inspect "ghcr.io/team-pinlog/ai:${SOURCE_SHA}@${IMAGE_DIGEST}"
           echo "Published digest: $IMAGE_DIGEST"
+
+      - name: Create verified image provenance
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ steps.publish.outputs.digest }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          test "$SOURCE_REPOSITORY" = "Team-PinLog/ai"
+          test "$IMAGE" = "ghcr.io/team-pinlog/ai"
+
+          temporary=$(mktemp)
+          trap 'rm -f "$temporary"' EXIT
+          jq -n \
+            --arg source_repository "$SOURCE_REPOSITORY" \
+            --arg source_sha "$SOURCE_SHA" \
+            --arg image_repository "$IMAGE" \
+            --arg digest "$IMAGE_DIGEST" \
+            '{source_repository: $source_repository, source_sha: $source_sha, image_repository: $image_repository, digest: $digest}' \
+            > "$temporary"
+          jq -e 'type == "object" and (keys | sort) == ["digest", "image_repository", "source_repository", "source_sha"]' "$temporary" >/dev/null
+          test "$(jq -er '.source_repository' "$temporary")" = "$SOURCE_REPOSITORY"
+          test "$(jq -er '.source_sha' "$temporary")" = "$SOURCE_SHA"
+          test "$(jq -er '.image_repository' "$temporary")" = "$IMAGE"
+          test "$(jq -er '.digest' "$temporary")" = "$IMAGE_DIGEST"
+          mv "$temporary" provenance.json
+
+      - name: Upload verified image provenance
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ai-image-provenance
+          path: provenance.json
+          if-no-files-found: error
+          retention-days: 7

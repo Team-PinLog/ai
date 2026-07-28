@@ -127,3 +127,43 @@ def test_publish_uses_github_token_and_fails_closed_on_registry_digest_verificat
     # Login and push must remain unreachable from pull_request jobs.
     assert text.count("docker/login-action@") == 1
     assert text.count("push: true") == 1
+
+
+def test_successful_publish_emits_exact_digest_bound_provenance_artifact():
+    workflow, _ = load_workflow()
+    steps = workflow["jobs"]["image-publish"]["steps"]
+    names = [step.get("name") for step in steps]
+    create_index = names.index("Create verified image provenance")
+    verify_index = names.index("Verify published image digest")
+    assert create_index > verify_index
+
+    create = steps[create_index]
+    assert create["env"] == {
+        "IMAGE_DIGEST": "${{ steps.publish.outputs.digest }}"
+    }
+    script = create["run"]
+    for field in (
+        "source_repository",
+        "source_sha",
+        "image_repository",
+        "digest",
+    ):
+        assert field in script
+    assert '[[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]' in script
+    assert "provenance.json" in script
+    assert "jq -e" in script
+
+    upload = next(
+        step
+        for step in steps
+        if step.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    assert upload["uses"] == (
+        "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
+    )
+    assert upload["with"] == {
+        "name": "ai-image-provenance",
+        "path": "provenance.json",
+        "if-no-files-found": "error",
+        "retention-days": "7",
+    }
