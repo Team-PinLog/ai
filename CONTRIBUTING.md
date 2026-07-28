@@ -102,11 +102,15 @@ PR 본문에는 Jira, 변경 목적, RED/GREEN/Regression 증거, 번호가 붙�
 
 ## Feed 협업 경계
 
-- 신규 Feed 담당자는 Jira, 설계 정합성, 구현, 테스트, PR 대응, 문서화를 수직
-  소유한다.
-- 기존 AI 담당자는 AI 운영체계와 추천 계약·점수·개인정보를 리뷰한다.
-- 백엔드 담당자는 Spring, DB, 트랜잭션, 캐시와 백엔드 테스트를 리뷰한다.
-- Feed 계약 변경은 병합 전에 AI 담당자에게, 백엔드 런타임 변경은 백엔드
+- Feed 런타임 구현은 Spring 기반 `Team-PinLog/back`에서 수행한다. 이 레포
+  (FastAPI)에는 Feed API나 실시간 scoring 실행 코드를 추가하지 않는다.
+- AI 파트는 계약을 소유한다 — deterministic scoring 정책, PUBLIC Keyword 공개
+  범위, 개인정보 경계, 후보·필터·fallback·impression 의미, Feed 관련 계약 리뷰.
+- 백엔드 파트는 구현을 소유한다 — 후보 조회, scoring 실행, API와 cursor,
+  requestId, DB·Redis·트랜잭션, impression 저장과 중복 처리, 백엔드 테스트.
+- Feed 구현은 `S15P11A705-111` 산하 Task와 `back` 레포 PR로 추적한다.
+  레포가 다르면 티켓·브랜치·PR도 분리하고 서로 연결한다.
+- Feed 계약 변경은 병합 전에 AI 계약 리뷰어에게, 백엔드 런타임 변경은 백엔드
   담당자와 AI 계약 리뷰어에게 요청한다.
 - Feed와 운영체계 변경은 별도 티켓·브랜치·PR로 병렬 진행하며, 운영체계 PR 병합
   후 진행 중인 브랜치는 최신 `main`을 반영한다.
