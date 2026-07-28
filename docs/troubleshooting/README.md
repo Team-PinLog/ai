@@ -20,6 +20,7 @@
 | [2026-07-23-fastapi-local-verification.md](2026-07-23-fastapi-local-verification.md) | FastAPI 로컬 검증 중 런타임/드라이버 이슈 (T16~T18) |
 | [2026-07-24-e3-ci-and-search-path.md](2026-07-24-e3-ci-and-search-path.md) | E3 CI·런타임 이슈 — lock 플랫폼 종속·pytest pythonpath·search_path (T19~T21) |
 | [2026-07-27-e2e-env-issues.md](2026-07-27-e2e-env-issues.md) | E2E 검증 환경 이슈 — `.env` CRLF·register_vector 미등록·한글 인코딩 (T22~T24) |
+| [2026-07-28-shared-worktree-and-env-cache.md](2026-07-28-shared-worktree-and-env-cache.md) | 멀티세션 워킹트리 오염 · import 시점 `.env` 캐시 (T25·T26) |
 
 ## 문제 해결 — 전수 (AI 소유)
 
@@ -47,5 +48,7 @@
 | T22 | `.env`가 CRLF라 셸로 값을 뽑으면 `\r`이 섞여 JSON 파싱 실패(일부 요청만 깨져 혼동) | `tr -d '\r\n'` 또는 셸 파싱 금지·`get_settings()` 사용 (T16 계열) |
 | T23 | raw `asyncpg` 연결은 `register_vector` 미등록 → VECTOR가 문자열로 디코딩되어 `PresetCache` 적재 실패 | 스크립트도 `app.core.db.Database` 사용(search_path+타입 등록 캡슐화). **시딩 재발 주의** |
 | T24 | Git Bash + `curl`에서 한글 본문 인코딩 깨짐(ASCII 본문은 통과 → T22와 증상 동일) | 한글 요청은 Python `httpx`로 전송, `curl`은 ASCII 경로에만 |
+| T25 | 멀티세션이 단일 git 워킹트리·인덱스·HEAD 공유 → 3파일 커밋에 타 세션 15파일 섞여 push | 격리 `git worktree` 기본, `git add` 개별(`-A` 금지)·커밋 전 브랜치 확인 |
+| T26 | `main.py` 모듈 레벨 `create_app()` import 시점 `.env` 캐시 → API 3건만 401(로컬 `.env` 우연 일치로 은폐) | `settings` fixture에서 `get_settings()` 캐시 재설정 + conftest placeholder env 선주입 |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.

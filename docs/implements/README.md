@@ -22,6 +22,7 @@
 | [2026-07-23-fastapi-implementation.md](2026-07-23-fastapi-implementation.md) | 구현 | FastAPI scaffold + /context/process + /search 구현·검증 (ai#5·#6) |
 | [2026-07-24-e3-test-harness.md](2026-07-24-e3-test-harness.md) | 구현 | E3 통합 테스트 하네스 + 저수준 27케이스 + 파이프라인 20 + Dockerfile + ai-ci 정비 (ai#14·#16·#18) |
 | [2026-07-27-e2e-verification.md](2026-07-27-e2e-verification.md) | 검증 | E2E 실경로 — 실제 GMS 프리셋 적재·파이프라인·검색 품질·하네스 동등성·권한 경계 |
+| [2026-07-28-s1-implementation-recovery.md](2026-07-28-s1-implementation-recovery.md) | 구현 | S1 세션 구현 판단 맥락 복원 — 설계선택 19·불변식·spec↔구현 불일치(구현결함)·인프라 미복원 |
 
 > **유형**: 구현(무엇을 만들었나) / 검증(어떻게 검증했나). 검증 성격 문서가 늘면 이 컬럼이 분류 기준이 된다.
 > **분리 트리거**: 리포트가 15개를 넘고 검증 유형이 절반 이상이면 `verification/` 분리를 검토한다.
@@ -41,11 +42,13 @@
 | I12 | MINYONG 공유 코멘트(결정 4건) | docs#2 |
 | I13 | eval 하네스 A/B/C (`tools/keyword_eval/`) | `test/keyword-matching-eval` |
 | I14 | eval REPORT(A/B/C-1) — 보정 불필요·프롬프트 확정·하한 0.30 | [eval 리포트](2026-07-23-keyword-matching-eval.md) |
+| I15 | `/search` 응답 `contextId` 추가(DISTINCT ON, Spring matchedContext 조립) — **소규모 변경이라 전용 리포트 없이 인벤토리만** | ai#11·docs#10, [P40](../proposals/README.md), [spec/personal-search.md](../spec/personal-search.md) |
 | I16 | AI 작업기록 문서(구조도+ADR 4+트러블슈팅+리포트 5) | 이 트리 |
 | I17 | 문서화 규약 메모리 | (로컬 메모리) |
 | I18 | 누적 계획 파일 | (로컬 plans) |
 | I19 | FastAPI 구현(scaffold + `/context/process` + `/search` + Preset 부트스트랩) | [FastAPI 리포트](2026-07-23-fastapi-implementation.md) |
 | I20 | E3 통합 테스트 하네스 + 저수준 27 + 파이프라인 20 + Dockerfile + ai-ci 정비(Python 3.12·lock·Jira 검증) | [E3 리포트](2026-07-24-e3-test-harness.md), PR ai#14·#16·#18 |
 | I21 | E2E 실경로 검증 + 검증 드라이버(`tools/e2e/`) — 문서 마찰 F1·F2·F5·F6, 하네스 동등성 실측, 권한 경계 실증(`-61` 근거), 시딩 가능 범위 | [E2E 리포트](2026-07-27-e2e-verification.md), [tools/e2e/](../../tools/e2e/) |
+| I22 | S1 구현 판단 맥락 복원 — 설계선택 19·불변식·spec↔구현 불일치(구현결함 A·F절)·실행 인프라 미복원 | [S1 복원 리포트](2026-07-28-s1-implementation-recovery.md) |
 
 > I6·I7·I8은 백엔드 아티팩트라 **back 레포** `docs/ai/implements`에 있습니다.
