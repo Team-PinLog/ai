@@ -27,6 +27,8 @@
 | 2026-07-27 | 문서↔코드 정합 감사 + M3 계약 개정 — spec 5종 코드 대조·정정(architecture §6.2·§5 등), M3 `COMPLETED→PENDING` 운영 재처리(state-machine + 계약 §6.3·§7.3) (ai#21·docs#13) | [spec/](spec/), [state-machine.md](spec/state-machine.md) |
 | 2026-07-27 | E2E(-58) 발견 합류 — README 기동 절차(Flyway·DSN·docker run·psql) 정정 + 검색 컷오프 실측 + 판정 비결정성 명시 + implements 유형 컬럼 (ai#22) | [README](../README.md), [spec/keyword-preset.md](spec/keyword-preset.md) |
 | 2026-07-27 | E3-PR2 — 파이프라인 시나리오 20개(`test_pipeline.py`, 19함수/20시나리오) (ai#18) | [spec/integration-tests.md](spec/integration-tests.md) |
+| 2026-07-27 | 코드 주석 §참조·`search_path` 서술 정정 (ai#20) | [troubleshooting](troubleshooting/2026-07-24-e3-ci-and-search-path.md) |
 | 2026-07-27 | E3-PR2 완료 반영(리포트·spec 헤더 갱신) + `preset_cache_ttl_sec` dead config 제거(§5 정합) (ai#23) | [implements](implements/2026-07-24-e3-test-harness.md), [spec/integration-tests.md](spec/integration-tests.md) |
 | 2026-07-27 | E2E 실경로 검증(-58) — 실제 GMS 프리셋 27 적재·파이프라인 8건·검색 품질(분리도 +0.2120)·하네스 동등성 9/10·권한 경계 실증(`-61` 근거) + 검증 드라이버 `tools/e2e/` | [implements](implements/2026-07-27-e2e-verification.md), [troubleshooting](troubleshooting/2026-07-27-e2e-env-issues.md) (T22~T24), [tools/e2e/](../tools/e2e/) |
 | 2026-07-28 | ai#25(인프라 CI 계약 테스트 6) 병합으로 pytest 46→52 확대 → 문서 정합(수치 AI 검증 46 + CI 계약 6·CI 계약 각주·pgvector 불일치 표시) (ai#28) | [tests/README](../tests/README.md), [spec/integration-tests.md](spec/integration-tests.md) |
+| 2026-07-28 | S1 구현 판단 맥락 복원 — 설계선택 19·불변식·구현결함 불일치·인프라 미복원(I22), 워킹트리·env캐시(T25·T26), 판단변경·기각(P42), partial-resume §3 재조회 판단변경 (ai#29) | [implements](implements/2026-07-28-s1-implementation-recovery.md), [troubleshooting](troubleshooting/2026-07-28-shared-worktree-and-env-cache.md), [P42](proposals/P42-s1-judgment-recovery.md) |

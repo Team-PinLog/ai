@@ -89,8 +89,16 @@ flowchart TD
   두 단계의 진행 여부는 각자의 status가 결정합니다.
 - Embedding 단계가 중단되었더라도 Keyword 단계는 시도합니다. `embedding_status`가
   COMPLETED여서 중단된 경우가 정확히 재개 경로입니다.
-- Keyword 단계에 필요한 벡터는 재사용 판정에서 이미 읽어 둔 값을 씁니다.
-  후보 검색을 위해 Embedding을 다시 조회하지 않습니다.
+- Keyword 단계에 필요한 벡터는 재사용 판정에서 이미 읽어 둔 값(`carried`)을 우선 씁니다.
+  다만 그 값이 없으면 `context_embedding`에서 **DB로 재조회**합니다(`keyword_service._resolve_vector`).
+
+  > **판단 변경(2-worker 경합 방어).** 원래 계약은 *"후보 검색을 위해 Embedding을 다시 조회하지
+  > 않는다"*였다 — 한 요청이 재사용 판정에서 벡터를 항상 손에 쥔다는 단일 워커 전제였다. 실제
+  > 구현은 **다른 워커가 임베딩을 완료해** 이 요청의 재사용 판정에는 `carried`가 `None`으로 오는
+  > 경합 경로를 방어하려 fallback 재조회를 넣었다(`_resolve_vector`가 `carried is None`일 때
+  > `context_embedding_repo.load_vector` 호출). 즉 **코드가 맞고 이 문장이 낡았다** — 재조회는
+  > 정상 경합 대응이지 "벡터 재사용" 원칙의 위반이 아니다. (출처: `기록복원` — 종료 S1 세션;
+  > `직접확인` — `keyword_service._resolve_vector:108-115`)
 
 ## 4. 재개할 수 없는 조합
 
