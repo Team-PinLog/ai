@@ -19,6 +19,7 @@
 | [mermaid-headless-validation.md](mermaid-headless-validation.md) | Mermaid 다이어그램 브라우저리스 문법 검증 (T7·T8) |
 | [2026-07-23-fastapi-local-verification.md](2026-07-23-fastapi-local-verification.md) | FastAPI 로컬 검증 중 런타임/드라이버 이슈 (T16~T18) |
 | [2026-07-24-e3-ci-and-search-path.md](2026-07-24-e3-ci-and-search-path.md) | E3 CI·런타임 이슈 — lock 플랫폼 종속·pytest pythonpath·search_path (T19~T21) |
+| [2026-07-27-e2e-env-issues.md](2026-07-27-e2e-env-issues.md) | E2E 검증 환경 이슈 — `.env` CRLF·register_vector 미등록·한글 인코딩 (T22~T24) |
 
 ## 문제 해결 — 전수 (AI 소유)
 
@@ -43,5 +44,8 @@
 | T19 | Windows `uv pip compile` lock이 마커 없이 `pywin32` 고정 → ubuntu CI 설치 실패 | `uv pip compile --universal`(sys_platform 마커) |
 | T20 | CI 러너에서 pytest가 `app`/`tests` import 실패(로컬은 PYTHONPATH 우회) | `pyproject [tool.pytest.ini_options] pythonpath=["."]` |
 | T21 | `search_path=ai` 단독이 public 제외 → VECTOR 타입·`register_vector`가 멀티 커넥션에서 실패 | `ai, public`으로 확장(public=vector 확장 소재, core는 경로 밖 유지) |
+| T22 | `.env`가 CRLF라 셸로 값을 뽑으면 `\r`이 섞여 JSON 파싱 실패(일부 요청만 깨져 혼동) | `tr -d '\r\n'` 또는 셸 파싱 금지·`get_settings()` 사용 (T16 계열) |
+| T23 | raw `asyncpg` 연결은 `register_vector` 미등록 → VECTOR가 문자열로 디코딩되어 `PresetCache` 적재 실패 | 스크립트도 `app.core.db.Database` 사용(search_path+타입 등록 캡슐화). **시딩 재발 주의** |
+| T24 | Git Bash + `curl`에서 한글 본문 인코딩 깨짐(ASCII 본문은 통과 → T22와 증상 동일) | 한글 요청은 Python `httpx`로 전송, `curl`은 ASCII 경로에만 |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.
