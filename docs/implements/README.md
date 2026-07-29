@@ -53,4 +53,6 @@
 | I22 | S1 구현 판단 맥락 복원 — 설계선택 19·불변식·spec↔구현 불일치(구현결함 A·F절)·실행 인프라 미복원 | [S1 복원 리포트](2026-07-28-s1-implementation-recovery.md) |
 | I23 | dev 배포 게이트 3종 — `GET /ready`(DB+Preset, GMS 미호출) · `GMS_BASE_URL` `/gmsapi/` fail-fast · `app.smoke.gms_roundtrip`(embedding+judge 실호출, 한쪽 실패 시 exit 1) | [배포 게이트 리포트](2026-07-29-dev-deployment-gates.md), ai#33 ← [ai#32](https://github.com/Team-PinLog/ai/pull/32) 요청 |
 
+| I24 | SealedSecret handoff — Actions Secret 7종을 `kubeseal --raw` 로 봉인해 평문 없이 Infra 에 전달 (`pinlog-dev/ai-owner-secrets`, scope strict) | [handoff 리포트](2026-07-29-sealed-secret-handoff.md) ← [ai#32](https://github.com/Team-PinLog/ai/pull/32) 요청 ① |
+
 > I6·I7·I8은 백엔드 아티팩트라 **back 레포** `docs/ai/implements`에 있습니다.
