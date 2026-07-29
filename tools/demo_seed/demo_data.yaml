@@ -1,0 +1,208 @@
+# 발표 시연용 데모 데이터 정의.
+#
+# 이 파일이 시딩의 유일한 입력이다. 내용을 바꾸고 `seed.py --reset`을 다시 돌리면
+# 그 내용대로 재구성된다 — 스크립트를 고칠 일이 없어야 한다.
+#
+# ## 규모의 근거 (GMS 실호출 비용)
+#
+# Context 14건 = 임베딩 14 + 판정 14, 프리셋 적재 1배치(27건 1회). 총 29회.
+# 시연 3종이 각각 성립하는 최소 구성이다.
+#
+#   자연어 검색 : 주인공 1명 × Context 6건. 정답 1건과 경쟁 5건이 있어야 순위가
+#                 의미를 갖는다. 6건은 2026-07-27 E2E가 분리도 +0.2120을 실측한 규모다.
+#   탐색 피드   : 타 소유자 4명 × Context 2건. `max-per-owner=2`라 소유자 4명이
+#                 카드 8장의 상한이고, 그 아래로는 "여러 소유자가 섞인다"가 눈에
+#                 보이지 않는다. Collection은 Record를 재사용해 늘리므로 추가 비용 0.
+#   Keyword     : 위 14건에 자연히 붙는다. 별도 Context를 만들지 않는다.
+#
+# 늘리지 않는 이유는 비용보다 **GMS Gemini 게이트웨이의 429**다. 판정은 지속적으로
+# 분당 2건 안팎만 통과한다(2026-07-29 실측, T27). 건수를 늘리면 시딩 시간이 선형으로
+# 늘고 재시도 구간이 넓어진다. 시연에 보탬이 되지 않는 Context는 그 시간을 값 없이 쓴다.
+#
+# ## 데이터 성격
+#
+# 장소·본문은 전부 가공이다. `[데모]` 접두사와 `demo-seed-*` kakaoPlaceId, 주소의
+# "(데모 시딩 데이터)" 표기로 시연용임이 화면과 DB 양쪽에서 드러난다. 실재하는 상호를
+# 쓰지 않는다 — 시연 화면이 특정 가게에 대한 실제 후기처럼 보이면 안 된다.
+#
+# `core.member`에는 이름 컬럼이 없다(익명 서비스). 아래 `key`는 이 파일과 로그에서만
+# 쓰는 식별자이며 DB에 사람 이름이 저장되지 않는다.
+
+members:
+  # 시연 주인공 — 자연어 검색 시연이 이 사람의 화면에서 일어난다.
+  # Record 6건이라 Feed의 cold-start 임계(3건)를 넘어 정상 프로파일 경로를 탄다.
+  - key: host
+    role: "시연 주인공 (검색·피드 화면의 주체)"
+    follows: [walker, dessert]        # 팔로우 채널·followSignal(0.5) 시연
+    collections:
+      - title: "데모 나의 아지트"
+        records: [rain, work, walk]
+    records:
+      # 시연 질의 "비 오는 날 가려고 저장한 곳"의 정답. RAINY_DAY·COZY·RETRO 기대.
+      - key: rain
+        place:
+          name: "[데모] 골목 안 다방"
+          kakao_place_id: "demo-seed-host-rain"
+          address: "서울특별시 중구 (데모 시딩 데이터)"
+          lat: 37.5665
+          lng: 126.9880
+        context: "비 오는 날 우산 접고 들어갔는데 나무 창틀이랑 옛날 다방 같은 분위기가 딱 좋았다. 빗소리 들으면서 앉아 있기 아늑한 곳"
+      - key: work
+        place:
+          name: "[데모] 창가 작업실 카페"
+          kakao_place_id: "demo-seed-host-work"
+          address: "서울특별시 성동구 (데모 시딩 데이터)"
+          lat: 37.5445
+          lng: 127.0557
+        context: "혼자 노트북 들고 와서 세 시간 내리 작업했다. 말소리가 거의 없고 콘센트도 많아서 집중이 잘 됐다"
+      - key: drink
+        place:
+          name: "[데모] 연남 골목 선술집"
+          kakao_place_id: "demo-seed-host-drink"
+          address: "서울특별시 마포구 (데모 시딩 데이터)"
+          lat: 37.5623
+          lng: 126.9250
+        context: "친구들이랑 저녁 먹고 늦게까지 수다 떨었다. 시끌벅적하고 활기찬 분위기라 이야기하기 좋았음"
+      # PRIVATE_ONLY 키워드(ANNIVERSARY 402)가 붙기를 기대하는 건.
+      # 본인 프로파일에는 반영되고 타인에게 보이는 Collection 특징에서는 빠진다.
+      - key: view
+        place:
+          name: "[데모] 언덕 위 야경 식당"
+          kakao_place_id: "demo-seed-host-view"
+          address: "서울특별시 용산구 (데모 시딩 데이터)"
+          lat: 37.5512
+          lng: 126.9882
+        context: "연인이랑 기념일에 왔다. 창가에서 보이는 야경이 정말 예뻐서 특별한 날 오기 좋은 곳"
+      - key: family
+        place:
+          name: "[데모] 넓은 한상 식당"
+          kakao_place_id: "demo-seed-host-family"
+          address: "서울특별시 송파구 (데모 시딩 데이터)"
+          lat: 37.5145
+          lng: 127.1060
+        context: "부모님이랑 같이 왔는데 자리가 넓어서 편하게 밥 먹었다. 방마다 떨어져 있어서 대화하기도 좋았다"
+      - key: walk
+        place:
+          name: "[데모] 강변 산책로 초입"
+          kakao_place_id: "demo-seed-host-walk"
+          address: "서울특별시 광진구 (데모 시딩 데이터)"
+          lat: 37.5300
+          lng: 127.0660
+        context: "밥 먹고 천천히 걷기 좋은 길. 작은 사진 전시도 하고 있어서 구경하면서 한 바퀴 돌았다"
+
+  # ── 아래 넷은 탐색 피드의 후보 소유자다. 각자 Record 2건, Collection 2개.
+  #    Collection은 Record를 재사용하므로 GMS 호출이 늘지 않는다.
+
+  - key: walker
+    role: "피드 후보 · 팔로우 대상 (산책·조용)"
+    collections:
+      - title: "데모 동네 산책 코스"
+        records: [morning, bench]
+      - title: "데모 조용한 아침"
+        records: [morning]
+    records:
+      - key: morning
+        place:
+          name: "[데모] 아침 여는 커피집"
+          kakao_place_id: "demo-seed-walker-morning"
+          address: "서울특별시 서대문구 (데모 시딩 데이터)"
+          lat: 37.5790
+          lng: 126.9368
+        context: "아침 일찍 문 열어서 조용할 때 커피 한잔 하기 좋다. 사람 없을 때 앉아 있으면 마음이 가라앉는다"
+      - key: bench
+        place:
+          name: "[데모] 언덕길 벤치 앞"
+          kakao_place_id: "demo-seed-walker-bench"
+          address: "서울특별시 종로구 (데모 시딩 데이터)"
+          lat: 37.5820
+          lng: 126.9830
+        context: "천천히 걸어 올라가면서 동네 구경하기 좋은 길. 중간에 앉아 쉬면서 이야기 나눴다"
+
+  - key: dessert
+    role: "피드 후보 · 팔로우 대상 (디저트·요즘 분위기)"
+    collections:
+      - title: "데모 디저트 지도"
+        records: [cake, trendy]
+      - title: "데모 요즘 뜨는 곳"
+        records: [trendy]
+    records:
+      - key: cake
+        place:
+          name: "[데모] 조각 케이크 가게"
+          kakao_place_id: "demo-seed-dessert-cake"
+          address: "서울특별시 강남구 (데모 시딩 데이터)"
+          lat: 37.5240
+          lng: 127.0290
+        context: "케이크 먹으러 일부러 찾아갔다. 종류가 많아서 고르는 재미가 있고 커피랑 같이 먹기 좋았다"
+      - key: trendy
+        place:
+          name: "[데모] 사진 찍는 베이커리"
+          kakao_place_id: "demo-seed-dessert-trendy"
+          address: "서울특별시 용산구 (데모 시딩 데이터)"
+          lat: 37.5340
+          lng: 126.9940
+        context: "요즘 사람들이 많이 오는 곳이라 그런지 인테리어가 세련됐다. 디저트도 예쁘게 나와서 사진 많이 찍었다"
+
+  - key: host_party
+    role: "피드 후보 (모임·활기)"
+    collections:
+      - title: "데모 모임 하기 좋은"
+        records: [room, late]
+      - title: "데모 늦게까지"
+        records: [late]
+    records:
+      - key: room
+        place:
+          name: "[데모] 단체석 있는 밥집"
+          kakao_place_id: "demo-seed-party-room"
+          address: "서울특별시 영등포구 (데모 시딩 데이터)"
+          lat: 37.5260
+          lng: 126.8960
+        context: "여럿이서 모이기로 해서 왔는데 방이 따로 있어서 편했다. 다 같이 밥 먹으면서 떠들기 좋은 자리"
+      - key: late
+        place:
+          name: "[데모] 새벽까지 하는 포차"
+          kakao_place_id: "demo-seed-party-late"
+          address: "서울특별시 동작구 (데모 시딩 데이터)"
+          lat: 37.4980
+          lng: 126.9510
+        context: "늦게까지 열어서 2차로 오기 좋다. 시끌시끌한 분위기에 한잔씩 하면서 오래 앉아 있었다"
+
+  # 주인공의 취향(비 오는 날·아늑)과 겹치도록 만든 소유자.
+  # keywordAffinity(가중치 0.375)가 실제로 점수에 반영되는지 피드 화면에서 보인다.
+  - key: rainy
+    role: "피드 후보 (주인공 취향과 겹침 — keywordAffinity 시연)"
+    collections:
+      - title: "데모 비 오는 날"
+        records: [teahouse, corner]
+      - title: "데모 혼자 있고 싶을 때"
+        records: [teahouse]
+    records:
+      - key: teahouse
+        place:
+          name: "[데모] 비 오면 가는 찻집"
+          kakao_place_id: "demo-seed-rainy-teahouse"
+          address: "서울특별시 종로구 (데모 시딩 데이터)"
+          lat: 37.5735
+          lng: 126.9860
+        context: "비 오는 날 들르면 유리창에 빗물 흐르는 게 보인다. 조용하고 포근해서 혼자 앉아 있기 좋은 곳"
+      - key: corner
+        place:
+          name: "[데모] 오래된 골목 가게"
+          kakao_place_id: "demo-seed-rainy-corner"
+          address: "서울특별시 중구 (데모 시딩 데이터)"
+          lat: 37.5650
+          lng: 126.9910
+        context: "예전 간판 그대로 두고 쓰는 가게. 낡은 나무 의자에 앉아 있으면 옛날 생각이 나서 자꾸 다시 가게 된다"
+
+# 시연에서 실행할 검색 질의. verify.py가 이 목록으로 검색 품질을 확인한다.
+# `expect`는 위 records의 key다.
+demo_queries:
+  - query: "비 오는 날 가려고 저장한 곳"
+    expect: rain
+  - query: "혼자 조용히 작업하기 좋은 카페"
+    expect: work
+  - query: "친구들이랑 시끌벅적하게 놀 만한 곳"
+    expect: drink
+  - query: "기념일에 야경 보면서 식사할 곳"
+    expect: view

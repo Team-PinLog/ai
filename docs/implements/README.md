@@ -24,6 +24,7 @@
 | [2026-07-27-e2e-verification.md](2026-07-27-e2e-verification.md) | 검증 | E2E 실경로 — 실제 GMS 프리셋 적재·파이프라인·검색 품질·하네스 동등성·권한 경계 |
 | [2026-07-28-s1-implementation-recovery.md](2026-07-28-s1-implementation-recovery.md) | 구현 | S1 세션 구현 판단 맥락 복원 — 설계선택 19·불변식·spec↔구현 불일치(구현결함)·인프라 미복원 |
 | [2026-07-29-dev-deployment-gates.md](2026-07-29-dev-deployment-gates.md) | 구현 | dev 배포 게이트 3종 — `/ready`·`GMS_BASE_URL` fail-fast·GMS 양방향 스모크 (ai#33) |
+| [2026-07-29-demo-seeding.md](2026-07-29-demo-seeding.md) | 구현 | 데모 시딩 — back API 경로 시딩(`tools/demo_seed/`)·GMS 건수 판단·E2E 재확인 (S15P11A705-58) |
 
 > **유형**: 구현(무엇을 만들었나) / 검증(어떻게 검증했나). 검증 성격 문서가 늘면 이 컬럼이 분류 기준이 된다.
 > **분리 트리거**: 리포트가 15개를 넘고 검증 유형이 절반 이상이면 `verification/` 분리를 검토한다.
@@ -54,5 +55,6 @@
 | I23 | dev 배포 게이트 3종 — `GET /ready`(DB+Preset, GMS 미호출) · `GMS_BASE_URL` `/gmsapi/` fail-fast · `app.smoke.gms_roundtrip`(embedding+judge 실호출, 한쪽 실패 시 exit 1) | [배포 게이트 리포트](2026-07-29-dev-deployment-gates.md), ai#33 ← [ai#32](https://github.com/Team-PinLog/ai/pull/32) 요청 |
 
 | I24 | SealedSecret handoff — Actions Secret 7종을 `kubeseal --raw` 로 봉인해 평문 없이 Infra 에 전달 (`pinlog-dev/ai-owner-secrets`, scope strict) | [handoff 리포트](2026-07-29-sealed-secret-handoff.md) ← [ai#32](https://github.com/Team-PinLog/ai/pull/32) 요청 ① |
+| I25 | 데모 시딩 도구 `tools/demo_seed/` — back API 경로로 member 5·Context 14·Collection 9 생성, `--reset` 재현, `verify.py` 시연 3종 판정. GMS 429(분당 약 2건) 실측과 그에 맞춘 회수 루프 | [데모 시딩 리포트](2026-07-29-demo-seeding.md), [tools/demo_seed/](../../tools/demo_seed/) |
 
 > I6·I7·I8은 백엔드 아티팩트라 **back 레포** `docs/ai/implements`에 있습니다.
