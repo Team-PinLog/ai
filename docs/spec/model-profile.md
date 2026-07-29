@@ -23,30 +23,39 @@ openai-text-embedding-3-small-1536-cosine-v1
 Context Embedding과 Keyword Preset Embedding은 **같은 Profile**을 사용합니다.
 서로 다른 Profile의 벡터는 비교 자체가 성립하지 않습니다.
 
-## 2. 단일 주입
+## 2. 단일 정본
 
 > Profile을 Spring과 FastAPI에 각각 하드코딩하지 않습니다.
-> 배포 환경의 **단일 설정**에서 주입합니다.
+> **정본은 한 곳**이고, 나머지는 그 값을 받거나 대조합니다.
 
 ### 2.1 FastAPI 쪽 규칙
 
-- Profile 문자열은 환경변수 `PINLOG_EMBEDDING_PROFILE` 하나로 주입받습니다.
-- 읽는 지점은 `app/core/config.py` 한 곳입니다. 다른 모듈은 설정 객체를 통해서만 접근합니다.
-- 코드 어디에도 `"openai-text-embedding-3-small-1536-cosine-v1"` 리터럴을 두지 않습니다.
-  테스트 fixture에서도 상수를 재선언하지 않고 설정 객체를 사용합니다.
-- 모델명·차원·거리 기준도 각각 설정값으로 주입받되, Profile 문자열과 **불일치하면 기동을
-  실패**시킵니다. 두 개의 진실이 생기는 것을 막기 위한 기동 시 검사입니다.
+- 읽는 지점은 `app/core/config.py` 한 곳입니다. 다른 모듈은 설정 객체를 통해서만 접근하며,
+  Profile 문자열 리터럴을 **그 파일 밖 어디에도** 두지 않습니다. 테스트 fixture에서도
+  상수를 재선언하지 않고 설정 객체를 사용합니다.
+- 모델명·차원·거리 기준도 각각 설정값이며, Profile 문자열과 **불일치하면 기동을 실패**
+  시킵니다. 두 개의 진실이 생기는 것을 막기 위한 기동 시 검사입니다.
 
 ```python
 class Settings(BaseSettings):
-    embedding_profile: str          # PINLOG_EMBEDDING_PROFILE
-    embedding_model: str            # PINLOG_EMBEDDING_MODEL
-    embedding_dimension: int        # PINLOG_EMBEDDING_DIMENSION
-    embedding_distance: str         # PINLOG_EMBEDDING_DISTANCE
+    embedding_profile: str = Field("openai-…-cosine-v1", alias="PINLOG_EMBEDDING_PROFILE")
+    embedding_model: str = Field("text-embedding-3-small", alias="PINLOG_EMBEDDING_MODEL")
+    embedding_dimension: int = Field(1536, alias="PINLOG_EMBEDDING_DIMENSION")
+    embedding_distance: str = Field("cosine", alias="PINLOG_EMBEDDING_DISTANCE")
 ```
 
-- 기본값을 코드에 넣지 않습니다. 값이 없으면 기동 실패입니다.
-  기본값이 있으면 배포 설정 누락이 조용한 Profile 불일치로 나타납니다.
+**기본값이 정본입니다.** 환경변수 주입은 필수가 아니라 실험·롤백을 위한 **덮어쓰기**입니다.
+
+> **2026-07-29 개정.** 이 절은 원래 *"기본값을 코드에 넣지 않습니다. 값이 없으면 기동
+> 실패입니다 — 기본값이 있으면 배포 설정 누락이 조용한 Profile 불일치로 나타납니다"* 였습니다.
+>
+> 그 논거는 **주입이 필수**라는 전제 위에 있었습니다. 주입을 덮어쓰기로 돌리면 "누락"이라는
+> 상태 자체가 없어지므로 전제가 사라집니다. 반대로 원 결정의 대가가 실측됐습니다 — 값이
+> 배포 설정에만 있으면 **교체가 git 이력도 리뷰도 남기지 않습니다.** Profile 변경은 기존
+> 임베딩을 전부 조회 대상에서 빼는 결정인데(§3.2) 그것이 콘솔 편집 한 번으로 가능했습니다.
+>
+> 불일치 탐지는 그대로입니다 — 어긋난 조합은 `_profile_consistency`가 기동 시,
+> 요청과의 불일치는 §3.1이 런타임에 잡습니다. 전환 근거는 [P45](../proposals/P45-public-config-in-code.md).
 
 ### 2.2 Spring과의 동기화
 

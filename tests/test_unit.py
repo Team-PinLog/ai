@@ -105,6 +105,74 @@ def test_settings_accepts_consistent_profile(monkeypatch):
     assert s.embedding_model in s.embedding_profile
 
 
+# ── 공개 설정의 정본은 코드다 (P45) ─────────────────────
+_PUBLIC_KEYS = (
+    "PINLOG_EMBEDDING_MODEL",
+    "PINLOG_EMBEDDING_DIMENSION",
+    "PINLOG_EMBEDDING_DISTANCE",
+    "PINLOG_EMBEDDING_PROFILE",
+)
+
+
+def test_public_settings_fall_back_to_code_defaults(monkeypatch):
+    """Profile 넷은 주입하지 않아도 뜬다 — 정본이 코드에 있고 주입은 덮어쓰기다.
+
+    이 테스트가 없으면 P45의 핵심 주장("주입은 필수가 아니다")에 근거가 없다.
+    """
+    for k in _PUBLIC_KEYS:
+        monkeypatch.delenv(k, raising=False)
+    for k, v in _ENV.items():
+        if k not in _PUBLIC_KEYS:
+            monkeypatch.setenv(k, v)
+
+    s = Settings(_env_file=None)
+
+    assert s.embedding_model == "text-embedding-3-small"
+    assert s.embedding_dimension == 1536
+    assert s.embedding_distance == "cosine"
+    assert s.embedding_profile == "openai-text-embedding-3-small-1536-cosine-v1"
+
+
+def test_code_defaults_satisfy_profile_consistency(monkeypatch):
+    """기본값 넷이 서로 정합해야 한다.
+
+    정합 검사는 주입값에만 걸리는 것이 아니다. 코드 기본값이 어긋난 채 배포되면
+    아무도 주입하지 않은 환경에서 기동이 죽는다 — 정본을 코드로 옮긴 이상
+    그 정합도 코드가 책임진다.
+    """
+    for k in _PUBLIC_KEYS:
+        monkeypatch.delenv(k, raising=False)
+    for k, v in _ENV.items():
+        if k not in _PUBLIC_KEYS:
+            monkeypatch.setenv(k, v)
+
+    s = Settings(_env_file=None)
+
+    for token in (s.embedding_model, str(s.embedding_dimension), s.embedding_distance):
+        assert token in s.embedding_profile
+
+
+def test_injection_overrides_code_defaults(monkeypatch):
+    """덮어쓰기 경로가 살아 있어야 실험·롤백이 가능하다.
+
+    기본값을 넣으면서 `alias`를 유지한 이유가 이것이다.
+    """
+    override = {
+        "PINLOG_EMBEDDING_MODEL": "text-embedding-3-large",
+        "PINLOG_EMBEDDING_DIMENSION": "3072",
+        "PINLOG_EMBEDDING_DISTANCE": "cosine",
+        "PINLOG_EMBEDDING_PROFILE": "openai-text-embedding-3-large-3072-cosine-v1",
+    }
+    for k, v in {**_ENV, **override}.items():
+        monkeypatch.setenv(k, v)
+
+    s = Settings(_env_file=None)
+
+    assert s.embedding_model == "text-embedding-3-large"
+    assert s.embedding_dimension == 3072
+    assert s.embedding_profile == override["PINLOG_EMBEDDING_PROFILE"]
+
+
 # ── GMS_BASE_URL 형식 (기동 시 fail-fast, ai#32 §2) ─────
 def _settings_with(monkeypatch, **overrides) -> Settings:
     for k, v in {**_ENV, **overrides}.items():
