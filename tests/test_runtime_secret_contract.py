@@ -28,6 +28,7 @@ def test_canonical_workflow_is_manual_only_and_legacy_workflow_is_removed():
     workflow, text = load_workflow()
 
     assert not LEGACY_WORKFLOW.exists()
+    assert list(WORKFLOW.parent.glob("*seal*secret*.yml")) == [WORKFLOW]
     assert workflow["on"] == {"workflow_dispatch": ""}
     assert "repository_dispatch" not in text
 
@@ -70,6 +71,13 @@ def test_shared_action_receives_only_the_exact_environment_secret_keys():
 
     assert set(action["env"]) == SECRET_KEYS
     assert action["env"] == {key: f"${{{{ secrets.{key} }}}}" for key in SECRET_KEYS}
+    for key in SECRET_KEYS:
+        assert text.count(f"${{{{ secrets.{key} }}}}") == 1
+    assert all(
+        "${{ secrets." not in str(step)
+        for step in job["steps"]
+        if step is not action
+    )
     assert "placeholder" not in text.lower()
     assert "base64" not in text.lower()
 
