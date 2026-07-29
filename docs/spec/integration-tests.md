@@ -1,4 +1,4 @@
-> 구현 완료. 하네스·저수준 계층(단위·저장소·API, ai#14·#16)과 파이프라인 계층(§3 시나리오, `test_pipeline.py`, ai#18)이 모두 구현됨([../../tests/README.md](../../tests/README.md), `pytest tests/` 52 passed — AI 검증 46 + CI 계약 6). 리포트: [implements/2026-07-24-e3-test-harness.md](../implements/2026-07-24-e3-test-harness.md).
+> 구현 완료. 하네스·저수준 계층(단위·저장소·API, ai#14·#16)과 파이프라인 계층(§3 시나리오, `test_pipeline.py`, ai#18)이 모두 구현됨([../../tests/README.md](../../tests/README.md), `pytest tests/` 66 passed — AI 검증 60 + CI 계약 6. 배포 게이트 14건이 2026-07-29 합류: `/ready` 6·`GMS_BASE_URL` 형식 4·스모크 4). 리포트: [implements/2026-07-24-e3-test-harness.md](../implements/2026-07-24-e3-test-harness.md).
 > 공용 계약은 Team-PinLog/docs의 `static/05_AI_설계.md`를 따릅니다.
 
 # AI 파트 통합 테스트
