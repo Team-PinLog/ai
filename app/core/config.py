@@ -37,11 +37,21 @@ class Settings(BaseSettings):
     gms_api_key: str = Field(alias="GMS_API_KEY")
     gms_base_url: str = Field(alias="GMS_BASE_URL")
 
-    # Embedding Profile — 기본값 없음(누락 시 기동 실패)
-    embedding_model: str = Field(alias="PINLOG_EMBEDDING_MODEL")
-    embedding_dimension: int = Field(alias="PINLOG_EMBEDDING_DIMENSION")
-    embedding_distance: str = Field(alias="PINLOG_EMBEDDING_DISTANCE")
-    embedding_profile: str = Field(alias="PINLOG_EMBEDDING_PROFILE")
+    # Embedding Profile — 공개 값이며 이 네 줄이 정본이다(P45, model-profile.md §2.1).
+    #
+    # 값을 배포 설정에만 두면 교체가 git 이력·리뷰를 남기지 않는다. Profile 변경은 기존
+    # 임베딩을 전부 조회 대상에서 빼는 결정인데(model-profile.md §3.2), 그것이 콘솔 편집
+    # 한 번으로 가능해진다. 공개 값을 비밀처럼 다루면 보안은 늘지 않고 감시만 줄어든다.
+    #
+    # 주입은 필수가 아니라 **덮어쓰기**다 — 실험·롤백 때만 환경변수를 준다. 그래서
+    # "배포 설정 누락"이라는 상태가 성립하지 않는다. 어긋난 조합은 아래 _profile_consistency
+    # 가 기동 시, 요청과의 불일치는 model-profile.md §3.1 이 런타임에 잡는다.
+    embedding_model: str = Field("text-embedding-3-small", alias="PINLOG_EMBEDDING_MODEL")
+    embedding_dimension: int = Field(1536, alias="PINLOG_EMBEDDING_DIMENSION")
+    embedding_distance: str = Field("cosine", alias="PINLOG_EMBEDDING_DISTANCE")
+    embedding_profile: str = Field(
+        "openai-text-embedding-3-small-1536-cosine-v1", alias="PINLOG_EMBEDDING_PROFILE"
+    )
 
     # LLM 판정 (E2)
     judge_model: str = Field("gemini-2.5-flash", alias="PINLOG_JUDGE_MODEL")
