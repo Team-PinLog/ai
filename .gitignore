@@ -18,6 +18,10 @@ env/
 .env
 .cache/
 
+# 데모 시딩 로컬 산출물 — JWT 서명 키(RSA 개인키)와 실행 로그가 들어간다.
+# 키는 tools/demo_seed 가 없으면 만들고 있으면 재사용한다. 절대 커밋하지 않는다.
+.demo/
+
 # tools/keyword_eval (평가 하네스는 test 브랜치 소유)
 tools/keyword_eval/.env
 tools/keyword_eval/.cache/
