@@ -1,38 +1,50 @@
 <!--
 제목: <type>(<JIRA-KEY>): <간결한 설명>
-예) feat(S15P11A705-14): 개인 검색 API 추가
-type: feat | fix | docs | refactor | chore | test | perf
-Jira 키는 필수입니다. 관련 GitHub Issue 링크는 선택입니다.
+예: feat(S15P11A705-14): 개인 검색 API 추가
+type: feat | fix | docs | refactor | chore | test | perf | ci
 -->
 
 ## 요약
-<!-- 이 PR이 무엇을, 왜 하는지 1~3줄. -->
+<!-- 무엇을 왜 바꾸는지 1~3줄 -->
 
 ## Jira (필수)
 - 키 또는 URL:
-
-## 관련 GitHub Issue (선택)
--
+- 완료 조건:
 
 ## 변경 사항
 -
 
 ## 테스트 / 검증
-<!-- 재현 가능한 명령과 결과. 없으면 삭제. -->
+<!-- 명령, exit code, 핵심 결과를 적습니다. 문서 전용이면 적용 불가 사유를 적습니다. -->
+
+### RED
+- 변경 전 실패 증거:
+
+### GREEN
+- 목표 테스트 통과 증거:
+
+### Regression
 - [ ] `ruff check .`
-- [ ] `pytest -q`
-- [ ] DB 변경 시 pgvector(PostgreSQL) 통합 확인
-- [ ] 계약(`Team-PinLog/docs` `static/05`·본 레포 `docs/spec`) 변경 시 관련 문서 갱신
-
-<!--
-아래는 필요할 때만 (리팩토링·복잡한 결정 등). 단순 feat/fix면 지워도 됩니다.
-
-## 배경
-- 왜 이 변경이 필요한가, 대안 대비 이유
+- [ ] `python -m compileall app tools`
+- [ ] `pytest --cov=app --cov-branch --cov-report=term-missing`
+- [ ] DB 계약 변경 시 pgvector(PostgreSQL) Testcontainers 검증
 
 ## 리뷰 포인트
-1. 집중해서 봐야 할 지점 / 판단이 필요한 트레이드오프
+<!-- 번호를 붙여 리뷰어가 판단할 지점을 명확히 합니다. -->
+1.
 
-## 미결 / 후속
-- 이 PR에서 다루지 않은 것
--->
+## 리스크
+- 계약:
+- 데이터·개인정보:
+- 운영·배포:
+
+## 범위 밖 / 후속
+- 이번 PR에서 다루지 않는 항목:
+- 후속 Jira:
+
+## 영구 문서
+<!-- 변경한 spec/proposal/implements/troubleshooting/WORKLOG. 없으면 이유. -->
+-
+
+## 관련 GitHub Issue (선택)
+-
