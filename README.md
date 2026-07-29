@@ -16,14 +16,16 @@ Client는 이 서버를 직접 호출하지 않으며, `/internal/v1/*` 계약�
 
 ```
 app/
-├── main.py                  # lifespan, 라우터, 미들웨어
+├── main.py                  # lifespan, 라우터, 미들웨어, /health
+├── api/probe.py             # /ready (readiness)
 ├── api/internal/v1/         # context.py(/context/process), search.py(/search)
 ├── service/                 # context_processing, embedding, keyword, search
 ├── repository/              # ai_state, context_embedding, context_keyword, keyword_preset
 ├── client/                  # embedding_client(GMS), llm_client(Gemini)
 ├── cache/preset_cache.py    # Preset 메모리 캐시
 ├── core/                    # config, db, errors, security, logging
-└── bootstrap/load_presets.py
+├── bootstrap/load_presets.py
+└── smoke/gms_roundtrip.py   # GMS 양방향 실호출 스모크(배포 게이트)
 data/keyword_preset.yaml     # Preset 시드(27개)
 tests/                       # 통합 테스트(Testcontainers) — tests/README.md 참고
 ```
@@ -69,6 +71,18 @@ uvicorn app.main:app --port 8000
 ```
 
 DB 조회도 로컬 psql 없이 컨테이너로: `docker exec -it pinlog-pgv psql -U pinlog -d pinlog`.
+
+## 프로브와 스모크
+
+배포 계약(`docs/implements/2026-07-29-dev-deployment-gates.md`)이 정한 세 경로입니다.
+
+| 경로 | 판정 | 용도 |
+|---|---|---|
+| `GET /health` | 정적 `{"status":"ok"}` | liveness · startup. DB·캐시 상태를 섞지 않는다 |
+| `GET /ready` | DB `SELECT 1` + Preset 캐시 ≥ 1건 → `200 ready` / `503 not_ready` | readiness. GMS는 호출하지 않는다 |
+| `python -m app.smoke.gms_roundtrip` | embedding 1회 + judge 1회, 한쪽이라도 실패 시 exit 1 | 배포 activation 게이트. DB 접근 없음 |
+
+두 프로브 모두 무인증입니다(`/internal/` 밖). 응답·출력에 credential·endpoint·profile 값을 싣지 않습니다.
 
 ## 테스트
 

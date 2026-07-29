@@ -14,14 +14,17 @@ AI 서버 통합 테스트 규칙. 계약 근거는 [`docs/spec/integration-test
 - **동시성은 `on_call` 훅으로 순서 고정, `sleep` 금지**. 모델 호출과 저장 사이 창을 결정론적으로 재현.
 - **데이터 빌더**([builders.py](builders.py))에 본문 버전 인자를 두지 않는다. 수정은 `context_id`가
   다른 두 State로 표현(계약 §4.2).
+- **외부 실호출을 CI에 넣지 않는다.** `app.smoke.gms_roundtrip`은 `_CHECKS`를 스텁으로 교체해
+  집계·종료 코드·값 미노출 규약만 검증한다. 실제 GMS 왕복은 배포 절차에서 수동 실행한다 —
+  실호출을 CI에 넣으면 GMS 가용성이 CI 성패에 들어온다.
 
 ## 계층 (integration-tests.md §5)
 
 | 파일 | 계층 | DB |
 |---|---|---|
-| `test_unit.py` | 오류 분류·TOP-K·LLM 매핑·Profile 검증 | 없음 |
+| `test_unit.py` | 오류 분류·TOP-K·LLM 매핑·Profile 검증·`GMS_BASE_URL` 형식·스모크 집계 | 없음 |
 | `test_repo.py` | 조건부 UPDATE rowcount·UPSERT·delete-insert·검색 Query | 실제 |
-| `test_api.py` | 202·검색 형식·422·401 | 실제 |
+| `test_api.py` | 202·검색 형식·422·401·프로브(`/health` 불변, `/ready` 200/503) | 실제 |
 | `test_pipeline.py` | §16 시나리오 전체 | 실제 |
 
 > `test_ci_image_publish_contract.py`는 위 §5 계층에 속하지 않는다 — `.github/workflows/ai-ci.yml`을 계약으로 고정하는 **CI 이미지 발행 계약**이며 **인프라 파트(`-20`) 소관**이다. `pytest tests/` 범위엔 포함되나 **DB·Docker가 필요 없다**(`pytest tests/test_ci_image_publish_contract.py`만 따로 돌리면 컨테이너 없이 검증). AI 파트가 `ai-ci.yml`을 바꾸면 이 테스트가 깨지므로 인프라에 요청·조율한다.

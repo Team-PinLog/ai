@@ -5,10 +5,11 @@ import numpy as np
 import pytest
 
 from app.cache.preset_cache import Preset, PresetSnapshot
-from app.core.config import Settings
+from app.core.config import Settings, SettingsError
 from app.core.errors import PermanentError, ProfileMismatchError, TransientError
 from app.schema.llm import JudgeResult, KeywordSelection
 from app.service.keyword_service import KeywordService, _topk
+from app.smoke import gms_roundtrip
 from tests.fakes import deterministic_vector
 
 _ENV = {
@@ -102,3 +103,94 @@ def test_settings_accepts_consistent_profile(monkeypatch):
     s = Settings(_env_file=None)
     assert s.embedding_dimension == 1536
     assert s.embedding_model in s.embedding_profile
+
+
+# ── GMS_BASE_URL 형식 (기동 시 fail-fast, ai#32 §2) ─────
+def _settings_with(monkeypatch, **overrides) -> Settings:
+    for k, v in {**_ENV, **overrides}.items():
+        monkeypatch.setenv(k, v)
+    return Settings(_env_file=None)
+
+
+def test_settings_rejects_gms_base_url_without_gmsapi_segment(monkeypatch):
+    """세그먼트가 빠지면 임베딩만 살고 judge가 조용히 죽는다 — 기동을 막는다."""
+    with pytest.raises(SettingsError):
+        _settings_with(monkeypatch, GMS_BASE_URL="https://gateway.invalid/api.openai.com/v1")
+
+
+def test_settings_rejects_gms_base_url_ending_at_gmsapi(monkeypatch):
+    """`/gmsapi`로 끝나면 뒤에 붙일 경로가 없어 세그먼트로 인정하지 않는다."""
+    with pytest.raises(SettingsError):
+        _settings_with(monkeypatch, GMS_BASE_URL="https://gateway.invalid/gmsapi")
+
+
+def test_settings_accepts_gms_base_url_with_gmsapi_segment(monkeypatch):
+    assert "/gmsapi/" in _settings_with(monkeypatch).gms_base_url
+
+
+def test_gms_base_url_error_carries_no_values(monkeypatch):
+    """기동 실패 메시지는 배포 로그에 남는다 — URL·키가 실리면 안 된다.
+
+    pydantic의 ValueError 경로를 쓰면 ValidationError가 input_value(원시 입력 dict)를
+    메시지에 넣어 이 단언이 깨진다. SettingsError를 쓰는 이유가 이것이다.
+    """
+    url = "https://gateway.invalid/no-segment/v1"
+    key = "gms-api-key-placeholder-sentinel"
+    with pytest.raises(SettingsError) as excinfo:
+        _settings_with(monkeypatch, GMS_BASE_URL=url, GMS_API_KEY=key)
+    rendered = f"{excinfo.value!s} {excinfo.value!r}"
+    assert url not in rendered
+    assert key not in rendered
+    assert _ENV["DATABASE_URL"] not in rendered
+
+
+# ── GMS 스모크 집계·출력 (실호출 없음, ai#32 §3) ────────
+def _stub_checks(monkeypatch, *, embedding_exc=None, judge_exc=None) -> list[str]:
+    """_CHECKS를 호출 기록용 스텁으로 교체하고 호출 순서 리스트를 돌려준다."""
+    called: list[str] = []
+
+    def _stub(name, exc):
+        async def _run(_settings):
+            called.append(name)
+            if exc is not None:
+                raise exc
+
+        return _run
+
+    monkeypatch.setattr(
+        gms_roundtrip,
+        "_CHECKS",
+        (("embedding", _stub("embedding", embedding_exc)),
+         ("judge", _stub("judge", judge_exc))),
+    )
+    return called
+
+
+async def test_smoke_runs_judge_even_when_embedding_fails(monkeypatch):
+    """비대칭 장애를 한 번에 보려면 앞선 실패로 뒤 검사를 건너뛰면 안 된다."""
+    called = _stub_checks(monkeypatch, embedding_exc=TransientError("x"))
+    results = await gms_roundtrip.run_checks(None)
+    assert called == ["embedding", "judge"]
+    assert results == [("embedding", "TransientError"), ("judge", None)]
+
+
+async def test_smoke_records_type_name_not_exception_message(monkeypatch):
+    """클라이언트 예외 메시지에는 URL·응답 본문 일부가 섞여 온다 — 타입만 남겨야 한다."""
+    marker = "response-body-marker-that-must-not-surface"
+    _stub_checks(monkeypatch, judge_exc=TransientError(f"llm error: 401 {marker}"))
+    results = await gms_roundtrip.run_checks(None)
+    assert ("judge", "TransientError") in results
+    assert marker not in "".join(f"{n}{f}" for n, f in results)
+
+
+async def test_smoke_all_pass(monkeypatch):
+    _stub_checks(monkeypatch)
+    assert await gms_roundtrip.run_checks(None) == [("embedding", None), ("judge", None)]
+
+
+def test_smoke_report_exit_code_zero_only_when_all_pass(capsys):
+    assert gms_roundtrip.report([("embedding", None), ("judge", None)]) == 0
+    assert gms_roundtrip.report([("embedding", None), ("judge", "TransientError")]) == 1
+    assert gms_roundtrip.report([("embedding", "PermanentError"), ("judge", None)]) == 1
+    out = capsys.readouterr().out
+    assert "SMOKE FAILED: judge" in out and "SMOKE FAILED: embedding" in out

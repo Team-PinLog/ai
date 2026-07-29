@@ -102,12 +102,16 @@ def create_app() -> FastAPI:
             },
         )
 
+    # liveness·startup 전용. 프로세스가 살아 있다는 사실만 답한다 — DB·캐시 상태를
+    # 섞지 않는 것이 배포 계약(ai#32 §2)이다. 준비 판정은 /ready가 한다.
     @app.get("/health")
     async def health():
         return {"status": "ok"}
 
+    from app.api import probe
     from app.api.internal.v1 import context, search
 
+    app.include_router(probe.router)  # /ready — 무인증(프로브가 헤더 없이 호출)
     app.include_router(search.router, prefix="/internal/v1")
     app.include_router(context.router, prefix="/internal/v1")
 
