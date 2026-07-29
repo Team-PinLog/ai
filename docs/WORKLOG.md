@@ -4,7 +4,6 @@
 
 | 날짜 | 작업 | 관련 문서 |
 |---|---|---|
-| 2026-07-28 | AI 레포 협업 운영 기준과 Jira→PR 리뷰 절차 수립, `app` branch coverage 비차단 측정 도입 (S15P11A705-108) | [CONTRIBUTING](../CONTRIBUTING.md), [P42](proposals/P42-ai-repository-governance.md), [development](development/) |
 | 2026-07-23 | AI 공용 설계를 docs `static/05` 단일 원본으로 확립 (docs#2) | [proposals](proposals/README.md) (P16) |
 | 2026-07-23 | FastAPI AI 서버 구현 명세 작성 + version→deletion race 리네임 (ai#1) | [spec/](spec/) |
 | 2026-07-23 | Keyword Preset seed 27개 (ai#2) | [implements](implements/2026-07-23-keyword-preset-seed.md), [spec/keyword-preset.md](spec/keyword-preset.md) |
@@ -33,4 +32,5 @@
 | 2026-07-27 | E2E 실경로 검증(-58) — 실제 GMS 프리셋 27 적재·파이프라인 8건·검색 품질(분리도 +0.2120)·하네스 동등성 9/10·권한 경계 실증(`-61` 근거) + 검증 드라이버 `tools/e2e/` | [implements](implements/2026-07-27-e2e-verification.md), [troubleshooting](troubleshooting/2026-07-27-e2e-env-issues.md) (T22~T24), [tools/e2e/](../tools/e2e/) |
 | 2026-07-28 | ai#25(인프라 CI 계약 테스트 6) 병합으로 pytest 46→52 확대 → 문서 정합(수치 AI 검증 46 + CI 계약 6·CI 계약 각주·pgvector 불일치 표시) (ai#28) | [tests/README](../tests/README.md), [spec/integration-tests.md](spec/integration-tests.md) |
 | 2026-07-28 | S1 구현 판단 맥락 복원 — 설계선택 19·불변식·구현결함 불일치·인프라 미복원(I22), 워킹트리·env캐시(T25·T26), 판단변경·기각(P43), partial-resume §3 재조회 판단변경 (ai#29) | [implements](implements/2026-07-28-s1-implementation-recovery.md), [troubleshooting](troubleshooting/2026-07-28-shared-worktree-and-env-cache.md), [P43](proposals/P43-s1-judgment-recovery.md) |
+| 2026-07-28 | AI 레포 협업 운영 기준과 Jira→PR 리뷰 절차 수립, `app` branch coverage 비차단 측정 도입 (S15P11A705-108) | [CONTRIBUTING](../CONTRIBUTING.md), [P44](proposals/P44-ai-repository-governance.md), [development](development/) |
 | 2026-07-29 | dev 배포 게이트 3종(I23) — `GET /ready`(DB `SELECT 1` + Preset ≥1, GMS 미호출) · `GMS_BASE_URL` `/gmsapi/` 기동 fail-fast(값 미노출 위해 `SettingsError`) · `app.smoke.gms_roundtrip` 양방향 실호출, pytest 52→66 (ai#33 ← [ai#32](https://github.com/Team-PinLog/ai/pull/32) 인프라 요청) | [implements](implements/2026-07-29-dev-deployment-gates.md), [README](../README.md) |
