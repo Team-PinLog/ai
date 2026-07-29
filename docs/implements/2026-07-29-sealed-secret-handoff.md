@@ -25,7 +25,7 @@ workflow가 Infra 공용 action에 전달하는 Environment Secret 이름은 다
 - checkout은 실행 commit인 `${{ github.sha }}`를 사용하고 credential을 보존하지 않는다.
 - workflow 권한은 `contents: read`, `id-token: write`뿐이다.
 - Infra action은 commit
-  `9ada03256858ccc5372675de85ba3ebee2b86343`으로 고정한다.
+  `84458bf35e341b79e91ce21a3667e9d3f7454068`으로 고정한다.
 - action 입력은 policy `ai-dev`와 revision `${{ github.sha }}`뿐이다.
 - 별도 artifact upload나 `repository_dispatch` handoff를 두지 않는다. Infra PR 생성은
   공용 action 계약에 위임한다.
