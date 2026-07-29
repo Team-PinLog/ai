@@ -19,8 +19,12 @@ from testcontainers.postgres import PostgresContainer
 from app.core.config import Settings, get_settings
 from app.core.db import Database
 
-# back compose.yaml·Testcontainers와 일치 유지(재현성). 롤링 태그 금지.
-PGVECTOR_IMAGE = "pgvector/pgvector:0.8.1-pg16"
+# 운영·back compose.yaml과 digest까지 일치 유지(재현성). 롤링 태그 금지 — 태그만 고정하면
+# 같은 태그가 언제든 다른 이미지를 가리킨다. 값의 정본은 back `compose.yaml`이다.
+PGVECTOR_IMAGE = (
+    "pgvector/pgvector:0.8.5-pg16"
+    "@sha256:1d533553fefe4f12e5d80c7b80622ba0c382abb5758856f52983d8789179f0fb"
+)
 
 _SCHEMA_SQL = (Path(__file__).parent / "schema" / "ai_snapshot.sql").read_text(encoding="utf-8")
 
