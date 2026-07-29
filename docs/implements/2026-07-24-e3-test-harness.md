@@ -11,7 +11,7 @@
 
 ## 하네스 (`tests/`)
 
-- **`conftest.py`**: 세션 스코프 `PostgresContainer("pgvector/pgvector:0.8.1-pg16")`(back `compose.yaml`과 태그 일치) → `schema/ai_snapshot.sql`(back V1/V100/V101 파생) 적용 → asyncpg 풀. **격리는 TRUNCATE**(동시성 테스트가 여러 커넥션을 쓰므로 롤백 격리 불가). `settings` fixture는 Profile을 주입(리터럴 금지).
+- **`conftest.py`**: 세션 스코프 `PostgresContainer(PGVECTOR_IMAGE)` — 현재 `pgvector/pgvector:0.8.5-pg16@sha256:1d53…`(운영·back `compose.yaml`과 digest까지 일치. 최초 `0.8.1-pg16` → `S15P11A705-122`에서 정합화) → `schema/ai_snapshot.sql`(back V1/V100/V101 파생) 적용 → asyncpg 풀. **격리는 TRUNCATE**(동시성 테스트가 여러 커넥션을 쓰므로 롤백 격리 불가). `settings` fixture는 Profile을 주입(리터럴 금지).
 - **`fakes.py`**: `FakeEmbeddingClient`/`FakeLLMClient` — sha256 기반 **결정론 벡터**(무작위는 유사도 순서 단언을 흔듦), **호출 횟수 기록**(여러 시나리오의 핵심 단언이 "호출 안 함"/"정확히 한 번"), `on_call` 훅(모델 호출과 저장 사이 창을 결정론적으로 재현, sleep 금지).
 - **`builders.py`**: `make_state`/`make_embedding`/`make_preset`. `embedding_profile`·`is_deleted`·두 status를 항상 명시. **본문 버전 인자를 두지 않음**(제거된 개념 부활 방지) — 수정은 `context_id`가 다른 두 State로 표현.
 - **`schema/ai_snapshot.sql`**: 테스트 전용 스냅샷. `ai` 스키마만(ai 테이블은 core FK 없음). 헤더에 back 파생 출처·갱신 위험 명시.
@@ -33,7 +33,7 @@
 ## 결정
 
 - **Python 3.12 통일, 상한 `<3.13`** — GraphRAG 스택(torch/transformers/igraph) wheel 안전판. 3.13 지원 확산 시 완화 재검토.
-- **pgvector `0.8.1-pg16` 고정** — back `compose.yaml`·Testcontainers와 일치(재현성). 롤링 `pg16` 금지.
+- **pgvector `0.8.5-pg16` + digest 고정** — 운영·back `compose.yaml`의 **실제 버전과 digest까지** 일치(재현성). 롤링 `pg16` 금지, 태그 단독 고정도 금지(같은 태그가 다른 이미지를 가리킬 수 있다). ※ 최초 결정은 `0.8.1-pg16` 태그 고정이었고 근거는 "back `compose.yaml`과 일치"였으나, back#31이 compose를 `0.8.5-pg16@sha256:1d53…`로 올려 그 근거가 무효화됐다(운영도 0.8.5 — infra#41). 어긋난 쪽이 ai였으므로 `S15P11A705-122`에서 digest까지 정합화했다.
 - **lock 도입** — 합류자 재현성. `requirements.txt`(사람용 하한) + lock(정확 버전).
 - **ai-ci PR 제목 Jira 키 검증** — 형식 보증(티켓 존재 보증 아님, 수용).
 

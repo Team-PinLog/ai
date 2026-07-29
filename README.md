@@ -48,8 +48,10 @@ DSN은 아래 pgvector 컨테이너 기준 `pinlog:pinlog@localhost:5433/pinlog`
 
 ```bash
 # 1. pgvector 기동
+#    이미지는 back compose.yaml·Testcontainers와 동일하게 digest까지 고정한다.
 docker run -d --name pinlog-pgv -e POSTGRES_USER=pinlog -e POSTGRES_PASSWORD=pinlog \
-  -e POSTGRES_DB=pinlog -p 5433:5432 pgvector/pgvector:0.8.1-pg16
+  -e POSTGRES_DB=pinlog -p 5433:5432 \
+  pgvector/pgvector:0.8.5-pg16@sha256:1d533553fefe4f12e5d80c7b80622ba0c382abb5758856f52983d8789179f0fb
 
 # 2. ai 스키마 생성 — back Flyway 마이그레이션을 순차 적용 (ai 레포는 Migration을 실행하지 않는다)
 #    파일 위치: back/src/main/resources/db/migration/
@@ -87,7 +89,7 @@ DB 조회도 로컬 psql 없이 컨테이너로: `docker exec -it pinlog-pgv psq
 ## 테스트
 
 ```bash
-pytest                       # Docker 필요 — Testcontainers가 pgvector 0.8.1 기동
+pytest                       # Docker 필요 — Testcontainers가 pgvector 0.8.5(digest 고정) 기동
 ```
 
 계층·컨벤션(Fake·TRUNCATE·호출 횟수·on_call 훅)은 [`tests/README.md`](tests/README.md), 시나리오 정의는 [`docs/spec/integration-tests.md`](docs/spec/integration-tests.md).

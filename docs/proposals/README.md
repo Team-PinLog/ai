@@ -59,7 +59,7 @@
 | P37 | 분류 3범주 proposals/implements/troubleshooting + spec | 공용(AI 주도) | 이 트리 |
 | P38 | rebase Option B(MINYONG 독립작업 위 재정리) | AI | [troubleshooting](../troubleshooting/) |
 | P40 | `/search` 응답 `contextId` 추가(DISTINCT ON, Spring matchedContext 조립용) | AI | ai#11·docs#10, [spec/personal-search.md](../spec/personal-search.md) |
-| P41 | 툴체인 — Python 3.12 통일·pgvector 0.8.1-pg16·requirements lock | AI | [implements](../implements/2026-07-24-e3-test-harness.md) (ai#14·#16) |
+| P41 | 툴체인 — Python 3.12 통일·pgvector `0.8.5-pg16`+digest 고정(최초 `0.8.1-pg16` → `S15P11A705-122`에서 운영·back 실제 버전에 정합)·requirements lock | AI | [implements](../implements/2026-07-24-e3-test-harness.md) (ai#14·#16) |
 | P43 | S1 판단 변경 10·기각 대안 9 복원(search_path 캐스트 원복·pgvector digest 권고·Python 3.12 상한(GraphRAG)·브랜치보호 CI 후 적용 등) | AI | [P43](P43-s1-judgment-recovery.md) |
 | P44 | Jira-first·TDD 증거·리뷰 대화 해결·영구 문서 기반 AI 협업 운영 | AI | [P44](P44-ai-repository-governance.md) |
 | P45 | 공개 설정은 코드가 정본, 주입 필수는 비밀뿐 — Embedding Profile 넷에 기본값 부여 | AI | [P45](P45-public-config-in-code.md), docs#27(05 §7.1 개정) |
