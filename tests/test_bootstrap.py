@@ -18,6 +18,7 @@ import pytest
 
 from app.bootstrap import load_presets
 from app.client.embedding_client import preset_embed_text
+from app.core.db import Database
 from tests.fakes import deterministic_vector
 
 # ── preset_embed_text — 적재와 평가 하네스가 공유하는 입력 구성 ──────────
@@ -166,22 +167,74 @@ async def test_load_is_idempotent_and_conflict_updates_drifted_columns(
     assert restored["embedding_profile"] == settings.embedding_profile
 
 
-async def test_load_leaves_no_pool_open(db, settings, fake_embedding_client):
+class _TrackingDatabase(Database):
+    """connect/disconnect 호출을 세는 것 외에는 진짜 Database 다.
+
+    `pg_stat_activity` 를 세지 않는다 — 풀을 닫아도 서버가 백엔드를 정리하는 시점은
+    비동기라 그 대조는 간헐 실패한다. 여기서 지킬 계약은 "적재가 반납을 호출한다"이고,
+    그건 값으로 셀 수 있다.
+    """
+
+    instances: list["_TrackingDatabase"] = []
+
+    def __init__(self, dsn: str) -> None:
+        super().__init__(dsn)
+        self.connects = 0
+        self.disconnects = 0
+        _TrackingDatabase.instances.append(self)
+
+    async def connect(self) -> None:
+        await super().connect()
+        self.connects += 1
+
+    async def disconnect(self) -> None:
+        await super().disconnect()
+        self.disconnects += 1
+
+
+@pytest.fixture
+def tracking_database(monkeypatch):
+    _TrackingDatabase.instances = []
+    monkeypatch.setattr(load_presets, "Database", _TrackingDatabase)
+    return _TrackingDatabase
+
+
+async def test_load_returns_its_pool(db, fake_embedding_client, tracking_database):
     """`finally: await db.disconnect()`. 적재는 짧게 살다 죽는 Job 이라 새는 커넥션이
     바로 보이지 않는다 — 남으면 부트스트랩 Job 이 pod 종료를 붙잡는다."""
-    before = await _backend_count(settings.database_url)
     await load_presets.load()
-    assert await _backend_count(settings.database_url) == before
+
+    assert len(tracking_database.instances) == 1
+    database = tracking_database.instances[0]
+    assert (database.connects, database.disconnects) == (1, 1)
 
 
-async def _backend_count(dsn: str) -> int:
-    conn = await asyncpg.connect(dsn)
+async def test_load_returns_its_pool_even_when_the_upsert_fails(
+    db, conn, fake_embedding_client, tracking_database
+):
+    """실패 경로가 `finally` 의 존재 이유다. 예외는 그대로 올리되 풀은 반납해야 한다.
+
+    차원이 어긋난 벡터를 넣어 UPSERT 를 DB 레벨에서 깨뜨린다 — 적재가 예외를 삼키고
+    0건으로 조용히 끝나지 않는 것도 함께 단언한다.
+    """
+    monkey_dimension = 8  # keyword_preset.embedding 은 VECTOR(1536)
+    fake_embedding_client.instances = []
+    original_embed = _RecordingEmbeddingClient.embed
+
+    async def _wrong_dimension(self, texts):
+        await original_embed(self, texts)
+        return [deterministic_vector(t, monkey_dimension) for t in texts]
+
+    _RecordingEmbeddingClient.embed = _wrong_dimension
     try:
-        return await conn.fetchval(
-            "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database()"
-        )
+        with pytest.raises(asyncpg.PostgresError):
+            await load_presets.load()
     finally:
-        await conn.close()
+        _RecordingEmbeddingClient.embed = original_embed
+
+    database = tracking_database.instances[0]
+    assert (database.connects, database.disconnects) == (1, 1)
+    assert await conn.fetchval("SELECT count(*) FROM ai.keyword_preset") == 0
 
 
 # ── 엔트리포인트 ─────────────────────────────────────────────────────────
