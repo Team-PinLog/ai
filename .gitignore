@@ -7,6 +7,8 @@ __pycache__/
 .ruff_cache/
 .coverage
 coverage.xml
+# coverage 게이트(tools/check_coverage_gate.py)의 입력. CI 는 artifact 로만 올린다.
+coverage.json
 htmlcov/
 
 # venv

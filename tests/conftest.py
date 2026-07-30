@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import asyncio
 import os
 from pathlib import Path
 
@@ -84,14 +85,36 @@ def settings(dsn) -> Settings:
     return get_settings()
 
 
-@pytest_asyncio.fixture(scope="session")
-async def _schema(dsn):
+async def _apply_schema(dsn: str) -> None:
     conn = await asyncpg.connect(dsn)
     try:
         await conn.execute(_SCHEMA_SQL)
     finally:
         await conn.close()
-    yield
+
+
+async def _truncate_ai_tables(dsn: str) -> None:
+    conn = await asyncpg.connect(dsn)
+    try:
+        await conn.execute(f"TRUNCATE {', '.join(_AI_TABLES)} RESTART IDENTITY CASCADE")
+    finally:
+        await conn.close()
+
+
+# 동기 fixture다. 스크립트 엔트리포인트(`app.bootstrap.load_presets`, `app.smoke.gms_roundtrip`)는
+# 자기가 `asyncio.run()`을 부르므로 그것을 검증하는 테스트도 sync여야 하고, sync 테스트는
+# async fixture를 받을 수 없다. 스키마 적용 자체는 세션당 1회라 어느 쪽이든 비용이 같다.
+# `_SCHEMA_SQL`은 `CREATE SCHEMA ai`로 시작해 멱등이 아니므로 반드시 세션 스코프여야 한다.
+@pytest.fixture(scope="session")
+def _schema(dsn) -> None:
+    asyncio.run(_apply_schema(dsn))
+
+
+@pytest.fixture
+def clean_dsn(settings, _schema) -> str:
+    """동기 테스트용 — 스키마가 적용된 DSN을 주고 ai 테이블을 비운다(`db` fixture의 sync판)."""
+    asyncio.run(_truncate_ai_tables(settings.database_url))
+    return settings.database_url
 
 
 @pytest_asyncio.fixture

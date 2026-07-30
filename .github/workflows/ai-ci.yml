@@ -52,21 +52,33 @@ jobs:
         run: python -m compileall app tools
 
       # 통합 테스트는 Testcontainers로 pgvector를 러너 Docker에 띄운다.
-      - name: Tests and app branch coverage (non-blocking threshold)
+      - name: Tests and app branch coverage
         run: >-
           pytest
           --cov=app
           --cov-branch
           --cov-report=term-missing
           --cov-report=xml:coverage.xml
+          --cov-report=json:coverage.json
           --cov-report=html:htmlcov
 
+      # `--cov-fail-under`를 쓰지 않는다. --cov-branch를 켜면 그 값은 statement와 branch를
+      # 합산한 하나의 비율이라, statement 수에 가려 branch 미달이 통과한다. 완료 조건은
+      # "각각 80% 이상"이므로 둘을 따로 보는 스크립트가 판정한다(S15P11A705-110).
+      # 임계값은 스크립트 상수이며 여기서 인자로 덮지 않는다 —
+      # test_ci_image_publish_contract.py가 그 사실을 계약으로 고정한다.
+      - name: Coverage gate (app line·branch >= 80% each)
+        run: python tools/check_coverage_gate.py
+
+      # 게이트 실패 시에도 리포트는 남겨야 어디가 비었는지 볼 수 있다.
       - name: Upload app coverage report
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ai-app-coverage-${{ github.run_id }}
           path: |
             coverage.xml
+            coverage.json
             htmlcov/
           if-no-files-found: error
           retention-days: 7
