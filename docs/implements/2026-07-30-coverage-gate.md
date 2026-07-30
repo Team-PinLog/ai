@@ -12,7 +12,7 @@ client 재시도·오류 분류 테스트 58개를 추가해 상황이 바뀌었
 
 | | 티켓 기재 (07-28) | 재측정 (`b45aa93` 시점) | 최종 |
 |---|---|---|---|
-| tests | 52 | 146 | **180** |
+| tests | 52 | 146 | **181** |
 | line | 76.95% (474/616) | 88.80% (674/759) | **99.74% (757/759)** |
 | branch | 62.50% (55/88) | 82.08% (87/106) | **98.11% (104/106)** |
 
@@ -63,12 +63,12 @@ statement 759개가 branch 106개를 압도하므로, branch가 60%대로 떨어
 임계값 상향 드릴에서는 `test_gate_thresholds_are_the_ticket_completion_criteria`도 함께 붉어졌다 —
 임계값을 조용히 내리면 게이트는 남고 의미만 사라지므로 그 값을 테스트로 못박아 두었다.
 
-## 4. 보강한 테스트 (146 → 180, +34)
+## 4. 보강한 테스트 (146 → 181, +35)
 
 전부 **계약과 실패 경로** 중심이다. 커버리지를 채우려고 만든 테스트가 아니라, 재측정으로
 드러난 "한 번도 실행된 적 없는 경로"에 단언을 붙인 것이다.
 
-### 4.1 부트스트랩 — `tests/test_bootstrap.py` (신설, 9)
+### 4.1 부트스트랩 — `tests/test_bootstrap.py` (신설, 10)
 
 `load_presets.py`는 line·branch 모두 0%였다. `/search`·`/context/process` 이전에 반드시 1회 도는
 경로인데 한 줄도 검증되지 않았다.
@@ -77,7 +77,11 @@ statement 759개가 branch 106개를 압도하므로, branch가 60%대로 떨어
   YAML이 아니라 적재가 채우는 값**이라 어긋나면 서버가 Preset 0건으로 기동 실패한다.
 - `embed()` **정확히 1회** 호출과 입력 텍스트 값 대조(§4.2 호출 횟수 기록).
 - 멱등성 + `ON CONFLICT DO UPDATE` SET 절: 행을 손으로 흔든 뒤 재실행이 YAML로 되돌리는지.
-- 커넥션 반납(`finally: disconnect()`) — `pg_stat_activity` 백엔드 수 대조.
+- 커넥션 반납(`finally: disconnect()`) — 성공 경로와 **UPSERT 실패 경로** 둘 다. 후자가
+  `finally`의 존재 이유다(차원이 어긋난 벡터로 DB 레벨에서 깨뜨리고, 예외를 삼키지 않는
+  것도 함께 단언한다). `pg_stat_activity` 백엔드 수를 세지 않는다 — 풀을 닫아도 서버가
+  백엔드를 정리하는 시점은 비동기라 그 대조는 간헐 실패한다. 지킬 계약은 "적재가 반납을
+  호출한다"이고 그건 값으로 셀 수 있다.
 - `python -m app.bootstrap.load_presets` 실행 경로.
 
 ### 4.2 기동 — `tests/test_lifespan.py` (신설, 4)
@@ -162,7 +166,7 @@ pytest --cov=app --cov-branch --cov-report=term-missing --cov-report=json:covera
 python tools/check_coverage_gate.py             # exit 0
 ```
 
-`180 passed`, Testcontainers pgvector `0.8.5-pg16@sha256:1d53…` 전량. Python 3.12.10 / win32.
+`181 passed`, Testcontainers pgvector `0.8.5-pg16@sha256:1d53…` 전량. Python 3.12.10 / win32.
 
 ## 8. 범위 밖
 

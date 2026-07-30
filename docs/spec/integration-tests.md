@@ -1,4 +1,4 @@
-> 구현 완료. 하네스·저수준 계층(단위·저장소·API, ai#14·#16)과 파이프라인 계층(§3 시나리오, `test_pipeline.py`, ai#18)이 모두 구현됨([../../tests/README.md](../../tests/README.md), `pytest tests/` **180 passed**). 이후 합류분: 배포 게이트 14건(2026-07-29), client 재시도·오류 분류 `S15P11A705-121`, 부트스트랩·기동 계층과 coverage 게이트 `S15P11A705-110`(2026-07-30). 리포트: [implements/2026-07-24-e3-test-harness.md](../implements/2026-07-24-e3-test-harness.md), [implements/2026-07-30-coverage-gate.md](../implements/2026-07-30-coverage-gate.md).
+> 구현 완료. 하네스·저수준 계층(단위·저장소·API, ai#14·#16)과 파이프라인 계층(§3 시나리오, `test_pipeline.py`, ai#18)이 모두 구현됨([../../tests/README.md](../../tests/README.md), `pytest tests/` **181 passed**). 이후 합류분: 배포 게이트 14건(2026-07-29), client 재시도·오류 분류 `S15P11A705-121`, 부트스트랩·기동 계층과 coverage 게이트 `S15P11A705-110`(2026-07-30). 리포트: [implements/2026-07-24-e3-test-harness.md](../implements/2026-07-24-e3-test-harness.md), [implements/2026-07-30-coverage-gate.md](../implements/2026-07-30-coverage-gate.md).
 > 공용 계약은 Team-PinLog/docs의 `static/05_AI_설계.md`를 따릅니다.
 
 # AI 파트 통합 테스트
