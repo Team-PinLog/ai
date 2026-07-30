@@ -1,11 +1,12 @@
 # AI 개발 워크플로
 
 상세 규칙은 [`CONTRIBUTING.md`](../../CONTRIBUTING.md)가 기준이다. 이 문서는
-하나의 작업을 시작해 `main`에 병합하는 실행 순서를 정리한다.
+하나의 작업을 시작해 `dev`에 병합하는 실행 순서를 정리한다. `dev`가 통합
+브랜치이고 `main`은 배포 브랜치다 — 일상 작업의 병합 대상은 `dev`다.
 
 ```text
 Jira 발급·담당자 지정
-  → 최신 main에서 독립 브랜치 생성
+  → 최신 dev에서 독립 브랜치 생성
   → 실패 테스트와 RED 증거
   → 최소 구현과 GREEN 증거
   → 전체 Regression 검증
@@ -27,10 +28,10 @@ Jira 발급·담당자 지정
 
 ## 2. 브랜치
 
-최신 `origin/main`에서 `{type}/{jira-key}-{summary}` 브랜치를 만든다. 담당자별로
+최신 `origin/dev`에서 `{type}/{jira-key}-{summary}` 브랜치를 만든다. 담당자별로
 독립 branch/worktree를 사용하며 다른 사람의 worktree를 공유하지 않는다.
 
-진행 중 운영체계가 `main`에 병합되면 작업 브랜치에서 최신 `main`을 반영하고
+진행 중 운영체계가 `dev`에 병합되면 작업 브랜치에서 최신 `dev`를 반영하고
 회귀검증을 다시 수행한다.
 
 ## 3. RED, GREEN, Regression
@@ -50,7 +51,7 @@ reviewer로 지정한다. PR 생성 후 Jira `In Progress`를 확인한다.
 
 병합 전 다음 조건을 모두 확인한다.
 
-- 최신 `main` 기준 `ai-ci / check` 성공
+- 최신 `dev` 기준 `ai-ci / check` 성공
 - 모든 리뷰 대화 해결
 - PR 본문의 검증 증거와 리스크가 최신 상태
 - 필요한 영구 문서와 후속 Jira 티켓 존재
@@ -60,5 +61,9 @@ reviewer로 지정한다. PR 생성 후 Jira `In Progress`를 확인한다.
 
 ## 5. 병합 후
 
-squash로 병합하고 기능 브랜치를 삭제한다. Jira가 `Done`인지 직접 확인하고,
+`dev`에 squash로 병합하고 기능 브랜치를 삭제한다. Jira가 `Done`인지 직접 확인하고,
 병합 후 새로 발견된 작업은 기존 완료 범위에 숨기지 말고 후속 티켓으로 만든다.
+
+`main`으로는 기능 브랜치를 직접 병합하지 않는다. 릴리스 시점에 `dev`를 `main`으로
+병합하며, 컨테이너 이미지 publish는 그 `main` push에서만 일어난다. 조건은
+[`CONTRIBUTING.md`](../../CONTRIBUTING.md)의 병합 조건 절이 기준이다.
