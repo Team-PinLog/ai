@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     embedding_dimension: int = Field(1536, alias="PINLOG_EMBEDDING_DIMENSION")
     embedding_distance: str = Field("cosine", alias="PINLOG_EMBEDDING_DISTANCE")
     embedding_profile: str = Field(
-        "openai-text-embedding-3-small-1536-cosine-v1", alias="PINLOG_EMBEDDING_PROFILE"
+        "openai-text-embedding-3-small-1536-cosine-v2", alias="PINLOG_EMBEDDING_PROFILE"
     )
 
     # LLM 판정 (E2)
