@@ -12,7 +12,7 @@ Jira 발급·담당자 지정
   → 전체 Regression 검증
   → 영구 문서와 WORKLOG 갱신
   → Draft PR 및 계약 소유자 리뷰 요청
-  → strict ai-ci / check와 리뷰 대화 해결
+  → strict 상태 검사 둘과 리뷰 대화 해결
   → squash 병합·브랜치 삭제
   → Jira Done 상태 확인
 ```
@@ -51,7 +51,8 @@ reviewer로 지정한다. PR 생성 후 Jira `In Progress`를 확인한다.
 
 병합 전 다음 조건을 모두 확인한다.
 
-- 최신 `dev` 기준 `ai-ci / check` 성공
+- 최신 `dev` 기준 필수 상태 검사 둘 성공 — `ai-ci / check`,
+  `ai-ci / embedding profile parity`
 - 모든 리뷰 대화 해결
 - PR 본문의 검증 증거와 리스크가 최신 상태
 - 필요한 영구 문서와 후속 Jira 티켓 존재
