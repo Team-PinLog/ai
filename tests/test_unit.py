@@ -5,8 +5,17 @@ import numpy as np
 import pytest
 
 from app.cache.preset_cache import Preset, PresetSnapshot
+from app.client.embedding_client import _TIMEOUT as EMB_TIMEOUT
+from app.client.llm_client import _TIMEOUT as LLM_TIMEOUT
+from app.client.retry import RetryPolicy
 from app.core.config import Settings, SettingsError
-from app.core.errors import PermanentError, ProfileMismatchError, TransientError
+from app.core.errors import (
+    PermanentError,
+    ProfileMismatchError,
+    SchemaViolationError,
+    TransientError,
+    classify_http_status,
+)
 from app.schema.llm import JudgeResult, KeywordSelection
 from app.service.keyword_service import KeywordService, _topk
 from app.smoke import gms_roundtrip
@@ -87,6 +96,73 @@ def test_error_hierarchy():
     assert issubclass(TransientError, Exception)
     exc = ProfileMismatchError("a", "b")
     assert exc.request_profile == "a" and exc.server_profile == "b"
+
+
+def test_schema_violation_is_transient_subtype():
+    # §2.2 승격 전까지는 재시도 대상이어야 하고, service가 보는 분류는 두 종류로 유지된다.
+    assert issubclass(SchemaViolationError, TransientError)
+    assert not issubclass(SchemaViolationError, PermanentError)
+
+
+# failure-recovery.md §2.1·§2.2 표를 그대로 옮긴 대조. HTTP 없이 매핑만 본다.
+@pytest.mark.parametrize("code", [429, 500, 502, 503, 504])
+def test_transient_status_codes(code):
+    assert isinstance(classify_http_status(code, "d"), TransientError)
+
+
+@pytest.mark.parametrize("code", [400, 401, 403, 404, 409, 413, 422])
+def test_permanent_status_codes(code):
+    assert isinstance(classify_http_status(code, "d"), PermanentError)
+
+
+def test_429_is_not_swallowed_by_5xx_rule():
+    # 결함 2의 형태: `>= 500`만 보면 429가 4xx로 떨어져 영구 오류가 된다.
+    assert type(classify_http_status(429, "d")) is TransientError
+    assert type(classify_http_status(499, "d")) is PermanentError
+
+
+def test_classify_preserves_detail_message():
+    assert "boom" in str(classify_http_status(503, "boom"))
+
+
+# ── 짧은 재시도 정책 (§3.1·§3.2) ────────────────────────
+def test_backoff_is_exponential_and_capped():
+    p = RetryPolicy(attempts=6, base_delay=0.5, multiplier=2.0, max_delay=4.0,
+                    jitter=lambda d: d)
+    assert [p.delay_for(i) for i in range(5)] == [0.5, 1.0, 2.0, 4.0, 4.0]
+
+
+def test_default_policy_is_two_retries():
+    # §3.1 "최대 2회 (총 3회 시도)"
+    assert RetryPolicy().attempts == 3
+
+
+def test_full_jitter_stays_within_backoff():
+    p = RetryPolicy()  # 기본 jitter = full jitter
+    for i in range(p.attempts - 1):
+        ceiling = p.base_delay * p.multiplier**i
+        assert all(0.0 <= p.delay_for(i) <= ceiling for _ in range(100))
+
+
+def test_jitter_actually_varies():
+    # jitter가 상수를 반환하면 재시도가 다시 몰린다. 값이 흩어지는지 본다.
+    p = RetryPolicy()
+    assert len({p.delay_for(1) for _ in range(50)}) > 1
+
+
+def test_attempts_must_include_the_first_call():
+    with pytest.raises(ValueError):
+        RetryPolicy(attempts=0)
+
+
+def test_retry_budget_fits_processing_expiry():
+    """§3.2: 두 호출의 타임아웃 합 + 재시도 대기가 PROCESSING 만료(600s)를 넘지 않는다.
+
+    넘으면 재스캔이 아직 살아 있는 작업을 중복 실행해 비용이 두 배가 된다.
+    """
+    p = RetryPolicy()
+    worst = p.attempts * (EMB_TIMEOUT + LLM_TIMEOUT) + 2 * p.worst_case_delay
+    assert worst < Settings.model_fields["processing_expiry_sec"].default
 
 
 # ── Profile 검증 (기동 시 불일치 실패) ──────────────────

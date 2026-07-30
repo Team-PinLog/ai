@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 
 from app.cache.preset_cache import PresetCache
+from app.core.errors import PermanentError, TransientError
 from app.repository import ai_state_repo, context_embedding_repo, keyword_preset_repo
 from app.repository.ai_state_repo import Stage
 from app.schema.context import ContextProcessRequest
@@ -320,6 +321,95 @@ async def test_failed_transition_does_not_overwrite_cancelled(db, conn, settings
     assert affected == 0                               # CANCELLED를 FAILED로 덮지 않음
     st = await _state(conn, 1)
     assert st["embedding_status"] == "CANCELLED"
+
+
+# ── 외부 API 오류 경로 (§3-8, failure-recovery §2.1·§2.2) ─
+# `raise_exc`로 client가 분류한 오류를 주입한다. 이 파라미터가 어느 테스트에서도 쓰이지 않아
+# Transient/Permanent 파이프라인 경로가 한 번도 실행된 적이 없던 것이 결함 5였다.
+async def test_embedding_transient_keeps_processing(db, conn, settings):
+    # §2.1: 상태를 건드리지 않고 PROCESSING으로 둔다 → 만료 후 Spring 재스캔이 회수
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    emb = FakeEmbeddingClient(raise_exc=TransientError("embedding error: 429"))
+    proc, emb, llm = _services(db, settings, emb=emb)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["embedding_status"] == "PROCESSING"   # FAILED로 내리지 않음(재스캔 대상 유지)
+    assert st["keyword_status"] == "PENDING"        # 다른 단계는 건드리지 않음
+    assert st["retry_count"] == 0                   # retry_count는 Spring 소관(§1)
+    assert await _emb_count(conn, 1) == 0           # 부분 결과 없음
+    assert emb.call_count == 1 and llm.call_count == 0
+
+
+async def test_embedding_permanent_fails_only_that_stage(db, conn, settings):
+    # §2.2: 해당 단계만 PROCESSING → FAILED
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    emb = FakeEmbeddingClient(raise_exc=PermanentError("embedding error: 401"))
+    proc, emb, llm = _services(db, settings, emb=emb)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["embedding_status"] == "FAILED"
+    assert st["keyword_status"] == "PENDING"        # keyword는 시작조차 못 함
+    assert await _emb_count(conn, 1) == 0
+    assert emb.call_count == 1 and llm.call_count == 0
+
+
+async def test_judge_transient_keeps_keyword_processing(db, conn, settings):
+    # §2.1: judge 일시 오류 → keyword PROCESSING 유지, 완료된 embedding은 보존
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    await make_state(conn, context_id=1, embedding_status="COMPLETED", keyword_status="PENDING")
+    await make_embedding(conn, context_id=1, user_id=1, record_id=1,
+                         embedding_profile=settings.embedding_profile,
+                         embedding=deterministic_vector("친구랑 저녁"))
+    llm = FakeLLMClient(raise_exc=TransientError("llm error: 503"))
+    proc, emb, llm = _services(db, settings, llm=llm, cache=cache)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["keyword_status"] == "PROCESSING"     # 재스캔이 회수할 상태로 남김
+    assert st["embedding_status"] == "COMPLETED"    # COMPLETED 단계는 그대로(§2.2)
+    assert await _kw_count(conn, 1) == 0
+    assert llm.call_count == 1 and emb.call_count == 0
+
+
+async def test_judge_permanent_fails_keyword_stage(db, conn, settings):
+    # §2.2: judge 영구 오류 → keyword만 FAILED. 이 결선이 없으면 예외가
+    # BackgroundTasks까지 새어 단계가 PROCESSING에 머문다(결함 3의 나머지 절반).
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    await make_state(conn, context_id=1, embedding_status="COMPLETED", keyword_status="PENDING")
+    await make_embedding(conn, context_id=1, user_id=1, record_id=1,
+                         embedding_profile=settings.embedding_profile,
+                         embedding=deterministic_vector("친구랑 저녁"))
+    llm = FakeLLMClient(raise_exc=PermanentError("llm error: 401"))
+    proc, emb, llm = _services(db, settings, llm=llm, cache=cache)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["keyword_status"] == "FAILED"
+    assert st["embedding_status"] == "COMPLETED"    # 완료 단계를 되돌리지 않음
+    assert await _kw_count(conn, 1) == 0
+    assert llm.call_count == 1
+
+
+async def test_transient_error_does_not_overwrite_cancelled(db, conn, settings, dsn):
+    # §2.1 + §11.1: 일시 오류는 상태를 쓰지 않으므로 그 사이 CANCELLED가 되어도 안전하다
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    emb = FakeEmbeddingClient(on_call=_cancel_hook(dsn, 1),
+                              raise_exc=TransientError("embedding error: 503"))
+    proc, emb, llm = _services(db, settings, emb=emb)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["embedding_status"] == "CANCELLED"    # PROCESSING으로 되살리지 않음
+    assert st["keyword_status"] == "CANCELLED"
+
+
+async def test_permanent_error_does_not_overwrite_cancelled(db, conn, settings, dsn):
+    # §2.2: FAILED 전이의 WHERE PROCESSING 가드가 CANCELLED를 지킨다(검증 시나리오 17)
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    emb = FakeEmbeddingClient(on_call=_cancel_hook(dsn, 1),
+                              raise_exc=PermanentError("embedding error: 400"))
+    proc, emb, llm = _services(db, settings, emb=emb)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["embedding_status"] == "CANCELLED"    # FAILED로 덮이지 않음
+    assert st["keyword_status"] == "CANCELLED"
 
 
 # ── 계약위반/경합 ───────────────────────────────────────

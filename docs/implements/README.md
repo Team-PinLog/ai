@@ -25,6 +25,7 @@
 | [2026-07-28-s1-implementation-recovery.md](2026-07-28-s1-implementation-recovery.md) | 구현 | S1 세션 구현 판단 맥락 복원 — 설계선택 19·불변식·spec↔구현 불일치(구현결함)·인프라 미복원 |
 | [2026-07-29-dev-deployment-gates.md](2026-07-29-dev-deployment-gates.md) | 구현 | dev 배포 게이트 3종 — `/ready`·`GMS_BASE_URL` fail-fast·GMS 양방향 스모크 (ai#33) |
 | [2026-07-29-demo-seeding.md](2026-07-29-demo-seeding.md) | 구현 | 데모 시딩 — back API 경로 시딩(`tools/demo_seed/`)·GMS 건수 판단·E2E 재확인 (S15P11A705-58) |
+| [2026-07-30-retry-and-error-classification.md](2026-07-30-retry-and-error-classification.md) | 구현 | 외부 API 재시도·오류 분류 정합화 — 429/LLM 4xx 오분류 정정·짧은 재시도·오류 경로 테스트 (S15P11A705-121) |
 | [2026-07-29-sealed-secret-handoff.md](2026-07-29-sealed-secret-handoff.md) | 구현 | Runtime Secret handoff — Environment 경계 계약·공급망 pin (S15P11A705-154). **상태: 대체** — 봉인 실행은 Infra 공용 action으로 이관, `S15P11A705-96` 판 설계 근거는 같은 문서에 보존 |
 
 > **유형**: 구현(무엇을 만들었나) / 검증(어떻게 검증했나). 검증 성격 문서가 늘면 이 컬럼이 분류 기준이 된다.

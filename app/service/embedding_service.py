@@ -57,13 +57,15 @@ class EmbeddingService:
         try:
             vector = await self._client.embed_one(req.text)
         except PermanentError as exc:
-            log.warning("ctx=%s embedding permanent error: %s", req.contextId, exc)
+            # §2.2: 해당 단계만 PROCESSING → FAILED. 대부분 배포 설정 문제이므로 ERROR다.
+            log.error("ctx=%s stage=embedding permanent error: %s", req.contextId, exc)
             async with self._db.transaction() as conn:
                 await ai_state_repo.fail(conn, req.contextId, Stage.EMBEDDING)
             return None
         except TransientError as exc:
-            # 상태를 건드리지 않고 PROCESSING으로 둔다 → 만료 후 재스캔 회수
-            log.info("ctx=%s embedding transient error: %s", req.contextId, exc)
+            # §2.1: 상태를 건드리지 않고 PROCESSING으로 둔다 → 만료 후 재스캔 회수.
+            # 로그는 WARN + context_id·stage·원인(§2.1) — INFO면 일시 장애가 묻힌다.
+            log.warning("ctx=%s stage=embedding transient error: %s", req.contextId, exc)
             return None
 
         try:

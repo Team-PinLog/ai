@@ -12,7 +12,7 @@ from app.cache.preset_cache import PresetCache, PresetSnapshot
 from app.client.llm_client import LLMClient
 from app.core.config import Settings
 from app.core.db import Database
-from app.core.errors import PersistDiscarded, TransientError
+from app.core.errors import PermanentError, PersistDiscarded, TransientError
 from app.core.logging import get_logger
 from app.repository import ai_state_repo, context_embedding_repo, context_keyword_repo
 from app.repository.ai_state_repo import Stage
@@ -95,9 +95,16 @@ class KeywordService:
         ]
         try:
             result = await self._llm.judge(req.text, cand_dicts)
+        except PermanentError as exc:
+            # §2.2: 이 단계만 PROCESSING → FAILED. embedding이 COMPLETED면 그대로 둔다.
+            # 이 핸들러가 없으면 400·401·403이 BackgroundTasks까지 새어 트레이스백만
+            # 남기고 단계는 PROCESSING에 머문다 → 만료 후 재스캔이 같은 호출을 반복한다.
+            log.error("ctx=%s stage=keyword permanent error: %s", req.contextId, exc)
+            await self._fail(req.contextId)
+            return
         except TransientError as exc:
-            # 상태를 PROCESSING으로 둔다 → 재스캔 회수
-            log.info("ctx=%s judge transient error: %s", req.contextId, exc)
+            # §2.1: 상태를 PROCESSING으로 둔다 → 만료 후 재스캔 회수
+            log.warning("ctx=%s stage=keyword transient error: %s", req.contextId, exc)
             return
 
         selections = self._map(result, cand_ids, req.contextId)
