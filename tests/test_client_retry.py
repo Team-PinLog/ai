@@ -362,6 +362,19 @@ async def test_llm_non_json_text_is_schema_violation():
     assert len(seen) == 3
 
 
+async def test_llm_non_json_body_is_schema_violation():
+    # 게이트웨이가 200으로 HTML 오류 페이지를 돌려주는 경우. resp.json() 자체가 실패한다.
+    sleep = _SleepRecorder()
+
+    def handler(_request: httpx.Request, _n: int) -> httpx.Response:
+        return httpx.Response(200, text="<html>gateway error</html>")
+
+    client, seen = _llm(handler, sleep)
+    with pytest.raises(PermanentError):
+        await client.judge("본문", _CANDS)
+    assert len(seen) == 3
+
+
 async def test_schema_violation_does_not_escape_as_transient():
     """service가 이 타입을 보면 PROCESSING 유지로 처리해 무한 재판정이 된다.
 
