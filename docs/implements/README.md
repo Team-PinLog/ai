@@ -28,6 +28,7 @@
 | [2026-07-30-retry-and-error-classification.md](2026-07-30-retry-and-error-classification.md) | 구현 | 외부 API 재시도·오류 분류 정합화 — 429/LLM 4xx 오분류 정정·짧은 재시도·오류 경로 테스트 (S15P11A705-121) |
 | [2026-07-30-coverage-gate.md](2026-07-30-coverage-gate.md) | 구현 | app coverage 게이트 활성화 — line·branch 각각 80% 차단·부트스트랩/기동 계층 신설·§4.2 계층 구분 명문화 (S15P11A705-110) |
 | [2026-07-29-sealed-secret-handoff.md](2026-07-29-sealed-secret-handoff.md) | 구현 | Runtime Secret handoff — Environment 경계 계약·공급망 pin (S15P11A705-154). **상태: 대체** — 봉인 실행은 Infra 공용 action으로 이관, `S15P11A705-96` 판 설계 근거는 같은 문서에 보존 |
+| [2026-07-30-real-data-e2e.md](2026-07-30-real-data-e2e.md) | 검증 | 실사용자 데이터 E2E — 검색 10/12·피드·Keyword PASS, 시딩 15분 8초·37건, GMS 32,912 토큰 (S15P11A705-174) |
 
 > **유형**: 구현(무엇을 만들었나) / 검증(어떻게 검증했나). 검증 성격 문서가 늘면 이 컬럼이 분류 기준이 된다.
 > **분리 트리거**: 리포트가 15개를 넘고 검증 유형이 절반 이상이면 `verification/` 분리를 검토한다.

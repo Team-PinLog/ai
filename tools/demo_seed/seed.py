@@ -64,8 +64,34 @@ RECOVER_DEADLINE_SEC = 1800
 RECOVER_INTERVAL_SEC = 20
 
 
+def _make_stdout_utf8_safe() -> None:
+    """콘솔 인코딩이 UTF-8이 아니어도 로그 한 줄 때문에 시딩이 죽지 않게 한다.
+
+    2026-07-30 실측 — 백그라운드 실행에서 stdout이 cp949로 잡혀 `—`(em-dash) 한
+    글자에 UnicodeEncodeError가 났다. **`--reset`이 이미 기존 데이터를 지운 뒤
+    첫 로그 출력에서 죽어**, DB에 member만 남고 Context가 0건인 상태가 됐다.
+    GMS 호출 전이라 비용 손실은 없었지만 복구는 전량 재시딩이었다.
+
+    호출자가 `PYTHONIOENCODING=utf-8`을 기억해야 하는 구조를 두지 않는다.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            # 파이프로 감싸여 reconfigure가 없는 경우. 아래 log()가 받아낸다.
+            pass
+
+
+_make_stdout_utf8_safe()
+
+
 def log(msg: str) -> None:
-    print(msg, flush=True)
+    try:
+        print(msg, flush=True)
+    except UnicodeEncodeError:
+        # 최후 방어. 로그가 시딩을 죽이는 것보다 글자가 깨지는 편이 낫다.
+        enc = sys.stdout.encoding or "ascii"
+        print(msg.encode(enc, errors="replace").decode(enc), flush=True)
 
 
 # ── reset ──────────────────────────────────────────────────────────────────

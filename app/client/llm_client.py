@@ -18,6 +18,7 @@ from functools import partial
 
 import httpx
 
+from app.client._usage import record as record_usage
 from app.client.retry import RetryPolicy, call_with_retry
 from app.core.errors import (
     PermanentError,
@@ -156,6 +157,7 @@ class LLMClient:
             payload = resp.json()
         except ValueError as exc:
             raise SchemaViolationError(f"llm response not json: {exc}") from exc
+        record_usage("judge", payload)
         return self._parse(payload)
 
     @staticmethod
