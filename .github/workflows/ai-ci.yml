@@ -255,3 +255,14 @@ jobs:
           path: provenance.json
           if-no-files-found: error
           retention-days: 7
+
+      - name: Request trusted Infra AI image promotion
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.PINLOG_INFRA_IMAGE_PR_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN"
+          gh workflow run ai-image-update.yaml \
+            --repo Team-PinLog/infra \
+            --ref main
