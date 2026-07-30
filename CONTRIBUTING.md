@@ -83,14 +83,26 @@ PR을 요청하기 전에 다음을 실행한다. Docker가 없다는 이유로 
 ```bash
 ruff check .
 python -m compileall app tools
-pytest --cov=app --cov-branch --cov-report=term-missing
+pytest --cov=app --cov-branch --cov-report=term-missing --cov-report=json:coverage.json
+python tools/check_coverage_gate.py
 ```
 
-CI는 Ruff, compile 검사, pytest/Testcontainers, PR 컨테이너 빌드를 수행한다.
-`app`의 line·branch coverage는 현재 기준선 측정 단계이므로 수치만으로 병합을
-막지 않는다. 80% 게이트는 기준선 기록과 테스트 보강을 완료한 별도 Jira·PR에서
-활성화한다. 커버리지 제외 범위를 넓히려면 PR에 근거를 남겨야 하며, 계약·통합
-테스트가 수치보다 우선한다.
+CI는 Ruff, compile 검사, pytest/Testcontainers, coverage 게이트, PR 컨테이너 빌드를
+수행한다.
+
+`app`의 **line과 branch coverage는 각각 80% 이상**이어야 하며 미달이면 `ai-ci / check`가
+실패한다(`S15P11A705-110`에서 활성화). 판정은 `tools/check_coverage_gate.py`가 하고
+임계값은 그 파일의 상수다 — CI에서 인자로 덮을 수 없다.
+
+`--cov-fail-under`를 쓰지 않는 이유는 그것이 두 지표를 **합산한 하나의 비율**이기
+때문이다. statement 수가 branch 수보다 훨씬 많아서, 합산값이 80을 넘어도 branch만 60%인
+상태가 통과한다. 두 지표를 따로 보는 것이 이 게이트의 전부다.
+
+수치를 맞추는 방법은 테스트 보강뿐이다. **`# pragma: no cover`나 `omit`으로 분모를
+줄이지 않는다.** 불가피한 제외는 건별 근거를 PR에 적고 리뷰를 받는다. 도달 불가능한
+방어 코드(트랜잭션 잠금 뒤의 재검사 등)는 제외하지 말고 **미달인 채로 두고 그 이유를
+PR에 적는다** — 제외하면 나중에 도달 가능해져도 아무도 모른다. 계약·통합 테스트가
+수치보다 우선한다.
 
 ## PR과 리뷰
 

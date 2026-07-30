@@ -26,6 +26,7 @@
 | [2026-07-29-dev-deployment-gates.md](2026-07-29-dev-deployment-gates.md) | 구현 | dev 배포 게이트 3종 — `/ready`·`GMS_BASE_URL` fail-fast·GMS 양방향 스모크 (ai#33) |
 | [2026-07-29-demo-seeding.md](2026-07-29-demo-seeding.md) | 구현 | 데모 시딩 — back API 경로 시딩(`tools/demo_seed/`)·GMS 건수 판단·E2E 재확인 (S15P11A705-58) |
 | [2026-07-30-retry-and-error-classification.md](2026-07-30-retry-and-error-classification.md) | 구현 | 외부 API 재시도·오류 분류 정합화 — 429/LLM 4xx 오분류 정정·짧은 재시도·오류 경로 테스트 (S15P11A705-121) |
+| [2026-07-30-coverage-gate.md](2026-07-30-coverage-gate.md) | 구현 | app coverage 게이트 활성화 — line·branch 각각 80% 차단·부트스트랩/기동 계층 신설·§4.2 계층 구분 명문화 (S15P11A705-110) |
 | [2026-07-29-sealed-secret-handoff.md](2026-07-29-sealed-secret-handoff.md) | 구현 | Runtime Secret handoff — Environment 경계 계약·공급망 pin (S15P11A705-154). **상태: 대체** — 봉인 실행은 Infra 공용 action으로 이관, `S15P11A705-96` 판 설계 근거는 같은 문서에 보존 |
 
 > **유형**: 구현(무엇을 만들었나) / 검증(어떻게 검증했나). 검증 성격 문서가 늘면 이 컬럼이 분류 기준이 된다.
@@ -56,6 +57,7 @@
 | I22 | S1 구현 판단 맥락 복원 — 설계선택 19·불변식·spec↔구현 불일치(구현결함 A·F절)·실행 인프라 미복원 | [S1 복원 리포트](2026-07-28-s1-implementation-recovery.md) |
 | I23 | dev 배포 게이트 3종 — `GET /ready`(DB+Preset, GMS 미호출) · `GMS_BASE_URL` `/gmsapi/` fail-fast · `app.smoke.gms_roundtrip`(embedding+judge 실호출, 한쪽 실패 시 exit 1) | [배포 게이트 리포트](2026-07-29-dev-deployment-gates.md), ai#33 ← [ai#32](https://github.com/Team-PinLog/ai/pull/32) 요청 |
 | I24 | Runtime Secret handoff — 평문 없이 Infra 에 전달. `S15P11A705-96` 판은 Actions Secret 7종을 `kubeseal --raw` 로 직접 봉인(`pinlog-dev/ai-owner-secrets`, scope strict), `S15P11A705-154` 에서 Environment 경계 + Infra 공용 action 으로 이관하고 앱 Secret 3종으로 축소. **설계 근거는 문서에 보존** | [handoff 리포트](2026-07-29-sealed-secret-handoff.md) ← [ai#32](https://github.com/Team-PinLog/ai/pull/32) 요청 ① |
+| I26 | app coverage 게이트 `tools/check_coverage_gate.py` — line·branch 를 **따로** 판정(합산 비율은 statement 수에 가려 branch 미달을 통과시킨다), 임계값은 스크립트 상수라 CI 인자로 덮을 수 없음. 부트스트랩·기동 계층 테스트 신설(둘 다 기준선 0%·58%), 146→180 tests, line 88.80→99.74% · branch 82.08→98.11%. RED 4종 실측 | [게이트 리포트](2026-07-30-coverage-gate.md), [tools/check_coverage_gate.py](../../tools/check_coverage_gate.py) |
 | I25 | 데모 시딩 도구 `tools/demo_seed/` — back API 경로로 member 5·Context 14·Collection 9 생성, `--reset` 재현, `verify.py` 시연 3종 판정. GMS 429(분당 약 2건) 실측과 그에 맞춘 회수 루프 | [데모 시딩 리포트](2026-07-29-demo-seeding.md), [tools/demo_seed/](../../tools/demo_seed/) |
 
 > I6·I7·I8은 백엔드 아티팩트라 **back 레포** `docs/ai/implements`에 있습니다.

@@ -8,8 +8,9 @@ AI 서버 통합 테스트 규칙. 계약 근거는 [`docs/spec/integration-test
   값의 **정본은 back `compose.yaml`**이며 운영 pgvector도 0.8.5다. back이 올리면 이쪽도 따라 올린다.
 - **외부 API는 인터페이스 레벨 Fake**([fakes.py](fakes.py)), HTTP mock 아님. **호출 횟수 기록
   필수** — "호출 안 함"/"정확히 한 번"이 여러 시나리오의 핵심 단언.
-  이 규칙은 **파이프라인이 client를 무엇으로 대체하는가**에 대한 것이다(integration-tests.md §4.2).
-  **client 자신의 HTTP 계층은 예외**이며 [test_client_retry.py](test_client_retry.py)가
+  이 규칙은 **파이프라인이 client를 무엇으로 대체하는가**에 대한 것이다. 두 계층의 구분은
+  [integration-tests.md §4.2](../docs/spec/integration-tests.md) 가 정본이다(`S15P11A705-110`에서 명문화).
+  **client 자신의 HTTP 계층은 §4.2 범위 밖**이며 [test_client_retry.py](test_client_retry.py)가
   `httpx.MockTransport`로 검증한다 — 상태 코드→오류 타입 매핑은 인터페이스 Fake로 볼 수 없고,
   그 공백이 429를 영구 오류로·LLM 401을 일시 오류로 둔 채 남긴 원인이었다(`S15P11A705-121`).
 - **오류 경로도 Fake로 주입한다** — `raise_exc`로 `TransientError`/`PermanentError`를 넣어
@@ -22,17 +23,32 @@ AI 서버 통합 테스트 규칙. 계약 근거는 [`docs/spec/integration-test
 - **데이터 빌더**([builders.py](builders.py))에 본문 버전 인자를 두지 않는다. 수정은 `context_id`가
   다른 두 State로 표현(계약 §4.2).
 - **외부 실호출을 CI에 넣지 않는다.** `app.smoke.gms_roundtrip`은 `_CHECKS`를 스텁으로 교체해
-  집계·종료 코드·값 미노출 규약만 검증한다. 실제 GMS 왕복은 배포 절차에서 수동 실행한다 —
+  집계·종료 코드·값 미노출 규약만 검증하고, 스크립트 실행 경로는 **클라이언트 클래스**를
+  스텁으로 갈아 끼워 검증한다. 실제 GMS 왕복은 배포 절차에서 수동 실행한다 —
   실호출을 CI에 넣으면 GMS 가용성이 CI 성패에 들어온다.
+- **`if __name__ == "__main__"` 아래는 `runpy`로 검증한다.** import로는 한 줄도 실행되지 않는다.
+  `runpy.run_module(..., run_name="__main__")`은 **새 네임스페이스**에서 모듈을 다시 실행하므로
+  캐시된 모듈에 건 패치가 보이지 않는다 — `monkeypatch.setattr("app.client.embedding_client.EmbeddingClient", ...)`
+  처럼 **원본 모듈의 속성**을 갈아 끼워야 새 네임스페이스의 `from ... import`가 그것을 집는다.
+- **coverage는 line·branch 각각 80% 이상**이며 `tools/check_coverage_gate.py`가 CI에서 판정한다.
+  `# pragma: no cover`·`omit`으로 분모를 줄이지 않는다(CONTRIBUTING.md 검증 절).
 
 ## 계층 (integration-tests.md §5)
 
 | 파일 | 계층 | DB |
 |---|---|---|
-| `test_unit.py` | 오류 분류(상태 코드 표·백오프 수열)·TOP-K·LLM 매핑·Profile 검증·`GMS_BASE_URL` 형식·스모크 집계 | 없음 |
+| `test_unit.py` | 오류 분류(상태 코드 표·백오프 수열)·TOP-K·LLM 매핑·Profile 검증·`GMS_BASE_URL` 형식·스모크 집계와 스크립트 실행·coverage 게이트 판정 | 없음 |
 | `test_repo.py` | 조건부 UPDATE rowcount·UPSERT·delete-insert·검색 Query | 실제 |
+| `test_bootstrap.py` | Preset 적재 멱등성·`ON CONFLICT` SET 절·Profile 주입·`python -m` 실행 | 실제 |
+| `test_lifespan.py` | 기동 조립·Preset 0건 기동 중단·종료 시 풀 반납 | 실제 |
 | `test_api.py` | 202·검색 형식·422·401·프로브(`/health` 불변, `/ready` 200/503) | 실제 |
 | `test_pipeline.py` | §16 시나리오 전체 | 실제 |
+
+> `test_bootstrap.py`·`test_lifespan.py`는 요청 경로 **밖**이라 파이프라인·API 테스트로는
+> 실행되지 않는다(`test_api.py`는 lifespan을 우회하고 `app.state`에 Fake를 직접 꽂는다).
+> `S15P11A705-110` 기준선에서 두 파일이 덮는 영역이 각각 0%·58%였다.
+> lifespan 테스트는 **진짜 클라이언트를 조립하는지**를 단언하므로 Fake로 바꾸지 않는다 —
+> 생성자는 IO를 하지 않으므로 실호출 금지 규칙과 충돌하지 않는다.
 
 > `test_client_retry.py`도 위 §5 계층 밖이다 — **client 호출 단위 방어**(failure-recovery.md §3.1)
 > 계층이며 DB·Docker·네트워크가 필요 없다. `RetryPolicy`의 `sleep`·`jitter`를 주입해 백오프

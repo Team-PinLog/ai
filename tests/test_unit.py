@@ -338,3 +338,219 @@ def test_smoke_report_exit_code_zero_only_when_all_pass(capsys):
     assert gms_roundtrip.report([("embedding", "PermanentError"), ("judge", None)]) == 1
     out = capsys.readouterr().out
     assert "SMOKE FAILED: judge" in out and "SMOKE FAILED: embedding" in out
+
+
+# ── Preset 캐시 스냅샷 (S15P11A705-110) ─────────────────
+def test_snapshot_as_dicts_exposes_only_judgement_fields():
+    """LLM 입력에 code·visibility·version·embedding이 섞이면 프롬프트가 오염되고
+    토큰만 늘어난다. 내보내는 필드를 값으로 고정한다."""
+    snap = PresetSnapshot(presets=(_preset(1, "WITH_FRIENDS", [0.0, 1.0]),), version=3)
+    assert snap.as_dicts() == [
+        {"id": 1, "display_name": "WITH_FRIENDS", "category": "C",
+         "description": "d", "examples": []}
+    ]
+
+
+def test_preset_cache_snapshot_before_load_raises():
+    """적재 전 조회는 조용한 빈 결과가 아니라 오류다 — 빈 후보로 COMPLETED를 쓰면
+    데이터가 조용히 망가진다(keyword-preset.md §2)."""
+    from app.cache.preset_cache import PresetCache
+
+    with pytest.raises(RuntimeError, match="not loaded"):
+        PresetCache().snapshot()
+
+
+# ── pgvector ↔ 파이썬 변환 (양쪽 분기) ──────────────────
+class _VectorLike:
+    """asyncpg가 돌려주는 pgvector.Vector의 최소 모양."""
+
+    def __init__(self, values: list[float]) -> None:
+        self._values = values
+
+    def to_numpy(self):
+        return np.asarray(self._values, dtype=np.float64)
+
+    def to_list(self):
+        return list(self._values)
+
+
+def test_keyword_to_array_accepts_both_vector_and_plain_list():
+    from app.service.keyword_service import _to_array
+
+    assert _to_array(_VectorLike([1.0, 2.0])).dtype == np.float32
+    assert _to_array([1.0, 2.0]).tolist() == [1.0, 2.0]
+
+
+def test_embedding_to_list_accepts_both_vector_and_plain_list():
+    """저장 경로는 `to_list`를 가진 pgvector 값과 Fake가 주는 순수 list를 모두 받는다.
+    한쪽만 다루면 재사용 경로가 운영에서만 깨진다."""
+    from app.service.embedding_service import _to_list
+
+    assert _to_list(_VectorLike([1.0, 2.0])) == [1.0, 2.0]
+    assert _to_list((1.0, 2.0)) == [1.0, 2.0]
+
+
+def test_map_keeps_first_confidence_when_duplicate_is_lower():
+    """중복 접기는 최댓값 기준이다. 내림차순으로 와도 뒤의 낮은 값이 앞을 덮지 않는다 —
+    `test_map_dedupes_keeping_max_confidence`(오름차순)의 짝."""
+    r = JudgeResult(selected=[KeywordSelection(1, 0.7), KeywordSelection(1, 0.3)])
+    assert _svc()._map(r, {1}, context_id=1) == [(1, 0.7)]
+
+
+def test_map_keeps_confidence_when_duplicate_has_none():
+    """confidence 없는 중복이 값 있는 선택을 None으로 덮으면 안 된다."""
+    r = JudgeResult(selected=[KeywordSelection(1, 0.7), KeywordSelection(1, None)])
+    assert _svc()._map(r, {1}, context_id=1) == [(1, 0.7)]
+
+
+# ── 스모크 엔트리포인트 (실호출 없음) ───────────────────
+@pytest.fixture
+def _restore_http_log_levels():
+    import logging
+
+    saved = {n: logging.getLogger(n).level for n in ("httpx", "httpcore")}
+    yield
+    for name, level in saved.items():
+        logging.getLogger(name).setLevel(level)
+
+
+def test_silence_http_logging_raises_httpx_levels_above_last_resort(_restore_http_log_levels):
+    """httpx는 요청마다 INFO로 전체 URL을 남긴다. 핸들러가 없을 때의 lastResort(WARNING+)
+    까지 막아야 배포 로그에 endpoint가 남지 않는다(ai#32 §3)."""
+    import logging
+
+    logging.getLogger("httpx").setLevel(logging.INFO)
+    logging.getLogger("httpcore").setLevel(logging.DEBUG)
+
+    gms_roundtrip._silence_http_logging()
+
+    assert logging.getLogger("httpx").level == logging.CRITICAL
+    assert logging.getLogger("httpcore").level == logging.CRITICAL
+
+
+class _StubEmbeddingClient:
+    def __init__(self, *, base_url, api_key, model, dimension):
+        self.dimension = dimension
+
+    async def embed_one(self, text: str) -> list[float]:
+        return [0.0] * self.dimension
+
+
+class _StubLLMClient:
+    def __init__(self, *, gms_base_url, api_key, model):
+        pass
+
+    async def judge(self, context_text: str, candidates: list[dict]) -> JudgeResult:
+        return JudgeResult(selected=[])
+
+
+@pytest.mark.filterwarnings("ignore:.*found in sys.modules.*:RuntimeWarning")
+def test_smoke_module_runs_as_a_script_and_exits_zero(
+    monkeypatch, capsys, _restore_http_log_levels
+):
+    """`python -m app.smoke.gms_roundtrip` 경로 — dev 배포 activation 게이트 그 자체.
+
+    `if __name__ == "__main__"` 아래는 import로 실행되지 않으므로 `runpy`로 스크립트 실행을
+    재현한다. runpy는 새 네임스페이스를 쓰므로 캐시된 모듈 패치가 보이지 않는다 —
+    **원본 클라이언트 모듈**의 속성을 갈아 끼워 새 네임스페이스의 import가 그것을 집게 한다.
+    실제 GMS는 부르지 않는다(tests/README.md: 실호출을 CI에 넣지 않는다).
+    """
+    import runpy
+
+    monkeypatch.setattr("app.client.embedding_client.EmbeddingClient", _StubEmbeddingClient)
+    monkeypatch.setattr("app.client.llm_client.LLMClient", _StubLLMClient)
+
+    with pytest.raises(SystemExit) as excinfo:
+        runpy.run_module("app.smoke.gms_roundtrip", run_name="__main__")
+
+    assert excinfo.value.code == 0
+    out = capsys.readouterr().out
+    assert "embedding: ok" in out and "judge: ok" in out
+    assert "OK: gms smoke passed (2 checks)" in out
+
+
+@pytest.mark.filterwarnings("ignore:.*found in sys.modules.*:RuntimeWarning")
+def test_smoke_script_exits_nonzero_and_leaks_no_values_when_a_check_fails(
+    monkeypatch, capsys, _restore_http_log_levels
+):
+    """실패해도 종료 코드만 1이고 응답 본문·URL은 새지 않는다."""
+    import runpy
+
+    marker = "leaked-endpoint-and-body-fragment"
+
+    class _FailingLLM(_StubLLMClient):
+        async def judge(self, context_text, candidates):
+            raise PermanentError(f"llm error: 401 {marker}")
+
+    monkeypatch.setattr("app.client.embedding_client.EmbeddingClient", _StubEmbeddingClient)
+    monkeypatch.setattr("app.client.llm_client.LLMClient", _FailingLLM)
+
+    with pytest.raises(SystemExit) as excinfo:
+        runpy.run_module("app.smoke.gms_roundtrip", run_name="__main__")
+
+    assert excinfo.value.code == 1
+    out = capsys.readouterr().out
+    assert "judge: failed (PermanentError)" in out
+    assert "SMOKE FAILED: judge" in out
+    assert marker not in out
+
+
+# ── coverage 게이트 판정 (S15P11A705-110) ───────────────
+# 게이트를 켜 놓고 "통과한다"만 확인하면 아무것도 강제하지 않는 게이트를 놓친다.
+# 여기서 임계값 양쪽을 값으로 고정한다. 드릴(실제 RED 관측)은 PR 본문에 기록한다.
+from tools.check_coverage_gate import CoverageGateError, evaluate  # noqa: E402
+
+
+def _totals(*, lines=(80, 100), branches=(80, 100)) -> dict:
+    return {
+        "covered_lines": lines[0], "num_statements": lines[1],
+        "covered_branches": branches[0], "num_branches": branches[1],
+    }
+
+
+def test_gate_passes_exactly_at_the_threshold():
+    assert all(m.ok for m in evaluate(_totals(lines=(80, 100), branches=(80, 100))))
+
+
+@pytest.mark.parametrize(
+    "totals, failing",
+    [
+        (_totals(lines=(799, 1000)), "line"),      # 79.9% — line만 미달
+        (_totals(branches=(799, 1000)), "branch"),  # 79.9% — branch만 미달
+    ],
+)
+def test_gate_fails_when_either_metric_alone_is_below_threshold(totals, failing):
+    """둘을 **따로** 본다는 것이 이 게이트의 전부다. 합산 비율(`--cov-fail-under`)이면
+    statement 수에 가려 branch 미달이 통과한다."""
+    metrics = {m.name: m.ok for m in evaluate(totals)}
+    assert metrics[failing] is False
+    assert metrics["line" if failing == "branch" else "branch"] is True
+
+
+def test_gate_refuses_a_report_measured_without_cov_branch():
+    """`--cov-branch` 없는 리포트에는 branch 키 자체가 없다(coverage.py 실측).
+    '측정하지 못했다'를 통과로 처리하면 게이트가 사라진 것과 같다."""
+    totals = _totals()
+    del totals["num_branches"]
+    del totals["covered_branches"]
+    with pytest.raises(CoverageGateError, match="--cov-branch"):
+        evaluate(totals)
+
+
+def test_gate_refuses_a_report_with_zero_branches():
+    """키는 있는데 0인 경우도 같은 이유로 막는다."""
+    with pytest.raises(CoverageGateError, match="--cov-branch"):
+        evaluate(_totals(branches=(0, 0)))
+
+
+def test_gate_refuses_an_empty_report():
+    with pytest.raises(CoverageGateError, match="statement 가 0"):
+        evaluate(_totals(lines=(0, 0)))
+
+
+def test_gate_thresholds_are_the_ticket_completion_criteria():
+    """임계값이 조용히 내려가면 게이트는 남고 의미만 사라진다."""
+    from tools import check_coverage_gate
+
+    assert check_coverage_gate.LINE_MIN == 80.0
+    assert check_coverage_gate.BRANCH_MIN == 80.0
