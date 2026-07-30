@@ -2,9 +2,9 @@ name: ai-ci
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   push:
-    branches: [main]
+    branches: [main, dev]
 
 permissions:
   contents: read
@@ -84,6 +84,9 @@ jobs:
           platforms: linux/amd64
           push: false
 
+  # check 는 main·dev 양쪽에서 돌지만 publish 는 main 전용이다.
+  # infra 의 ai-image-update.yaml 이 `test "$SOURCE_BRANCH" = main` 으로 어서션하므로
+  # 이 조건을 dev 로 넓히면 GitOps 반영이 거부된다.
   image-publish:
     name: ai-image / publish
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
