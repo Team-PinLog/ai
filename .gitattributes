@@ -1,0 +1,30 @@
+# 담당자 OS가 섞여 있어도 인덱스는 LF 하나로 유지한다. 이 레포의 인덱스는 이미 전부
+# LF이므로(`git ls-files --eol`로 확인 — 126 파일 i/lf, 나머지는 빈 `__init__.py`)
+# 이 선언은 재정규화를 일으키지 않고 앞으로 들어오는 파일만 고정한다.
+# 목록은 `back/.gitattributes`와 같은 형태이나 실제로 존재하는 확장자에 맞췄다.
+*.py text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.txt text eol=lf
+*.lock text eol=lf
+*.sql text eol=lf
+*.example text eol=lf
+Dockerfile text eol=lf
+.gitignore text eol=lf
+.dockerignore text eol=lf
+.gitattributes text eol=lf
+
+# `deploy/sealed-secrets/*.pem`은 일부러 뺐다. Infra가 제공한 인증서 원본이라 우리가
+# 형식을 바꾸지 않는다(지문 검증은 PEM을 디코드한 인증서에 대해 하므로 개행과 무관하지만,
+# 외부 제공 자료를 재정규화 대상에 넣지 않는 편이 경계가 분명하다).
+
+# WORKLOG는 모든 작업이 표 끝에 한 줄씩 추가하는 append 전용 파일이라, 브랜치가 둘 이상이면
+# 항상 같은 지점에서 충돌한다. union은 양쪽 줄을 모두 남겨 그 충돌을 없앤다.
+# 감수할 점은 세 가지다 — 순서가 보장되지 않으므로 시간순 판독의 기준은 날짜 컬럼이고,
+# 기존 줄을 두 브랜치가 각각 수정하면 두 버전이 중복으로 남으며(WORKLOG 머리말 참고),
+# GitHub 서버측 병합 판정은 이 설정을 반영하지 않아 PR은 여전히 CONFLICTING으로 표시된다.
+# 즉 이득은 "로컬 병합에서 손으로 충돌을 풀 일이 없어지는 것"까지다(back 실측: S15P11A705-91,
+# ai 실측: S15P11A705-158에서 ai#44·ai#45가 이 파일 같은 지점에서 충돌).
+docs/WORKLOG.md merge=union
