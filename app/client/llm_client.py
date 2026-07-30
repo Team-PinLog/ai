@@ -6,14 +6,25 @@ function-calling은 2.5-flash에서 코드형 호출로 malformed 되므로 쓰�
 
 GMS는 도메인별 네이티브 인증을 통과시킨다 — Gemini는 x-goog-api-key.
 client는 DB를 모른다. HTTP 실패는 분류된 오류로 service까지 올린다.
+
+분류는 `classify_http_status` 하나를 쓴다(failure-recovery.md §2.1·§2.2). 이 파일이
+**모든 non-200을 Transient로** 두어 인증 실패가 재스캔 주기(5분)마다 GMS 호출을 만들던 것이
+S15P11A705-121의 결함 3이었다. 구조화 출력 위반은 재시도 대상이되 소진 후 영구 오류다(§2.2).
 """
 from __future__ import annotations
 
 import json
+from functools import partial
 
 import httpx
 
-from app.core.errors import TransientError
+from app.client.retry import RetryPolicy, call_with_retry
+from app.core.errors import (
+    PermanentError,
+    SchemaViolationError,
+    TransientError,
+    classify_http_status,
+)
 from app.schema.llm import JudgeResult, KeywordSelection
 
 _TIMEOUT = 90.0
@@ -69,11 +80,22 @@ def build_user(context_text: str, candidates: list[dict]) -> str:
 
 
 class LLMClient:
-    def __init__(self, gms_base_url: str, api_key: str, model: str) -> None:
+    def __init__(
+        self,
+        gms_base_url: str,
+        api_key: str,
+        model: str,
+        *,
+        retry: RetryPolicy | None = None,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> None:
         # GMS root에서 Gemini 네이티브 경로를 파생한다.
         self._root = gms_base_url.split("/gmsapi/")[0] + "/gmsapi"
         self._key = api_key
         self._model = model
+        self._retry = retry or RetryPolicy()
+        # transport는 테스트 이음새다(embedding_client와 같은 이유).
+        self._transport = transport
 
     async def judge(self, context_text: str, candidates: list[dict]) -> JudgeResult:
         user = build_user(context_text, candidates)
@@ -91,44 +113,71 @@ class LLMClient:
                 "thinkingConfig": {"thinkingBudget": 0},
             },
         }
-        try:
-            async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-                resp = await client.post(
-                    url,
-                    headers={
-                        "x-goog-api-key": self._key,
-                        "content-type": "application/json",
-                    },
-                    json=body,
+        async with httpx.AsyncClient(
+            timeout=_TIMEOUT, transport=self._transport
+        ) as client:
+            try:
+                return await call_with_retry(
+                    partial(self._judge_once, client, url, body),
+                    self._retry,
+                    stage="keyword",
                 )
+            except SchemaViolationError as exc:
+                # §2.2: 재시도 후에도 스키마 위반이면 영구 오류다. 승격을 여기서 끝내
+                # service는 두 분류(Transient/Permanent)만 보게 한다.
+                raise PermanentError(
+                    f"llm schema violation after {self._retry.attempts} attempt(s): {exc}"
+                ) from exc
+
+    async def _judge_once(
+        self, client: httpx.AsyncClient, url: str, body: dict
+    ) -> JudgeResult:
+        """1회 호출. 재시도 여부는 던지는 오류 타입이 결정한다(retry.py)."""
+        try:
+            resp = await client.post(
+                url,
+                headers={
+                    "x-goog-api-key": self._key,
+                    "content-type": "application/json",
+                },
+                json=body,
+            )
         except httpx.HTTPError as exc:
             raise TransientError(f"llm request failed: {exc}") from exc
 
         if resp.status_code != 200:
-            # 5xx·일시 오류는 물론, 게이트웨이 오류도 재스캔으로 회수되게 일시 오류로 둔다.
-            raise TransientError(
-                f"llm error: {resp.status_code} {resp.text[:200]}"
+            # 게이트웨이 오류를 일괄 일시 오류로 두지 않는다 — 400·401·403은 키·설정을
+            # 고치기 전까지 같은 답이므로, 재스캔에 맡기면 5분마다 같은 호출을 만든다.
+            raise classify_http_status(
+                resp.status_code, f"llm error: {resp.status_code} {resp.text[:200]}"
             )
 
-        return self._parse(resp.json())
+        try:
+            payload = resp.json()
+        except ValueError as exc:
+            raise SchemaViolationError(f"llm response not json: {exc}") from exc
+        return self._parse(payload)
 
     @staticmethod
     def _parse(payload: dict) -> JudgeResult:
         try:
             text = payload["candidates"][0]["content"]["parts"][0]["text"]
             data = json.loads(text)
-        except (KeyError, IndexError, json.JSONDecodeError) as exc:
-            raise TransientError(f"llm parse failed: {exc}") from exc
-
-        selected = [
-            KeywordSelection(
-                keyword_id=int(s["keywordId"]),
-                confidence=(
-                    float(s["confidence"]) if s.get("confidence") is not None else None
-                ),
-            )
-            for s in data.get("selected", [])
-            if "keywordId" in s
-        ]
-        unmatched = [str(x) for x in data.get("unmatchedConcepts", [])]
+            selected = [
+                KeywordSelection(
+                    keyword_id=int(s["keywordId"]),
+                    confidence=(
+                        float(s["confidence"])
+                        if s.get("confidence") is not None
+                        else None
+                    ),
+                )
+                for s in data.get("selected", [])
+                if "keywordId" in s
+            ]
+            unmatched = [str(x) for x in data.get("unmatchedConcepts", [])]
+        except (KeyError, IndexError, TypeError, AttributeError, ValueError) as exc:
+            # 구조화 출력 위반. json.JSONDecodeError는 ValueError 하위다. 후보 절단
+            # (MAX_TOKENS)·안전 차단·타입 위반이 모두 여기로 들어온다.
+            raise SchemaViolationError(f"llm parse failed: {exc}") from exc
         return JudgeResult(selected=selected, unmatched_concepts=unmatched)
