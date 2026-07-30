@@ -21,6 +21,7 @@
 | [2026-07-24-e3-ci-and-search-path.md](2026-07-24-e3-ci-and-search-path.md) | E3 CI·런타임 이슈 — lock 플랫폼 종속·pytest pythonpath·search_path (T19~T21) |
 | [2026-07-27-e2e-env-issues.md](2026-07-27-e2e-env-issues.md) | E2E 검증 환경 이슈 — `.env` CRLF·register_vector 미등록·한글 인코딩 (T22~T24) |
 | [2026-07-28-shared-worktree-and-env-cache.md](2026-07-28-shared-worktree-and-env-cache.md) | 멀티세션 워킹트리 오염 · import 시점 `.env` 캐시 (T25·T26) |
+| [2026-07-30-seeding-quota-and-encoding.md](2026-07-30-seeding-quota-and-encoding.md) | GMS 판정 쿼터·콘솔 인코딩으로 인한 시딩 중단 (T27·T28) |
 
 ## 문제 해결 — 전수 (AI 소유)
 
@@ -50,5 +51,7 @@
 | T24 | Git Bash + `curl`에서 한글 본문 인코딩 깨짐(ASCII 본문은 통과 → T22와 증상 동일) | 한글 요청은 Python `httpx`로 전송, `curl`은 ASCII 경로에만 |
 | T25 | 멀티세션이 단일 git 워킹트리·인덱스·HEAD 공유 → 3파일 커밋에 타 세션 15파일 섞여 push | 격리 `git worktree` 기본, `git add` 개별(`-A` 금지)·커밋 전 브랜치 확인 |
 | T26 | `main.py` 모듈 레벨 `create_app()` import 시점 `.env` 캐시 → API 3건만 401(로컬 `.env` 우연 일치로 은폐) | `settings` fixture에서 `get_settings()` 캐시 재설정 + conftest placeholder env 선주입 |
+| T27 | GMS Gemini 게이트웨이가 판정을 분당 약 2건으로 제한 → 429 한 번이 Context를 `PROCESSING`으로 10분 얼림 | 회피 불가. `--pace 25`로 간격 확보 + 미완료 건 회수 루프. 운영은 재스캔 Scheduler(`-159`) |
+| T28 | 콘솔이 cp949면 `—` 한 글자에 `UnicodeEncodeError` → **`--reset` 직후 죽어 데이터만 지워진 상태**가 됨 | `sys.stdout.reconfigure(utf-8)` + `log()` 최후 방어. 호출자가 `PYTHONIOENCODING`을 기억하지 않게 (T22·T24 계열) |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.

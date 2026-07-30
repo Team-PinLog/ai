@@ -16,6 +16,7 @@ from functools import partial
 
 import httpx
 
+from app.client._usage import record as record_usage
 from app.client.retry import RetryPolicy, call_with_retry
 from app.core.errors import PermanentError, TransientError, classify_http_status
 
@@ -96,7 +97,9 @@ class EmbeddingClient:
             )
 
         try:
-            data = sorted(resp.json()["data"], key=lambda d: d["index"])
+            payload = resp.json()
+            record_usage("embedding", payload)
+            data = sorted(payload["data"], key=lambda d: d["index"])
             vectors = [item["embedding"] for item in data]
         except (ValueError, KeyError, TypeError) as exc:
             # 응답 형식 위반. 재시도해도 같은 형식이 오므로 영구 오류다(§2.2 입력 형식 오류).
