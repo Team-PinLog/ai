@@ -1,6 +1,6 @@
 """발표 시연용 데모 데이터 시딩 — back API 경로로 만든다.
 
-    python tools/demo_seed/seed.py [--reset] [--pace 20] [--back URL] [--ai URL]
+    python tools/demo_seed/seed.py [--reset] [--pace 1] [--back URL] [--ai URL]
 
 ## 왜 back API인가 (직접 INSERT가 아니라)
 
@@ -32,11 +32,26 @@ API로 만들면 그 경로가 실제로 탄다. 그래서 이 스크립트는 �
 
 ## GMS 429와 pace
 
-판정(Gemini)은 GMS 게이트웨이에서 지속적으로 분당 2건 안팎만 통과한다
-(2026-07-29 실측). Record를 몰아서 만들면 판정이 무더기로 429를 받고, 그때
-keyword_status는 `PROCESSING`으로 남아 재스캔을 기다린다. 로컬에는 재스캔이
-없으므로 이 스크립트가 그 역할을 대신한다 — `--pace` 간격으로 생성한 뒤,
-미완료 건을 **한 건씩** 되살린다.
+**GMS 쿼터는 상수가 아니다.** SSAFY 공용 게이트웨이라 우리 전용 할당이 아니고,
+시점과 프로바이더 경로에 따라 크게 다르다(T27).
+
+```
+2026-07-29   판정 분당 약 2건. 15초 간격에도 429가 났다
+2026-07-30   같은 코드가 분당 30건 이상 통과. 동시 10건도 막히지 않았다
+```
+
+그래서 `--pace` 기본값을 **1초**로 둔다. 선제적으로 느리게 던지는 것은 한산한
+날의 시간을 버리기만 한다 — 같은 데이터가 `--pace 25`에서 15분 8초, `--pace 1`
+에서 **42초**였고 토큰과 결과는 같았다.
+
+혼잡할 때의 방어는 두 겹으로 남아 있다.
+
+* `retry.py`의 지수 백오프 — 429를 `TransientError`로 받아 호출 단위로 재시도
+* 아래 회수 루프 — 그래도 미완료로 남은 건을 **한 건씩** `PENDING`으로 되살린다
+
+`--pace`를 올리는 것은 429가 실제로 나는 것을 본 뒤에 한다. 운영에는 재스캔
+Scheduler(`S15P11A705-159`)가 같은 역할을 하며, `back#104` 병합 이후로는
+로컬에서도 그것이 돈다.
 """
 from __future__ import annotations
 
@@ -58,9 +73,13 @@ from _client import (
 
 from app.core.db import Database
 
-# 미완료 건 회수의 상한. 14건 × (429 재시도 포함) 여유를 본 값이다.
+# 미완료 건 회수의 상한. 혼잡한 날(2026-07-29 수준)에도 완주하도록 넉넉히 둔다.
 RECOVER_DEADLINE_SEC = 1800
-# 한 건을 되살린 뒤 다음 건까지 쉬는 시간. 판정 통과율(분당 2건)에 맞춘다.
+# 한 건을 되살린 뒤 다음 건까지 쉬는 시간.
+#
+# 여기는 `--pace`와 달리 보수적으로 둔다 — 회수가 도는 시점은 **이미 429를 본
+# 뒤**라 그날 게이트웨이가 혼잡하다는 증거가 있다. 한산하면 애초에 이 루프가
+# 돌지 않으므로(2026-07-30 실측 회수 0회) 이 값이 총 시간을 늘리지 않는다.
 RECOVER_INTERVAL_SEC = 20
 
 
@@ -283,7 +302,7 @@ async def main() -> int:
     argv = sys.argv
     back = back_base(argv)
     ai = ai_base(argv)
-    pace = float(argv[argv.index("--pace") + 1]) if "--pace" in argv else 20.0
+    pace = float(argv[argv.index("--pace") + 1]) if "--pace" in argv else 1.0
     data = load_data()
     pem = ensure_key()
 
