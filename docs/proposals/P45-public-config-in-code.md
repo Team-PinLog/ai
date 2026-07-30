@@ -78,7 +78,7 @@ Infra 가 주입 경로를 하나로 요구했으므로 그 요구를 따르는 
 | `app/core/config.py` | EMBEDDING 넷에 기본값. `alias` 는 유지되므로 환경변수 덮어쓰기 경로는 그대로 |
 | `.env.example` | 비밀/공개 두 절로 나누고 각 절의 규칙을 명시 |
 | `model-profile.md §2.1` | *"기본값을 넣지 않는다"* → *"기본값이 정본이다"*. 개정 사실과 근거를 인용문으로 남김 |
-| `seal-ai-secrets.yml` | 봉인 대상 7종 → **3종**. EMBEDDING 넷은 주입할 것이 없어 뺀다 |
+| `seal-runtime-secrets.yml` | 런타임 owner 값 **3종**만 봉인하고 Infra PR token은 action 인증에만 쓴다. EMBEDDING 넷은 주입하지 않는다 |
 | GitHub Actions Secret | 등록된 EMBEDDING 넷은 **지우지 않아도 된다** — workflow 가 읽지 않을 뿐이다 |
 
 **모델을 교체할 때**의 절차가 이렇게 바뀐다.

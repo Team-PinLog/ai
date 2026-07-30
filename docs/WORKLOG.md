@@ -4,6 +4,7 @@
 
 | 날짜 | 작업 | 관련 문서 |
 |---|---|---|
+| 2026-07-29 | S15P11A705-154 — protected Environment 기반 3 runtime owner 값 + Infra PR credential handoff를 canonical workflow로 정렬 | [runtime Secret handoff](implements/2026-07-29-sealed-secret-handoff.md) |
 | 2026-07-23 | AI 공용 설계를 docs `static/05` 단일 원본으로 확립 (docs#2) | [proposals](proposals/README.md) (P16) |
 | 2026-07-23 | FastAPI AI 서버 구현 명세 작성 + version→deletion race 리네임 (ai#1) | [spec/](spec/) |
 | 2026-07-23 | Keyword Preset seed 27개 (ai#2) | [implements](implements/2026-07-23-keyword-preset-seed.md), [spec/keyword-preset.md](spec/keyword-preset.md) |
