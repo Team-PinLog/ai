@@ -35,6 +35,7 @@ from app.core.errors import (
     TransientError,
     classify_http_status,
 )
+from app.core.redact import redact, redact_body
 from app.schema.llm import JudgeResult, KeywordSelection
 
 _TIMEOUT = 90.0
@@ -145,16 +146,20 @@ class LLMClient:
                 # 것이고 뒤는 경로가 아예 막힌 것이다. 메시지 본문에는 URL 이 섞여
                 # 들어올 수 있어 그쪽이 아니라 타입 이름을 쓴다.
                 rec.status = type(exc).__name__
-                raise TransientError(f"llm request failed ({call.label}): {exc}") from exc
+                raise TransientError(
+                    f"llm request failed ({call.label}): {redact(str(exc))}"
+                ) from exc
 
             rec.status = resp.status_code
             if resp.status_code != 200:
                 # 게이트웨이 오류를 일괄 일시 오류로 두지 않는다 — 400·401·403은 키·설정을
                 # 고치기 전까지 같은 답이므로 다음 벤더로 넘겨도 같은 답이 온다.
                 # 메시지에 벤더를 넣는다 — 폴백이 있으면 "어느 경로가 막혔나"가 원인 그 자체다.
+                # 본문은 마스킹해서 싣는다(S15P11A705-205, `core/redact.py`) — 이 문자열이
+                # `retry.py`·두 service·트레이스백까지 다섯 경로로 로그가 된다.
                 raise classify_http_status(
                     resp.status_code,
-                    f"llm error: {call.label} {resp.status_code} {resp.text[:200]}",
+                    f"llm error: {call.label} {resp.status_code} {redact_body(resp.text)}",
                 )
 
             try:
