@@ -27,4 +27,17 @@ Dockerfile text eol=lf
 # GitHub 서버측 병합 판정은 이 설정을 반영하지 않아 PR은 여전히 CONFLICTING으로 표시된다.
 # 즉 이득은 "로컬 병합에서 손으로 충돌을 풀 일이 없어지는 것"까지다(back 실측: S15P11A705-91,
 # ai 실측: S15P11A705-158에서 ai#44·ai#45가 이 파일 같은 지점에서 충돌).
+#
+# 같은 성격의 파일이 둘 더 있어 대상을 늘렸다. `implements/README.md`와
+# `troubleshooting/README.md`도 모든 작업이 표 끝에 한 줄씩 붙이는 append 전용이다
+# (git 실측: 파일 생성 이후 `troubleshooting` 7건 중 6건, `implements` 17건 중 11건이
+# 삭제 0줄의 순수 추가). 위 감수 사항 셋이 그대로 적용된다.
+#
+# `proposals/README.md`는 **일부러 뺐다.** 겉모습은 같은 표지만 성격이 다르다 — `M##` 행은
+# 그 파일에만 존재하고(개별 `M##` 문서가 없다) `미결 → 종결`, `Proposed → Accepted` 같은
+# 제자리 상태 전이가 그 파일의 용도 그 자체다(실측: 생성 이후 10건 중 6건이 삭제를 동반).
+# 상태 레지스트리에 union을 걸면 한 항목의 옛 상태와 새 상태가 나란히 남아 어느 쪽이
+# 현재인지 읽을 수 없게 되는데, 그것은 이 파일이 존재하는 이유를 없애는 것이다.
 docs/WORKLOG.md merge=union
+docs/implements/README.md merge=union
+docs/troubleshooting/README.md merge=union
