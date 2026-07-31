@@ -64,4 +64,6 @@
 | I26 | app coverage 게이트 `tools/check_coverage_gate.py` — line·branch 를 **따로** 판정(합산 비율은 statement 수에 가려 branch 미달을 통과시킨다), 임계값은 스크립트 상수라 CI 인자로 덮을 수 없음. 부트스트랩·기동 계층 테스트 신설(둘 다 기준선 0%·58%), 146→181 tests, line 88.80→99.74% · branch 82.08→98.11%. RED 4종 실측 | [게이트 리포트](2026-07-30-coverage-gate.md), [tools/check_coverage_gate.py](../../tools/check_coverage_gate.py) |
 | I25 | 데모 시딩 도구 `tools/demo_seed/` — back API 경로로 member 5·Context 14·Collection 9 생성, `--reset` 재현, `verify.py` 시연 3종 판정. GMS 429(분당 약 2건) 실측과 그에 맞춘 회수 루프 | [데모 시딩 리포트](2026-07-29-demo-seeding.md), [tools/demo_seed/](../../tools/demo_seed/) |
 
+| I27 | 임베딩 4조건 측정 하네스 `tools/emb_grid/` — 조건 정본 하나(`conditions.py`)를 셸에 `eval` 로 넘겨 값이 갈라지지 않게 하고, 조건이 환경과 어긋나면 **재기 전에 멈춘다**(profile·차원·프리셋 적재 여부·FastAPI 도달). `alter_dim.py` 는 로컬 DB 차원을 바꾸고 되돌린다 — Flyway 를 만들지 않는 것이 이 측정의 계약이다 | [4조건 측정](2026-07-31-embedding-grid.md), [tools/emb_grid/](../../tools/emb_grid/) |
+
 > I6·I7·I8은 백엔드 아티팩트라 **back 레포** `docs/ai/implements`에 있습니다.
