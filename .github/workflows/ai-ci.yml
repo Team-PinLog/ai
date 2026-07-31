@@ -24,6 +24,29 @@ jobs:
         with:
           persist-credentials: false
 
+      # main 은 배포 브랜치다. 일반 작업이 main 으로 들어가면 dev 가 뒤처지고
+      # 다음 릴리스에서 같은 파일이 충돌한다. 2026-07-30 ai#50 이 7 대 1 분기를
+      # 만들어 ai#52 로 되돌렸고, 07-31 에 다시 6커밋이 dev 에 없는 상태가 됐다.
+      # 두 번 다 사람이 뒤늦게 발견했다 -- CONTRIBUTING 에 적혀 있어도 매번
+      # 떠올릴 이유가 없기 때문이다. base 제약은 branch protection 에 기능이
+      # 없으므로 여기서 검사한다.
+      - name: Validate PR base
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          case "$HEAD_REF" in
+            release/*|hotfix/*)
+              echo "base=main 허용: $HEAD_REF" ;;
+            *)
+              echo "::error::배포 브랜치를 base 로 하는 PR 은 release/* 또는 hotfix/* 만 허용한다."
+              echo "일반 작업은 dev 를 base 로 연다 (CONTRIBUTING.md 「Jira와 Git」)."
+              echo "  현재 head: $HEAD_REF"
+              echo "  고치는 법: PR 화면에서 base 를 dev 로 바꾸면 된다."
+              echo "  main 에만 들어가야 하는 변경이면 브랜치명을 hotfix/ 로 시작하게 한다."
+              exit 1 ;;
+          esac
+
       # PR 제목만 검증(squash 병합이라 제목이 최종 커밋 메시지가 된다).
       # 형식 보증이지 티켓 존재 보증은 아니다(수용).
       - name: Validate PR title
