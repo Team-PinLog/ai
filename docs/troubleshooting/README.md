@@ -25,6 +25,7 @@
 | [2026-07-31-local-e2e-and-ci-pitfalls.md](2026-07-31-local-e2e-and-ci-pitfalls.md) | 로컬 E2E·CI 함정 — venv·로그 버퍼·jar 낙후·포트·로그인 쿠키 (T29~T36) |
 | [2026-07-31-tau-measurement.md](2026-07-31-tau-measurement.md) | 후보 임계값 τ 측정 — 틀린 진단·인코딩 재발·대조군 부재 (T37~T39) |
 | [2026-07-31-search-cut-measurement.md](2026-07-31-search-cut-measurement.md) | 검색 결과 컷 측정 — 반대 방향 질의 부재·worktree `.env`·배치 구성과 임베딩 재현성 (T40~T42) |
+| [2026-07-31-error-contract-pitfalls.md](2026-07-31-error-contract-pitfalls.md) | 오류 응답 계약 검증 — ASGITransport 예외 전파·GMS 스텁 URL 형식·시연 DB 자격증명 (T43~T45) |
 
 ## 문제 해결 — 전수 (AI 소유)
 
@@ -70,5 +71,8 @@
 | T40 | **정답이 있는 질의만 재면 컷의 절반이 안 보인다** — `r` 이 무관 질의를 15건 중 0건도 침묵시키지 못한다는 사실이 검증 질의 12건에서는 드러나지 않는다 | 걸러져야 하는 입력을 표본에 넣는다. 「0건」의 부호가 축마다 반대이므로 표를 가른다 |
 | T41 | worktree 에 `.env` 가 없어 `get_settings()` 가 `GMS_API_KEY` 부터 죽는다(`env_file` 은 CWD 기준·gitignore) | `.env` 를 worktree 에 복사하고 `DATABASE_URL` 만 환경변수로 덮는다. `.demo/` 키 분기(`-198`)와 같은 원인 |
 | T42 | **임베딩 배치 구성이 바뀌면** 같은 텍스트의 유사도가 `10⁻⁴` 규모로 흔들린다(0.5264→0.5258). 「임베딩은 결정적」은 같은 배치일 때의 이야기다 | 그 규모 차이가 결론을 가르는 값을 채택하지 않는다. 재현용으로 유사도 행렬을 커밋한다 |
+| T43 | `httpx.ASGITransport` 는 앱 예외를 **응답으로 바꾸지 않는다**(`raise_app_exceptions=True` 기본) — 「500 이 나간다」를 단언하려는데 예외가 테스트로 튄다 | 500 을 보려면 `raise_app_exceptions=False`. 무엇이 새는지 보려면 기본값 그대로 |
+| T44 | 로컬 GMS 스텁 URL 에 `/gmsapi/` 가 없으면 **앱이 기동에서 죽는다**(`_gms_base_url_shape`) — 증상이 「스텁이 안 불린다」가 아니라 「안 뜬다」다 | 스텁도 `/gmsapi/api.openai.com/v1/embeddings` 경로를 흉내낸다 |
+| T45 | 시연 DB 는 포트뿐 아니라 **비밀번호도 `.env` 와 다르다**(`pinlog-local`). T33 대로 `:15432` 만 고치면 `InvalidPasswordError` | DSN 일부만 고치지 않는다. `docker inspect` 로 컨테이너 env 를 직접 읽는다 |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.
