@@ -100,7 +100,7 @@ async def main() -> int:
         log("(run_condition.py 가 첫 단계로 부른다).")
         return 0
     finally:
-        await db.close()
+        await db.disconnect()
 
 
 if __name__ == "__main__":
