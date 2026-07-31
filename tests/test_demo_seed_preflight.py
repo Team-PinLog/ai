@@ -147,6 +147,8 @@ class TestOrphanReport:
         assert "ai.context_embedding" not in joined  # 0인 테이블은 줄을 차지하지 않는다
         assert "지우지 않았다" in joined
         assert "--prune-orphans" in joined
+        # 지우면 안 되는 것이 여기 섞여 있다는 사실을 빠뜨리면 보고가 삭제를 부추긴다
+        assert "tools/e2e/" in joined
 
 
 def test_reset과_고아집계가_같은_테이블_목록을_쓴다():

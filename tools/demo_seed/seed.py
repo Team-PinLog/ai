@@ -81,8 +81,13 @@ from _client import (
     ensure_key,
     load_data,
 )
-from preflight import ORPHAN_TABLES, count_orphans, delete_orphans, format_orphans
-from preflight import run as preflight
+from preflight import (
+    ORPHAN_TABLES,
+    count_orphans,
+    delete_orphans,
+    format_orphans,
+    run as preflight,
+)
 
 from app.core.db import Database
 

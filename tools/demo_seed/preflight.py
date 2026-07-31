@@ -335,7 +335,16 @@ async def delete_orphans(conn) -> dict[str, int]:
 
 
 def format_orphans(counts: dict[str, int]) -> list[str]:
-    """고아를 **보고만** 한다. 지우지 않는 근거는 `--prune-orphans` 도움말과 같다."""
+    """고아를 **보고만** 한다. 지우지 않는다.
+
+    자동 삭제하지 않는 이유가 취향이 아니라 사실에 있다. `tools/e2e/`의 검증
+    데이터는 **의도적으로** `core`에 대응 행이 없는 `ai` 단독 데이터다
+    (`README.md` "주의"). 그것이 여기 정의로는 전부 고아이며, 지우면 남의 하네스를
+    깨뜨린다. 반대로 이번 시딩의 집계를 틀리게 만드는 것도 사실이다
+    (`-191`에서 저장 비용 평균이 8행만큼 틀렸다).
+
+    둘 다 참이므로 도구가 고를 문제가 아니다. **세어서 보여주고 사람이 정한다.**
+    """
     total = sum(counts.values())
     if total == 0:
         return []
@@ -344,10 +353,13 @@ def format_orphans(counts: dict[str, int]) -> list[str]:
         if n:
             lines.append(f"      {t:<32} {n}")
     lines.append(
-        "      지우지 않았다. 이 행들이 이번 시딩의 산출물과 섞여 집계를 틀리게 만든다면"
+        "      지우지 않았다. 집계에 섞이는 것이 문제면 --prune-orphans 로 지워라."
     )
     lines.append(
-        "      --prune-orphans 로 지워라. 남의 측정 데이터일 수 있으므로 자동 삭제하지 않는다"
+        "      단 tools/e2e/ 의 검증 데이터(context 1xxx)는 core 대응 행이 없는 것이"
+    )
+    lines.append(
+        "      정상이라 여기 포함된다 — 지우기 전에 무엇인지 확인하라"
     )
     return lines
 
