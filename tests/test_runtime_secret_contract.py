@@ -75,13 +75,23 @@ def test_shared_action_receives_only_the_exact_environment_secret_keys():
         "${{ secrets.PINLOG_INFRA_IMAGE_PR_TOKEN }}"
     )
     assert action["env"] == expected_env
-    for value in expected_env.values():
-        assert text.count(value) == 1
+    preflight = next(
+        step for step in job["steps"]
+        if step.get("name") == "Preflight Secret PR token access"
+    )
+    assert preflight["env"] == {
+        "PINLOG_PREFLIGHT_TOKEN": "${{ secrets.PINLOG_INFRA_IMAGE_PR_TOKEN }}"
+    }
+    assert "--output /dev/null" in preflight["run"]
+    assert "--write-out '%{http_code}'" in preflight["run"]
     assert all(
         "${{ secrets." not in str(step)
         for step in job["steps"]
-        if step is not action
+        if step is not action and step is not preflight
     )
+    assert text.count("${{ secrets.PINLOG_INFRA_IMAGE_PR_TOKEN }}") == 2
+    for key in SECRET_KEYS - {"PINLOG_INFRA_SECRET_PR_TOKEN"}:
+        assert text.count(f"${{{{ secrets.{key} }}}}") == 1
     assert "placeholder" not in text.lower()
     assert "base64" not in text.lower()
 
