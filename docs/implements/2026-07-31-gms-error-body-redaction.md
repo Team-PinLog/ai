@@ -75,7 +75,7 @@ Invalid value: 'PIN...def'. Supported values are: 'system', 'assistant', 'user',
 ```
 
 **앞 3자와 뒤 3자만 남기고 잘라서 에코한다.** 완전 일치로 마커를 찾는 검사는 이것을
-「에코 없음」으로 판정한다(T57).
+「에코 없음」으로 판정한다(T61).
 
 사용자 Context 원문이 실리는 자리(`messages[].content`·`parts[].text`·`input`)는 값이 아니라
 **타입·경로만** 되돌아왔다 — `messages.0.content: Input should be…`, `Invalid value at
@@ -222,16 +222,19 @@ TLD를 화이트리스트로 한정했다. 점이 든 평범한 식별자를 건
 모으고, `redact_body(...)` 인자 안에 든 것을 뺀 나머지를 위반으로 낸다.
 
 처음에 텍스트로 훑었더니 `gms_roundtrip.py`의 **docstring**이 위반으로 잡혔다 — 그 파일은
-`resp.text[:200]`을 *설명*하고 있었다. 산문을 코드로 오인하는 검사는 오래 못 간다(T59).
+`resp.text[:200]`을 *설명*하고 있었다. 산문을 코드로 오인하는 검사는 오래 못 간다(T63).
 
 ### 4.3 전체
 
 ```
 ruff check .                  All checks passed
 python -m compileall app tools exit 0
-pytest                        375 passed
-coverage                      line 99.82% · branch 98.85%   (게이트 80/80)
+pytest                        404 passed
+coverage                      line 99.83% · branch 98.99%   (게이트 80/80)
 ```
+
+이 수치는 **`-223`(판정 n회 다수결)을 병합한 뒤**의 것이다. 두 티켓이 `keyword_service.py`를
+함께 건드려서, 병합 전(375건)과 후를 모두 돌려 회귀가 없음을 확인했다.
 
 ### 4.4 하지 않은 것
 
@@ -258,11 +261,11 @@ coverage                      line 99.82% · branch 98.85%   (게이트 80/80)
 - **운영 로그 조치는 이 티켓 밖이다.** 이미 남은 로그의 Loki 검색과 키 재발급 판단은
   `ai#69`로 인프라 파트에 있다.
 - **`/metrics`는 건드리지 않았다** — prod 승격 전 승인 항목(§2.4).
-- **거대 요청 본문에서 GMS가 오해를 부르는 400을 낸다**(T58). 이 티켓의 범위는 아니지만
+- **거대 요청 본문에서 GMS가 오해를 부르는 400을 낸다**(T62). 이 티켓의 범위는 아니지만
   분류에 영향이 있다 — 자세한 것은 트러블슈팅.
 
 ## 관련 함정
 
 측정·구현 중 걸린 셋을
 [2026-07-31-log-redaction-pitfalls.md](../troubleshooting/2026-07-31-log-redaction-pitfalls.md)
-(T57~T59)에 남겼다.
+(T61~T63)에 남겼다.
