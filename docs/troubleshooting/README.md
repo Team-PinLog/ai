@@ -26,7 +26,6 @@
 | [2026-07-31-tau-measurement.md](2026-07-31-tau-measurement.md) | 후보 임계값 τ 측정 — 틀린 진단·인코딩 재발·대조군 부재 (T37~T39) |
 | [2026-07-31-search-cut-measurement.md](2026-07-31-search-cut-measurement.md) | 검색 결과 컷 측정 — 반대 방향 질의 부재·worktree `.env`·배치 구성과 임베딩 재현성 (T40~T42) |
 | [2026-07-31-error-contract-pitfalls.md](2026-07-31-error-contract-pitfalls.md) | 오류 응답 계약 검증 — ASGITransport 예외 전파·GMS 스텁 URL 형식·시연 DB 자격증명 (T43~T45) |
-| [2026-07-31-judge-prompt-ab.md](2026-07-31-judge-prompt-ab.md) | 판정 프롬프트 A/B — 죽은 설정 키·라벨 커버리지·조건 노출·사전 기준 (T43~T46) |
 | [2026-07-31-judge-prompt-ab.md](2026-07-31-judge-prompt-ab.md) | 판정 프롬프트 A/B — 죽은 설정 키·라벨 커버리지·조건 노출·사전 기준·1회 분포·번호 충돌 (T43~T49) |
 | [2026-07-31-db-error-pitfalls.md](2026-07-31-db-error-pitfalls.md) | DB 오류 분류 — 접속 실패는 asyncpg 예외가 아니다·`min_size=1` 재현 불가·curl 한글 본문 (T53~T55) |
 
@@ -87,5 +86,6 @@
 | T53 | **DB 접속 실패는 `asyncpg` 예외가 아니다** — 포트 거부·DNS·타임아웃·풀 획득 타임아웃이 전부 stdlib `OSError` 다. `08xxx` 는 *붙어 있던* 연결이 끊길 때의 SQLSTATE 다. asyncpg 만 분류하면 **테스트는 전부 초록인데** 「DB 연결 실패가 503」만 거짓으로 남는다 | 접속 단계에서만 `OSError` 를 함께 번역하고, 분류를 repository 함수가 아니라 **세션 경계**에 건다(`pool.acquire()` 가 함수 밖이다) |
 | T54 | 닿지 않는 주소로 「요청 중 DB 불가」를 재현하려 하면 `create_pool` 이 `min_size` 만큼 즉시 접속해 **픽스처에서 죽는다.** `connect()` 를 건너뛰면 `RuntimeError`(우리 결함·500)라 다른 것을 측정한다 | 테스트용 `min_size=0` 풀로 접속 시점을 첫 `acquire()` 로 미룬다. 풀·드라이버·예외는 실물로 두고 **예외를 주입하지 않는다** |
 | T55 | Git Bash `curl -d` 로 한글 본문을 보내면 `{"detail":"There was an error parsing the body"}` `400` — **스키마 결함처럼 보인다** | 질의어만 ASCII 로 바꿔 같은 요청이 통과하면 원인은 본문 바이트다. 한글이 측정 대상이면 UTF-8 파일 + `--data-binary @file` |
+| T56 | `merge=union` 은 색인 행을 **갱신**하면 낡은 판을 되살려 같은 문서가 두 줄이 된다 — 추가만 할 때는 안 난다 | 행을 고쳤으면 병합 뒤 `uniq -d` 로 확인한다 |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.
