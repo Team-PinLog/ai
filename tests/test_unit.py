@@ -631,3 +631,69 @@ def test_gate_thresholds_are_the_ticket_completion_criteria():
 
     assert check_coverage_gate.LINE_MIN == 80.0
     assert check_coverage_gate.BRANCH_MIN == 80.0
+
+
+# ── 개인 검색 결과 컷 (S15P11A705-213) ──────────────────
+def _cut(monkeypatch, rows, **overrides):
+    """`SearchService._cut` 만 부른다 — DB·임베딩 클라이언트를 타지 않는 순수 계산이다."""
+    from app.service.search_service import SearchService
+
+    settings = _settings_with(monkeypatch, **overrides)
+    service = SearchService(db=None, embedding_client=None, settings=settings)
+    return [r["similarity"] for r in service._cut([{"similarity": s} for s in rows])]
+
+
+def test_cut_absolute_floor_drops_below_threshold(monkeypatch):
+    got = _cut(monkeypatch, [0.80, 0.35, 0.29, 0.10],
+               SEARCH_SIMILARITY_FLOOR="0.30", SEARCH_TOP_RATIO="0")
+    assert got == [0.80, 0.35]
+
+
+def test_cut_ratio_is_relative_to_top1(monkeypatch):
+    """같은 0.35 가 1위에 따라 살기도 죽기도 한다 — 그것이 τ_abs 로 대체되지 않는 이유다."""
+    high = _cut(monkeypatch, [0.80, 0.35], SEARCH_SIMILARITY_FLOOR="0", SEARCH_TOP_RATIO="0.60")
+    low = _cut(monkeypatch, [0.50, 0.35], SEARCH_SIMILARITY_FLOOR="0", SEARCH_TOP_RATIO="0.60")
+    assert high == [0.80]
+    assert low == [0.50, 0.35]
+
+
+def test_cut_ratio_baseline_is_the_pre_cut_top1(monkeypatch):
+    """1위가 τ_abs 에 걸려 사라져도 r 의 기준은 **그 1위**다.
+
+    살아남은 것의 1위로 기준을 옮기면 아무것도 더 잘리지 않는 자기충족 컷이 된다.
+    """
+    got = _cut(monkeypatch, [0.90, 0.40, 0.30],
+               SEARCH_SIMILARITY_FLOOR="0.35", SEARCH_TOP_RATIO="0.60")
+    # 기준 0.90×0.60=0.54 → 0.40·0.30 은 r 에서 이미 탈락. 0.90 은 τ_abs 를 넘는다
+    assert got == [0.90]
+
+
+def test_cut_can_return_zero_rows(monkeypatch):
+    """무관 질의에 억지 결과를 내밀지 않는 것이 τ_abs 의 존재 이유다."""
+    got = _cut(monkeypatch, [0.28, 0.22], SEARCH_SIMILARITY_FLOOR="0.30", SEARCH_TOP_RATIO="0.60")
+    assert got == []
+
+
+def test_cut_ratio_alone_never_empties(monkeypatch):
+    """r 은 1위를 언제나 남긴다. 이것이 r 하나로 충분하지 않은 이유다."""
+    got = _cut(monkeypatch, [0.05, 0.01], SEARCH_SIMILARITY_FLOOR="0", SEARCH_TOP_RATIO="0.90")
+    assert got == [0.05]
+
+
+def test_cut_disabled_when_both_zero(monkeypatch):
+    rows = [0.80, 0.02]
+    assert _cut(monkeypatch, rows, SEARCH_SIMILARITY_FLOOR="0", SEARCH_TOP_RATIO="0") == rows
+
+
+def test_cut_defaults_are_the_measured_values(monkeypatch):
+    """값이 조용히 바뀌면 컷은 남고 -213 의 측정 근거만 사라진다."""
+    s = _settings_with(monkeypatch)
+    assert s.search_similarity_floor == 0.30
+    assert s.search_top_ratio == 0.60
+
+
+def test_search_limit_default_matches_public_contract():
+    """공용 계약 08 §6.1 의 `size` 기본값 20. back 이 항상 명시해 보내 드러나지 않았다."""
+    from app.schema.search import SearchRequest
+
+    assert SearchRequest.model_fields["limit"].default == 20
