@@ -62,6 +62,24 @@ NO_LIMIT = 10_000
 DEMO_PROVIDER = "demo-seed"
 DATA_YAML = ROOT / "tools" / "demo_seed" / "demo_data.yaml"
 
+# **정답이 아예 없는 질의.** `demo_data.yaml` 의 12건은 전부 기대 정답을 가지므로 그것만
+# 재면 `τ_abs` 의 고유 가치가 드러나지 않는다 — `r` 은 top-1 을 언제나 남기는 컷이라
+# 「이 사용자에게 관련 기록이 하나도 없다」를 표현할 수 없고, 그것을 할 수 있는 것은
+# 절대 하한뿐이다. 그 차이를 재려면 정답이 없는 질의가 있어야 한다.
+#
+# 첫 항목은 `personal-search.md §6` 이 이미 실측한 그 질의다(top-1 0.3143). 나머지 넷은
+# 같은 성격 — PinLog 가 담는 것(음식점·카페·공원 방문 기록)과 범주가 다른 생활 검색이다.
+# 소유자마다 보유 Record 가 다르므로 **세 소유자 각각에게** 던진다. 질의 임베딩은
+# 소유자와 무관하므로 임베딩은 질의 수만큼만 든다.
+OFFTOPIC_QUERIES = (
+    "자동차 엔진오일 교환 정비소",
+    "치과 임플란트 상담 받을 곳",
+    "겨울 스키장 리프트권 파는 데",
+    "노트북 액정 수리 서비스센터",
+    "강아지 예방접종 동물병원",
+)
+OFFTOPIC_OWNERS = ("host", "jeongheon", "gahyeon")
+
 _MEMBERS = """
 SELECT provider_user_id, member_id FROM core.social_account WHERE provider = $1
 """
@@ -107,8 +125,10 @@ async def build(db: Database, settings) -> dict:
         dimension=settings.embedding_dimension,
     )
     # 배치 1회로 부른다. 건별로 부르면 호출 수만 늘고 재는 값은 같다.
-    log(f"  GMS 임베딩 배치 1회 ({len(queries)}건) …")
-    vectors = await client.embed([q["query"] for q in queries])
+    texts = [q["query"] for q in queries] + list(OFFTOPIC_QUERIES)
+    log(f"  GMS 임베딩 배치 1회 (검증 {len(queries)}건 + 무관 {len(OFFTOPIC_QUERIES)}건) …")
+    embedded = await client.embed(texts)
+    vectors, off_vectors = embedded[: len(queries)], embedded[len(queries) :]
 
     out_queries = []
     async with db.acquire() as conn:
@@ -153,12 +173,45 @@ async def build(db: Database, settings) -> dict:
             mark = f"{hit['rank']}위 {hit['sim']:.4f}" if hit else "미검색"
             log(f"    {q['query'][:28]:<30} as={who:<10} 후보 {len(results):>2}건 · 정답 {mark}")
 
+        log()
+        out_offtopic = []
+        for text, vec in zip(OFFTOPIC_QUERIES, off_vectors):
+            for who in OFFTOPIC_OWNERS:
+                rows = await context_embedding_repo.search(
+                    conn, members[who], settings.embedding_profile, vec, NO_LIMIT
+                )
+                results = [
+                    {
+                        "rank": i,
+                        "record_id": r["record_id"],
+                        "context_id": r["context_id"],
+                        "name": name_by_record.get(r["record_id"], f"record={r['record_id']}"),
+                        "sim": round(float(r["similarity"]), 6),
+                        # 정답이 없는 질의다. 어느 행도 기대 정답이 아니다.
+                        "is_expected": False,
+                    }
+                    for i, r in enumerate(rows, 1)
+                ]
+                out_offtopic.append(
+                    {
+                        "query": text,
+                        "as": who,
+                        "user_id": members[who],
+                        "owned_records": owned.get(members[who], 0),
+                        "results": results,
+                    }
+                )
+                log(f"    [무관] {text[:24]:<26} as={who:<10} 후보 {len(results):>2}건 · "
+                    f"top-1 {results[0]['sim']:.4f} {results[0]['name'][:16]}")
+
     return {
         "profile": settings.embedding_profile,
         "model": settings.embedding_model,
         "record_count": len(name_by_record),
         "query_count": len(out_queries),
+        "offtopic_count": len(out_offtopic),
         "queries": out_queries,
+        "offtopic": out_offtopic,
     }
 
 
