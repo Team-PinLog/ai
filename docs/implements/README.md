@@ -38,6 +38,9 @@
 | [2026-07-31-candidate-threshold.md](2026-07-31-candidate-threshold.md) | 검증 | 후보 유사도 임계값 τ 재검증 — 현행 `0.30` 유지. `fit min 0.3001` 과 `unfit max 0.4225` 가 겹쳐 τ 로는 「붙여도 되는가」를 가를 수 없다 |
 | [2026-07-31-search-cut.md](2026-07-31-search-cut.md) | 검증 | 검색 결과 컷 `τ_abs=0.30 · r=0.60` — 정답 누락 0/12 · 빈 결과 0/12 · 꼬리 76.3% 제거 · 무관 질의 11/15 침묵. **무관 질의를 1건에서 15건으로 늘리자 §6 의 「간격 +0.2120」이 -0.0176 으로 뒤집혀** 컷 미적용 판단을 개정 (S15P11A705-213) |
 
+
+| [2026-07-31-search-error-contract.md](2026-07-31-search-error-contract.md) | 구현 | 검색 API 오류 응답 계약 — `TransientError→503` · `PermanentError→502`, 500 을 「우리 코드의 결함」으로 비워 둔다. 운영 버그 `ai#69`(임베딩 502 → 검색 500). **`back` 은 500·503 을 구분하지 않으므로 바뀌는 것은 사용자 화면이 아니라 관측** (S15P11A705-220) |
+
 > **유형**: 구현(무엇을 만들었나) / 검증(어떻게 검증했나) / 감사(티켓·문서가 실물과 맞는가). 검증 성격 문서가 늘면 이 컬럼이 분류 기준이 된다.
 > **분리 트리거**: 리포트가 15개를 넘고 검증 유형이 절반 이상이면 `verification/` 분리를 검토한다.
 
@@ -75,5 +78,8 @@
 
 | I29 | 검색 결과 컷 하네스 `tools/search_cut/` — 질의를 한 번 임베딩해 굳히고 `τ_abs × r` 격자를 오프라인으로 훑는다(GMS 배치 1회). **정답이 없는 무관 질의 15건을 별도 축으로 둔다** — 검증 질의만 재면 `r` 이 무관 질의를 침묵시키지 못한다는 사실이 보이지 않는다. `verify_live.py` 가 실서버와 27/27 정확 일치를 확인(`-210` 과 달리 근사가 아니라 대조군 불필요) | [컷 측정](2026-07-31-search-cut.md), [tools/search_cut/](../../tools/search_cut/) |
 | I30 | 후보 임계값 τ 측정 하네스 `tools/tau_grid/` — 42×27 유사도 행렬을 한 번 떠서 임의의 τ 를 **GMS 호출 없이 재구성**한다. 라벨 83행(`labels.yaml`)이 채점 기준이고 `unclear` 를 따로 둬 낙관·비관 양 끝을 함께 낸다 |
+
+
+| I31 | 검색 API 오류 응답 계약 — `app/main.py` 예외 핸들러 2종과 그 계약 테스트 `tests/test_api_error_contract.py`(MockTransport→실제 client→router→응답을 한 요청으로 관통). 분류·재시도는 `-121` 이 이미 맞혔고 **비어 있던 것은 예외가 응답이 되는 지점**이었다. 로컬 스텁으로 502 를 만들어 `origin/dev` 500 ↔ 이 브랜치 503 을 대조 | [오류 응답 계약](2026-07-31-search-error-contract.md), [failure-recovery §2.5](../spec/failure-recovery.md), [ai#69](https://github.com/Team-PinLog/ai/issues/69) |
 
 > I6·I7·I8은 백엔드 아티팩트라 **back 레포** `docs/ai/implements`에 있습니다.
