@@ -54,12 +54,14 @@ IMPLEMENTS = """# 구현 리포트
 """
 
 
-def build_repo(tmp_path, *, files, indexed, numbers):
+def build_repo(tmp_path, *, files, indexed, numbers, ledger_links=None):
     """troubleshooting 만 인자대로 만들고 implements 는 항상 정합 상태로 둔다.
 
     `files` 는 실제로 만들 파일, `indexed` 는 파일 표에 넣을 행(중복을 만들려면 같은
-    이름을 두 번 준다), `numbers` 는 전수 표의 첫 칸이다.
+    이름을 두 번 준다), `numbers` 는 전수 표의 첫 칸이다. `ledger_links` 는 전수 표
+    행이 가리킬 문서(`{번호: 파일명}`) — 실제 전수 표도 일부 행만 문서를 가리킨다.
     """
+    ledger_links = ledger_links or {}
     troubleshooting = tmp_path / "docs" / "troubleshooting"
     implements = tmp_path / "docs" / "implements"
     troubleshooting.mkdir(parents=True)
@@ -71,7 +73,17 @@ def build_repo(tmp_path, *, files, indexed, numbers):
     (troubleshooting / "README.md").write_text(
         TROUBLESHOOTING.format(
             file_rows="\n".join(f"| [{name}]({name}) | 내용 |" for name in indexed),
-            ledger_rows="\n".join(f"| T{number} | 증상 | 해결 |" for number in numbers),
+            ledger_rows="\n".join(
+                "| T{n} | 증상 | {fix} |".format(
+                    n=number,
+                    fix=(
+                        f"[리포트]({ledger_links[number]})"
+                        if number in ledger_links
+                        else "해결"
+                    ),
+                )
+                for number in numbers
+            ),
         ),
         encoding="utf-8",
     )
@@ -167,6 +179,54 @@ def test_사고_3_파일_표가_낡으면_고아로_잡는다(tmp_path):
     assert "개별 문서" in findings[0].remedy
 
 
+def test_사고_5_전수_표에만_있는_문서를_잡는다(tmp_path):
+    """`-223` 의 리포트가 전수 표 I33 에만 있고 파일 표에 없었다 — 중앙이 `-205` 로 발견."""
+    root = build_repo(
+        tmp_path,
+        files=["a.md", "b.md"],
+        indexed=["a.md"],
+        numbers=[1, 2],
+        ledger_links={2: "b.md"},
+    )
+    findings = findings_of(root)
+    # 한 문제에 한 줄. 고아가 같은 파일을 또 잡으면 고칠 곳이 둘인 것처럼 읽힌다.
+    assert [finding.kind for finding in findings] == ["표 누락"]
+    assert "b.md" in findings[0].detail
+    assert "README.md:" in findings[0].detail  # 전수 표의 어느 줄인지 지목한다
+    assert "| [b.md](b.md) |" in findings[0].remedy
+
+
+def test_전수_표가_없는_파일을_가리키면_잡는다(tmp_path):
+    """파일 표만 보던 「누락」이 못 잡던 구멍 — 전수 표 링크는 존재 검사를 안 받았다."""
+    root = build_repo(
+        tmp_path,
+        files=["a.md"],
+        indexed=["a.md"],
+        numbers=[1, 2],
+        ledger_links={2: "없다.md"},
+    )
+    findings = findings_of(root)
+    assert [finding.kind for finding in findings] == ["표 누락"]
+    assert "파일도 없다" in findings[0].detail
+
+
+def test_반대_방향은_검사하지_않는다(tmp_path):
+    """파일 표에 있는데 전수 표가 안 가리키는 것은 **정상**이다.
+
+    `docs/troubleshooting` 의 전수 표는 설계상 문서를 가리키지 않는다(T↔문서 매핑은
+    파일 표의 `(T16~T18)` 표기가 유일한 출처다). 이 방향을 켜면 정상 문서 15건이 전부
+    위반으로 나오고, `docs/implements` 도 문서 없는 산출 때문에 7건이 걸린다.
+    """
+    root = build_repo(
+        tmp_path,
+        files=["a.md", "b.md"],
+        indexed=["a.md", "b.md"],
+        numbers=[1, 2],
+        ledger_links={1: "a.md"},  # b.md 는 전수 표가 가리키지 않는다
+    )
+    assert findings_of(root) == []
+
+
 def test_색인이_가리키는_파일이_없으면_잡는다(tmp_path):
     root = build_repo(
         tmp_path,
@@ -228,11 +288,11 @@ def test_색인이_없으면_실패다(tmp_path):
         check_repository(root)
 
 
-def test_두_표의_목록_불일치는_검사하지_않는다(tmp_path):
-    """표 이중화가 07-31 사고 3 의 **원인**이다. 일치 검사는 문제를 규칙으로 승격시킨다.
+def test_두_표의_내용_불일치는_검사하지_않는다(tmp_path):
+    """**누락만** 본다(④). 설명 문구·번호 표기까지 맞추라고 하면 이중화를 규칙으로 굳힌다.
 
-    각 표는 파일 시스템에만 대조한다. 전수 표에 링크가 없어도(있어도) 파일 표가
-    정합이면 통과다 — 구조 판단은 중앙 몫이고 이 검사가 선점하지 않는다.
+    전수 표에 문서를 안 가리키는 행이 아무리 많아도(문서 없는 산출이 그렇다) 통과다.
+    구조 판단은 중앙 몫이고 이 검사가 선점하지 않는다.
     """
     root = build_repo(tmp_path, files=["a.md"], indexed=["a.md"], numbers=[1, 2, 3])
     assert findings_of(root) == []

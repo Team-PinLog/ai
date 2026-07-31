@@ -11,14 +11,25 @@ T53 중복, 하네스 소실. **대응이 다섯 번 다 「문서에 문장 추
 
     ① 번호 중복    전수 표에서 T## · I## 이 같은 번호를 두 번 쓰면 실패
     ③ 고아 · 누락  파일 표가 가리키는 파일이 없거나, 있는 파일이 파일 표에 없으면 실패
+    ④ 표 누락      전수 표가 가리키는 문서가 파일 표에 없으면 실패
 
 번호가 **연속인지는 검사하지 않는다.** `T9`·`T10` 은 백엔드 아티팩트라 `back` 레포에
 있고, 결번은 정상 상태다. 결번을 오류로 만들면 이 검사가 없는 규칙을 만들어 낸다.
 
-**두 표(파일 표 · 전수 표)의 목록이 서로 일치하는지도 검사하지 않는다.** 표가 둘로
-나뉜 것 자체가 07-31 사고 `3`(파일 표 미갱신)의 원인이므로, 일치 검사를 붙이면 문제를
-규칙으로 승격시키는 셈이 된다. 검사는 각 표를 **파일 시스템** 하나에만 대조한다.
-표를 하나로 줄일 수 있는지는 이 PR 의 조사 항목이고 판단은 중앙이 한다.
+**두 표(파일 표 · 전수 표)가 서로 일치하는지는 검사하지 않는다 — 누락만 본다(④).**
+표가 둘로 나뉜 것 자체가 07-31 사고 `3`(파일 표 미갱신)의 원인이므로, 설명 문구나 번호
+표기까지 맞추라고 하면 문제를 규칙으로 승격시키는 셈이 된다. 누락은 다르다 — 한쪽에만
+적힌 문서는 사고이지 편집 재량이 아니다(07-31 사고 `5`).
+
+**④ 는 한 방향뿐이다(전수 → 파일).** 반대 방향(파일 표에 있는데 전수 표가 안 가리킨다)
+은 검사할 수 없다 — `docs/troubleshooting` 의 전수 표는 **설계상 문서를 가리키지 않고**
+(T↔문서 매핑은 파일 표의 `(T16~T18)` 표기가 유일한 출처다) 그 방향을 켜면 정상 문서
+15건이 전부 위반으로 나온다. `docs/implements` 도 문서 없는 산출(`docs#2`·로컬 메모리)이
+전수 표에 섞여 있어 7건이 걸린다. 근거는 `docs/implements/2026-07-31-docs-index-check.md`.
+
+**구조가 해소되면 ④ 는 불필요하다.** 표를 하나로 줄이거나 파일 표에 번호 컬럼을 두어
+매핑을 한 곳에 모으면 「두 곳에 같은 사실을 적는다」가 사라지고, 그때 이 검사를 지운다.
+남겨 두면 나중에 왜 있는지 모르는 검사가 된다.
 
 로컬과 CI 가 같은 코드를 쓰도록 Python 으로 둔다(셸이면 CI 전용이 된다).
 `tests/test_docs_index.py` 가 같은 함수를 부르므로 `pytest` 만 돌려도 신호가 나온다.
@@ -148,8 +159,12 @@ def parse_ledger(
     return numbers, malformed
 
 
-def parse_file_table(lines: list[str], offset: int) -> dict[str, list[int]]:
-    """파일 표가 가리키는 같은 디렉터리 문서. (파일명 -> 줄번호들)"""
+def parse_table_links(lines: list[str], offset: int) -> dict[str, list[int]]:
+    """표 행이 가리키는 같은 디렉터리 문서. (파일명 -> 줄번호들)
+
+    파일 표와 전수 표 양쪽에 쓴다 — 전수 표는 대부분의 행이 문서를 가리키지 않지만
+    (`docs#2`, 로컬 메모리, `spec/`) 가리키는 행은 파일 표와 같은 형태다.
+    """
     entries: dict[str, list[int]] = {}
     for index, line in enumerate(lines):
         if first_cell(line) is None:
@@ -196,7 +211,8 @@ def check_index(root: Path, spec: IndexSpec) -> IndexReport:
     file_offset, file_lines = find_section(lines, spec.file_section, source)
 
     numbers, malformed = parse_ledger(ledger_lines, ledger_offset, spec.prefix)
-    entries = parse_file_table(file_lines, file_offset)
+    entries = parse_table_links(file_lines, file_offset)
+    ledger_links = parse_table_links(ledger_lines, ledger_offset)
 
     findings: list[Finding] = []
 
@@ -275,9 +291,45 @@ def check_index(root: Path, spec: IndexSpec) -> IndexReport:
             )
         )
 
-    # ③ 고아 — 파일이 있는데 색인에 없다. 07-31 사고 3 이 이것이다.
     actual = {path.name for path in directory.glob("*.md") if path.name != INDEX_FILENAME}
-    for name in sorted(actual - set(entries)):
+
+    # ④ 표 누락 — 전수 표는 가리키는데 파일 표에 없다. 07-31 사고 5 가 이것이다
+    #    (`-223` 의 리포트가 I33 에만 있었다). 한 방향뿐인 이유는 모듈 docstring 참조.
+    #    구조가 해소되면 이 검사는 불필요하다.
+    #
+    #    같은 파일을 아래 ③ 고아가 또 잡지 않도록 여기서 처리한 것을 빼 둔다 — 한 문제에
+    #    두 줄이 나오면 고칠 곳이 둘인 것처럼 읽힌다.
+    ledger_only = sorted(set(ledger_links) - set(entries))
+    for name in ledger_only:
+        where = ", ".join(f"{source}:{lineno}" for lineno in ledger_links[name])
+        exists = (directory / name).is_file()
+        findings.append(
+            Finding(
+                label=spec.label,
+                kind="표 누락",
+                detail=(
+                    f"전수 표가 가리키는 {name} 이 파일 표에 없다 ({where})"
+                    + ("" if exists else f" — {spec.directory}/ 에 파일도 없다")
+                ),
+                remedy=(
+                    (
+                        f"{source} 의 「{spec.file_section}」 표에 "
+                        f"`| [{name}]({name}) | ... |` 행을 추가한다.\n"
+                        "전수 표에 행을 더할 때 파일 표를 잊는 것이 07-31 사고 3·5 다 — "
+                        "두 표는 서로 다른 축이라 한쪽이 다른 쪽을 대신하지 못한다."
+                    )
+                    if exists
+                    else (
+                        "파일명을 바꿨으면 전수 표의 링크를 같이 고친다.\n"
+                        "문서를 아직 안 썼으면 전수 표의 링크를 지우거나 문서를 만든다 — "
+                        "가리키는 곳이 없는 링크는 색인이 아니다."
+                    )
+                ),
+            )
+        )
+
+    # ③ 고아 — 파일이 있는데 색인에 없다. 07-31 사고 3 이 이것이다.
+    for name in sorted(actual - set(entries) - set(ledger_only)):
         findings.append(
             Finding(
                 label=spec.label,
