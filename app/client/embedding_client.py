@@ -20,6 +20,7 @@ from app.client._calls import meter
 from app.client._usage import record as record_usage
 from app.client.retry import RetryPolicy, call_with_retry
 from app.core.errors import PermanentError, TransientError, classify_http_status
+from app.core.redact import redact, redact_body
 
 _BATCH = 128
 _TIMEOUT = 60.0
@@ -93,13 +94,19 @@ class EmbeddingClient:
                 # 타임아웃·연결 실패·DNS 실패 (§2.1). httpx.TimeoutException·ConnectError가
                 # 모두 HTTPError 하위이므로 한 곳에서 일시 오류로 받는다.
                 rec.status = type(exc).__name__
-                raise TransientError(f"embedding request failed: {exc}") from exc
+                # 메시지에 요청 URL이 섞여 들어올 수 있다(DNS 실패·프록시 오류). `rec.status`를
+                # 타입 이름으로 두는 것만으로는 부족하다 — 이 메시지가 그대로 로그가 된다.
+                raise TransientError(
+                    f"embedding request failed: {redact(str(exc))}"
+                ) from exc
 
             rec.status = resp.status_code
             if resp.status_code != 200:
+                # 본문 200자는 "400이 왜 났는지"의 유일한 단서라 지우지 않는다. 대신
+                # 자격 증명·endpoint 만 마스킹한다(S15P11A705-205, `core/redact.py`).
                 raise classify_http_status(
                     resp.status_code,
-                    f"embedding error: {resp.status_code} {resp.text[:200]}",
+                    f"embedding error: {resp.status_code} {redact_body(resp.text)}",
                 )
 
             try:
