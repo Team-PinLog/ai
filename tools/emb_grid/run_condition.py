@@ -267,17 +267,31 @@ def measure_tokens(path: Path) -> dict:
     return {"by_kind": dict(agg), "total": grand}
 
 
-async def measure_storage(db: Database) -> dict:
-    """저장 비용. 차원이 2배면 벡터도 2배라는 것을 실측으로 확인한다."""
+async def measure_storage(db: Database, cond) -> dict:
+    """저장 비용. 차원이 2배면 벡터도 2배라는 것을 실측으로 확인한다.
+
+    **행 수와 벡터 크기는 이 조건 profile 로 한정해 센다.** 같은 DB 에 앞선 실행이 남긴 행이
+    있으면(`--reset` 은 demo-seed 소유만 지우므로 다른 member 의 고아 행은 남는다) 조건과
+    무관한 벡터가 평균에 섞여 든다. `pg_total_relation_size` 만 테이블 전체값이라 참고용이다.
+    """
     head("저장 비용 — ai.context_embedding")
     async with db.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT count(*) AS rows, "
             "       coalesce(avg(pg_column_size(embedding)), 0)::bigint AS avg_vec, "
             "       pg_total_relation_size('ai.context_embedding') AS total_bytes "
-            "FROM ai.context_embedding"
+            "FROM ai.context_embedding WHERE embedding_profile = $1",
+            cond.profile,
         )
-        presets = await conn.fetchval("SELECT count(*) FROM ai.keyword_preset")
+        other = await conn.fetchval(
+            "SELECT count(*) FROM ai.context_embedding WHERE embedding_profile <> $1",
+            cond.profile,
+        )
+        if other:
+            log(f"  [주의] 이 조건 밖 행이 {other}건 남아 있다 — 테이블 전체값에만 섞인다")
+        presets = await conn.fetchval(
+            "SELECT count(*) FROM ai.keyword_preset WHERE embedding_profile = $1", cond.profile
+        )
     log(f"  행        {row['rows']}")
     log(f"  벡터 1건   {row['avg_vec']:,} bytes")
     log(f"  테이블 전체 {row['total_bytes']:,} bytes (인덱스·TOAST 포함)")
@@ -328,9 +342,9 @@ async def main() -> int:
 
         search = await measure_search(ai, db, load_data())
         tokens = measure_tokens(token_log)
-        storage = await measure_storage(db)
+        storage = await measure_storage(db, cond)
     finally:
-        await db.close()
+        await db.disconnect()
 
     result = {
         "condition": cond.key,
