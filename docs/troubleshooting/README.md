@@ -22,6 +22,13 @@
 | [2026-07-27-e2e-env-issues.md](2026-07-27-e2e-env-issues.md) | E2E 검증 환경 이슈 — `.env` CRLF·register_vector 미등록·한글 인코딩 (T22~T24) |
 | [2026-07-28-shared-worktree-and-env-cache.md](2026-07-28-shared-worktree-and-env-cache.md) | 멀티세션 워킹트리 오염 · import 시점 `.env` 캐시 (T25·T26) |
 | [2026-07-30-seeding-quota-and-encoding.md](2026-07-30-seeding-quota-and-encoding.md) | GMS 판정 쿼터·콘솔 인코딩으로 인한 시딩 중단 (T27·T28) |
+| [2026-07-31-local-e2e-and-ci-pitfalls.md](2026-07-31-local-e2e-and-ci-pitfalls.md) | 로컬 E2E·CI 함정 — venv·로그 버퍼·jar 낙후·포트·로그인 쿠키 (T29~T36) |
+| [2026-07-31-tau-measurement.md](2026-07-31-tau-measurement.md) | 후보 임계값 τ 측정 — 틀린 진단·인코딩 재발·대조군 부재 (T37~T39) |
+| [2026-07-31-search-cut-measurement.md](2026-07-31-search-cut-measurement.md) | 검색 결과 컷 측정 — 반대 방향 질의 부재·worktree `.env`·배치 구성과 임베딩 재현성 (T40~T42) |
+| [2026-07-31-error-contract-pitfalls.md](2026-07-31-error-contract-pitfalls.md) | 오류 응답 계약 검증 — ASGITransport 예외 전파·GMS 스텁 URL 형식·시연 DB 자격증명·색인 갱신 중복 (T50~T52 · T56) |
+| [2026-07-31-judge-prompt-ab.md](2026-07-31-judge-prompt-ab.md) | 판정 프롬프트 A/B — 죽은 설정 키·라벨 커버리지·조건 노출·사전 기준·1회 분포·번호 충돌 (T43~T49) |
+| [2026-07-31-db-error-pitfalls.md](2026-07-31-db-error-pitfalls.md) | DB 오류 분류 — 접속 실패는 asyncpg 예외가 아니다·`min_size=1` 재현 불가·curl 한글 본문 (T53~T55) |
+| [2026-07-31-judge-vote.md](2026-07-31-judge-vote.md) | 판정 n회 다수결 — 사라진 선행 산출물·실패와 빈 선택의 혼동·전수 검정·번호 확정 시점 (T57~T60) |
 
 ## 문제 해결 — 전수 (AI 소유)
 
@@ -53,5 +60,37 @@
 | T26 | `main.py` 모듈 레벨 `create_app()` import 시점 `.env` 캐시 → API 3건만 401(로컬 `.env` 우연 일치로 은폐) | `settings` fixture에서 `get_settings()` 캐시 재설정 + conftest placeholder env 선주입 |
 | T27 | **GMS 판정 쿼터는 상수가 아니다** — 공용 게이트웨이라 시점·프로바이더 경로별로 다르다. 07-29 분당 2건 → 07-30 분당 30건 이상 | `--pace` 기본값 1. 방어는 `retry.py` 백오프 + 회수 루프. 근본 대책은 벤더 폴백(`-175`) |
 | T28 | 콘솔이 cp949면 `—` 한 글자에 `UnicodeEncodeError` → **`--reset` 직후 죽어 데이터만 지워진 상태**가 됨 | `sys.stdout.reconfigure(utf-8)` + `log()` 최후 방어. 호출자가 `PYTHONIOENCODING`을 기억하지 않게 (T22·T24 계열) |
+| T29 | `python -m uvicorn` 이 시스템 Python 을 타서 `No module named uvicorn` — **exit 0 이라 「완료」로 보인다** | `.venv/Scripts/python.exe -m uvicorn` |
+| T30 | 백그라운드 파이프(`\| tail`)가 서버 로그를 버퍼에 가둔다 — 살아 있는 동안 0바이트 | 파이프 대신 `> file 2>&1` |
+| T31 | `gms window` 가 안 나오는 것을 계측 실패로 오판 — **창은 타이머가 아니라 다음 호출이 닫는다** | 60초 뒤 1건 더 넣으면 나온다 |
+| T32 | `back` jar 이 낡으면 Flyway 가 `Detected applied migration not resolved locally: 6` 으로 기동 거부 | `git pull` 뒤 `./gradlew bootJar` |
+| T33 | `ai/.env` 의 `DATABASE_URL` 이 07-27 잔재 `:5433` — 시연 정본은 `:15432` | preflight 가 BLOCK 한다. 기본값은 그대로 |
+| T34 | 브라우저 로컬 테스트 로그인은 `logged_in=1` **정확 일치** — `true` 는 안 걸린다 | `access_token` + `logged_in=1` + `XSRF-TOKEN` 셋을 심는다 |
+| T35 | 검색이 소유자별로 갈려 계정을 잘못 잡으면 데이터가 없는 것처럼 보인다 | `social_account` 로 member 별 Context 수를 먼저 센다 |
+| T36 | CI 검사를 `dev` 에만 넣으면 **`main` 기반 PR 에 적용되지 않는다**(PR CI 는 head 워크플로로 돈다) | `hotfix/*` 로 `main` 에도 올린다 |
+| T37 | 「후보 임계값이 없어서 오분류가 난다」는 진단이 **틀렸다** — `_topk` 에 이미 있었고 테스트도 둘 있었다. 후보도 10개가 아니라 평균 7.4개 | 「기능이 없어서」는 grep 한 줄로 확인하고 쓴다. 실제 원인은 적합·부적합 유사도 분포의 겹침 |
+| T38 | 스크립트에만 T28 방어를 넣으면 탐색용 `python -c` 한 줄에서 다시 죽는다 — **앞줄은 이미 찍혀서 완료로 보인다** | 한 줄에는 `PYTHONIOENCODING=utf-8`, 반복할 것이면 파일로 옮긴다 |
+| T39 | 재판정 차이를 대조군 없이 읽으면 전부 조건 탓이 된다 — **같은 τ 로 다시 판정만 해도 Context 26% 가 흔들린다** | 판정(LLM) 계층 측정은 대조군을 같이 돌린다. 임베딩은 결정적이라 불필요 |
+| T40 | **정답이 있는 질의만 재면 컷의 절반이 안 보인다** — `r` 이 무관 질의를 15건 중 0건도 침묵시키지 못한다는 사실이 검증 질의 12건에서는 드러나지 않는다 | 걸러져야 하는 입력을 표본에 넣는다. 「0건」의 부호가 축마다 반대이므로 표를 가른다 |
+| T41 | worktree 에 `.env` 가 없어 `get_settings()` 가 `GMS_API_KEY` 부터 죽는다(`env_file` 은 CWD 기준·gitignore) | `.env` 를 worktree 에 복사하고 `DATABASE_URL` 만 환경변수로 덮는다. `.demo/` 키 분기(`-198`)와 같은 원인 |
+| T42 | **임베딩 배치 구성이 바뀌면** 같은 텍스트의 유사도가 `10⁻⁴` 규모로 흔들린다(0.5264→0.5258). 「임베딩은 결정적」은 같은 배치일 때의 이야기다 | 그 규모 차이가 결론을 가르는 값을 채택하지 않는다. 재현용으로 유사도 행렬을 커밋한다 |
+| T50 | `httpx.ASGITransport` 는 앱 예외를 **응답으로 바꾸지 않는다**(`raise_app_exceptions=True` 기본) — 「500 이 나간다」를 단언하려는데 예외가 테스트로 튄다 | 500 을 보려면 `raise_app_exceptions=False`. 무엇이 새는지 보려면 기본값 그대로 |
+| T51 | 로컬 GMS 스텁 URL 에 `/gmsapi/` 가 없으면 **앱이 기동에서 죽는다**(`_gms_base_url_shape`) — 증상이 「스텁이 안 불린다」가 아니라 「안 뜬다」다 | 스텁도 `/gmsapi/api.openai.com/v1/embeddings` 경로를 흉내낸다 |
+| T52 | 시연 DB 는 포트뿐 아니라 **비밀번호도 `.env` 와 다르다**(`pinlog-local`). T33 대로 `:15432` 만 고치면 `InvalidPasswordError` | DSN 일부만 고치지 않는다. `docker inspect` 로 컨테이너 env 를 직접 읽는다 |
+| T43 | `.env` 의 `PINLOG_JUDGE_MODEL` 은 `-175` 가 대체해 **읽히지 않는데** 값이 그럴듯해(체인 2순위) 리포트의 판정 모델을 잘못 적게 한다. 실제 응답은 체인 1순위 `gpt-4o-mini` | 측정 도구는 벤더를 인자로 받고, 읽은 값이 아니라 **답한 값**(`JudgeResult.model`)을 남긴다 |
+| T44 | `labels.yaml` 은 **현행 판정 83행만** 덮는다 — τ 스윕과 달리 재판정은 없던 행을 만들어 표 밖으로 나간다(24종). 빼고 세면 조건 비교가 기운다 | 원본은 고치지 않고 `labels_extra.yaml` 로 넓힌다. 남는 것은 `unlabeled` 로 세어 양극단으로 돌린다 |
+| T45 | 라벨을 붙일 때 **어느 조건이 고른 행인지 보이면** 라벨이 결론을 따라간다 — 증상이 없고 개선 폭만 부푼다 | 덤프에서 조건·회차를 뺀다. 본문과 `description` 만 보고 붙인다 |
+| T46 | 사전 기준(범위 비중첩)을 못 넘으면 자를 바꾸고 싶어진다. 표본이 늘면 그 기준은 **오히려 통과하기 어려워져** 교체가 정당한데, 교체 시점이 결과를 본 뒤다 | 표본을 늘리고 자를 **더한다**(순열검정). 앞의 자를 지우지 않고 둘 다 찍는다 |
+| T47 | DB 에 저장된 판정 **1회분**의 `confidence` 가 라벨을 깨끗이 가르는 것처럼 보인다(fit min 0.70 · unfit 0.30~). 한 번 더 판정받으면 분리가 사라진다 — **confidence 도 비결정적이다.** DB 조회가 공짜라 여러 번 볼 생각을 안 하게 된다 | 저장된 판정에서 발견한 문턱은 후속으로 올리기 전에 같은 조건으로 한 번 더 받아 대조한다(42회·70초). 확인용 회차는 `--outdir` 를 나눈다 |
+| T48 | 트러블슈팅 번호를 **분기 시점**의 마지막 다음으로 매기면, 같은 날 병렬로 병합된 티켓과 겹친다(`-213` 이 T40~T42 를 먼저 썼다). 색인 표는 정렬되지 않아 **중복이 나란히 서지 않는다** | PR 직전 `origin/dev` 로 rebase 한 **뒤에** 번호를 확정한다. 재번호는 매핑 한 번으로(역순 치환은 뒤섞인다), 남의 행은 건드리지 않는다 |
+| T49 | `open(p,'w').write(f(s))` 에서 `f` 가 죽으면 **파일이 0바이트로 남는다** — `'w'` 가 인자 평가 전에 truncate 한다. 고쳐서 재실행하면 빈 파일을 읽어 빈 결과를 써서 **조용히 성공한다** | 변환 결과를 먼저 만들고 임시 파일에 쓴 뒤 `os.replace`. `newline=''` 를 양쪽에. 문서 일괄 수정은 커밋 뒤에 돌린다 |
+| T53 | **DB 접속 실패는 `asyncpg` 예외가 아니다** — 포트 거부·DNS·타임아웃·풀 획득 타임아웃이 전부 stdlib `OSError` 다. `08xxx` 는 *붙어 있던* 연결이 끊길 때의 SQLSTATE 다. asyncpg 만 분류하면 **테스트는 전부 초록인데** 「DB 연결 실패가 503」만 거짓으로 남는다 | 접속 단계에서만 `OSError` 를 함께 번역하고, 분류를 repository 함수가 아니라 **세션 경계**에 건다(`pool.acquire()` 가 함수 밖이다) |
+| T54 | 닿지 않는 주소로 「요청 중 DB 불가」를 재현하려 하면 `create_pool` 이 `min_size` 만큼 즉시 접속해 **픽스처에서 죽는다.** `connect()` 를 건너뛰면 `RuntimeError`(우리 결함·500)라 다른 것을 측정한다 | 테스트용 `min_size=0` 풀로 접속 시점을 첫 `acquire()` 로 미룬다. 풀·드라이버·예외는 실물로 두고 **예외를 주입하지 않는다** |
+| T55 | Git Bash `curl -d` 로 한글 본문을 보내면 `{"detail":"There was an error parsing the body"}` `400` — **스키마 결함처럼 보인다** | 질의어만 ASCII 로 바꿔 같은 요청이 통과하면 원인은 본문 바이트다. 한글이 측정 대상이면 UTF-8 파일 + `--data-binary @file` |
+| T56 | `merge=union` 은 색인 행을 **갱신**하면 낡은 판을 되살려 같은 문서가 두 줄이 된다 — 추가만 할 때는 안 난다 | 행을 고쳤으면 병합 뒤 `uniq -d` 로 확인한다 |
+| T57 | 후속에 「하네스에 기록을 넣어 두었다」로 물려주면 **코드에 기능이 있다**는 뜻인데 읽는 쪽은 **데이터가 남아 있다**로 읽는다. `.prompt_ab/` 는 `.gitignore` 에 이름조차 없어 수명을 정한 사람이 없었고 worktree 와 함께 사라졌다 | 산출물은 **경로와 수명을 함께** 물려준다. 안 남길 파일도 `.gitignore` 에 이름과 이유를 적는다 |
+| T58 | 다수결은 「고르지 않았다」를 정보로 쓰므로 **「고르지 않았다」와 「묻지 못했다」가 같은 모양이면** 호출이 실패할수록 오분류가 줄어 보인다. 판정 1회 집계에서는 둘을 가를 이유가 없어 드러나지 않는다 | 분모를 성공 수가 아니라 **n 으로 고정**하고 정족수 미달이면 저장하지 않는다(`PROCESSING` 유지). 서비스와 측정이 같은 함수를 부른다 |
+| T59 | `score_ab.py` 의 순열검정은 근사가 아니라 **전수**라 조건 간 관측 수가 어긋나면 폭발한다(30 대 10 → C(40,10) ≈ 8.5억). 접어서 만드는 측정은 조건마다 관측 수가 자연히 달라진다 | 기술 수치는 관측 전부로 내고 **검정을 걸 때만** `--cap` 으로 수를 맞춘다. 자를 무르는 것과 표본을 맞추는 것은 다르다 |
+| T60 | 색인이 낡아 번호를 틀리게 하고(본문 T50~T52 인데 색인 T43~T45), **본문에서 세도 틀린다** — 세는 시점이 PR 보다 앞이면 그 사이 병합된 병렬 티켓을 못 본다. `-221` 이 T53~T56·I32 를 먼저 가져갔다 | T48 의 처방이 유일하게 듣는다 — **병합 뒤에 번호를 확정한다.** 문서를 쓰는 동안은 번호를 미루고 매핑 한 번으로 치환. `T` 와 `I` 를 함께 본다 |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.

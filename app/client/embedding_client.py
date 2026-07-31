@@ -16,6 +16,7 @@ from functools import partial
 
 import httpx
 
+from app.client._calls import meter
 from app.client._usage import record as record_usage
 from app.client.retry import RetryPolicy, call_with_retry
 from app.core.errors import PermanentError, TransientError, classify_http_status
@@ -79,37 +80,45 @@ class EmbeddingClient:
     async def _embed_batch(
         self, client: httpx.AsyncClient, batch: list[str]
     ) -> list[list[float]]:
-        try:
-            resp = await client.post(
-                f"{self._base}/embeddings",
-                headers={"Authorization": f"Bearer {self._key}"},
-                json={"model": self._model, "input": batch},
-            )
-        except httpx.HTTPError as exc:
-            # 타임아웃·연결 실패·DNS 실패 (§2.1). httpx.TimeoutException·ConnectError가
-            # 모두 HTTPError 하위이므로 한 곳에서 일시 오류로 받는다.
-            raise TransientError(f"embedding request failed: {exc}") from exc
-
-        if resp.status_code != 200:
-            raise classify_http_status(
-                resp.status_code,
-                f"embedding error: {resp.status_code} {resp.text[:200]}",
-            )
-
-        try:
-            payload = resp.json()
-            record_usage("embedding", payload)
-            data = sorted(payload["data"], key=lambda d: d["index"])
-            vectors = [item["embedding"] for item in data]
-        except (ValueError, KeyError, TypeError) as exc:
-            # 응답 형식 위반. 재시도해도 같은 형식이 오므로 영구 오류다(§2.2 입력 형식 오류).
-            # 분류되지 않은 예외로 새면 BackgroundTasks에 트레이스백만 남고 단계는
-            # PROCESSING에 머문다 — 영구 오류가 일시 오류처럼 행동하게 된다.
-            raise PermanentError(f"embedding response malformed: {exc}") from exc
-
-        for vec in vectors:
-            if len(vec) != self._dimension:
-                raise PermanentError(
-                    f"embedding dimension {len(vec)} != expected {self._dimension}"
+        # 계측 단위는 배치 1건 = API 호출 1회다(재시도 단위와 같다). 벤더를 붙이지
+        # 않는다 — 임베딩은 폴백 대상이 아니라 경로가 하나뿐이다(_usage.py 와 동일).
+        async with meter.call("embedding", model=self._model) as rec:
+            try:
+                resp = await client.post(
+                    f"{self._base}/embeddings",
+                    headers={"Authorization": f"Bearer {self._key}"},
+                    json={"model": self._model, "input": batch},
                 )
-        return vectors
+            except httpx.HTTPError as exc:
+                # 타임아웃·연결 실패·DNS 실패 (§2.1). httpx.TimeoutException·ConnectError가
+                # 모두 HTTPError 하위이므로 한 곳에서 일시 오류로 받는다.
+                rec.status = type(exc).__name__
+                raise TransientError(f"embedding request failed: {exc}") from exc
+
+            rec.status = resp.status_code
+            if resp.status_code != 200:
+                raise classify_http_status(
+                    resp.status_code,
+                    f"embedding error: {resp.status_code} {resp.text[:200]}",
+                )
+
+            try:
+                payload = resp.json()
+                record_usage("embedding", payload)
+                data = sorted(payload["data"], key=lambda d: d["index"])
+                vectors = [item["embedding"] for item in data]
+            except (ValueError, KeyError, TypeError) as exc:
+                # 응답 형식 위반. 재시도해도 같은 형식이 오므로 영구 오류다(§2.2 입력 형식 오류).
+                # 분류되지 않은 예외로 새면 BackgroundTasks에 트레이스백만 남고 단계는
+                # PROCESSING에 머문다 — 영구 오류가 일시 오류처럼 행동하게 된다.
+                raise PermanentError(f"embedding response malformed: {exc}") from exc
+
+            # 차원 검사도 계측 안에 둔다. 200 을 받고도 쓸 수 없는 응답이면 그 호출은
+            # 실패이고, `status=200 outcome=permanent` 조합이 그것을 게이트웨이 실패와
+            # 구분해 준다 — Profile 이 어긋난 배포에서는 이 칸만 올라간다.
+            for vec in vectors:
+                if len(vec) != self._dimension:
+                    raise PermanentError(
+                        f"embedding dimension {len(vec)} != expected {self._dimension}"
+                    )
+            return vectors

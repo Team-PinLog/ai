@@ -14,30 +14,86 @@ EXPIRY = 600
 # ── try_start ──────────────────────────────────────────
 async def test_try_start_pending_transitions(conn):
     await make_state(conn, context_id=1, embedding_status="PENDING")
-    assert await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY) == 1
+    outcome = await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY)
+    assert outcome.affected == 1
 
 
 async def test_try_start_cancelled_does_not_transition(conn):
     await make_state(conn, context_id=1, embedding_status="CANCELLED")
-    assert await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY) == 0
+    outcome = await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY)
+    assert outcome.affected == 0
 
 
 async def test_try_start_reclaims_expired_processing(conn):
     old = datetime.now(timezone.utc) - timedelta(minutes=11)
     await make_state(conn, context_id=1, embedding_status="PROCESSING", updated_at=old)
-    assert await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY) == 1
+    outcome = await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY)
+    assert outcome.affected == 1
 
 
 async def test_try_start_skips_fresh_processing(conn):
     await make_state(conn, context_id=1, embedding_status="PROCESSING")  # updated_at=now
-    assert await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY) == 0
+    outcome = await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY)
+    assert outcome.affected == 0
 
 
 async def test_try_start_keyword_requires_embedding_completed(conn):
     await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
-    assert await ai_state_repo.try_start(conn, 1, Stage.KEYWORD, EXPIRY) == 0
+    assert (await ai_state_repo.try_start(conn, 1, Stage.KEYWORD, EXPIRY)).affected == 0
     await make_state(conn, context_id=2, embedding_status="COMPLETED", keyword_status="PENDING")
-    assert await ai_state_repo.try_start(conn, 2, Stage.KEYWORD, EXPIRY) == 1
+    assert (await ai_state_repo.try_start(conn, 2, Stage.KEYWORD, EXPIRY)).affected == 1
+
+
+# ── try_start: 신규 시작과 재선점의 구별 (S15P11A705-197) ─────
+# rowcount 는 두 경우 모두 1이다. 그 1이 무엇이었는지가 `prev_status` 로만 드러나며,
+# 재선점 로그가 이 값 하나에 걸려 있다.
+async def test_try_start_reports_pending_as_fresh_start(conn):
+    await make_state(conn, context_id=1, embedding_status="PENDING")
+    outcome = await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY)
+    assert (outcome.started, outcome.prev_status, outcome.reclaimed) == (True, "PENDING", False)
+
+
+async def test_try_start_reports_expired_processing_as_reclaimed(conn):
+    old = datetime.now(timezone.utc) - timedelta(minutes=11)
+    await make_state(conn, context_id=1, embedding_status="PROCESSING", updated_at=old)
+    outcome = await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY)
+    assert (outcome.started, outcome.prev_status, outcome.reclaimed) == (True, "PROCESSING", True)
+
+
+async def test_fresh_processing_is_not_reclaimed_even_though_prev_matches(conn):
+    """`prev_status` 만 보고 판정하면 틀리는 경우.
+
+    아직 살아 있는 다른 워커의 PROCESSING 도 `prev_status` 는 'PROCESSING' 이다. 전이에
+    성공했는지를 함께 봐야 재선점이다 — `reclaimed` 가 `started` 를 곱하는 이유.
+    """
+    await make_state(conn, context_id=1, embedding_status="PROCESSING")  # updated_at=now
+    outcome = await ai_state_repo.try_start(conn, 1, Stage.EMBEDDING, EXPIRY)
+    assert outcome.prev_status == "PROCESSING"
+    assert (outcome.started, outcome.reclaimed) == (False, False)
+
+
+async def test_try_start_on_missing_state_row(conn):
+    """State 행이 없으면 전이도 없고 직전 상태도 없다 — 두 필드가 함께 성립해야 한다."""
+    outcome = await ai_state_repo.try_start(conn, 999, Stage.EMBEDDING, EXPIRY)
+    assert (outcome.affected, outcome.prev_status, outcome.reclaimed) == (0, None, False)
+
+
+async def test_try_start_keyword_reclaim_keeps_embedding_guard(conn):
+    """재선점 판정을 붙이면서 keyword 가드가 느슨해지지 않았는가.
+
+    CTE 로 감싸면서 WHERE 절을 옮겨 적었으므로, embedding 미완료인데 stale keyword
+    PROCESSING 이 있는 조합에서 전이가 새지 않는지 확인한다.
+    """
+    old = datetime.now(timezone.utc) - timedelta(minutes=11)
+    await make_state(
+        conn,
+        context_id=1,
+        embedding_status="PENDING",
+        keyword_status="PROCESSING",
+        updated_at=old,
+    )
+    outcome = await ai_state_repo.try_start(conn, 1, Stage.KEYWORD, EXPIRY)
+    assert (outcome.affected, outcome.reclaimed) == (0, False)
 
 
 # ── complete / fail ────────────────────────────────────

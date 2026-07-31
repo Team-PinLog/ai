@@ -28,7 +28,32 @@ env/
 # 들어가므로 원본을 커밋하지 않는다. 수치는 docs/implements/ 문서로 옮겨 남긴다.
 .grid/
 
+# tools/tau_grid 실행 산출물 — 유사도 행렬과 스윕 결과. `matrix.json` 은 Context 본문을
+# **전문 그대로** 담으므로(.grid/ 보다 강하다) 커밋하지 않는다. 수치와 판단은
+# docs/implements/ 로 옮기고, 재현은 matrix.py 를 다시 돌려서 한다.
+.tau/
+
+# tools/prompt_ab 실행 산출물 — 회차별 판정 결과. `selections` 자체는 코드뿐이지만
+# 회차 파일이 조건 프롬프트 전문을 함께 담고, 무엇보다 **GMS 를 다시 부르면 값이 달라진다**
+# (판정은 비결정적이라 재현이 아니라 재측정이다). 수치와 판단은 docs/implements/ 로 옮긴다.
+.prompt_ab/
+
+# tools/prompt_ab 실행 산출물 — 회차별 판정 결과. `.tau/matrix.json` 에서 온 Context
+# 본문을 직접 담지는 않지만 그 본문에 대한 판정 기록이라 같은 취급으로 둔다.
+# `-219` 가 이 줄을 빠뜨려 회차 파일이 추적 대상으로 보였다(`-223` T57).
+.prompt_ab/
+
+# tools/judge_vote 실행 산출물 — 회차를 n회 다수결로 접은 합성 회차와 집계.
+# `.prompt_ab/` 에서 언제든 재구성되므로 남기지 않는다.
+.judge_vote/
+
 # tools/keyword_eval (평가 하네스는 test 브랜치 소유)
 tools/keyword_eval/.env
 tools/keyword_eval/.cache/
 tools/keyword_eval/compare_out.txt
+
+# tools/search_cut 실행 산출물. `matrix.json` 은 **커밋한다** — 다시 뜨려면 GMS 임베딩을
+# 부르고, 이 파일은 tools/tau_grid 와 달리 Context 본문을 담지 않는다(장소명까지).
+# 스윕 결과는 matrix 에서 언제든 재구성되므로 남기지 않는다.
+.search/*
+!.search/matrix.json
