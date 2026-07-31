@@ -53,5 +53,13 @@
 | T26 | `main.py` 모듈 레벨 `create_app()` import 시점 `.env` 캐시 → API 3건만 401(로컬 `.env` 우연 일치로 은폐) | `settings` fixture에서 `get_settings()` 캐시 재설정 + conftest placeholder env 선주입 |
 | T27 | **GMS 판정 쿼터는 상수가 아니다** — 공용 게이트웨이라 시점·프로바이더 경로별로 다르다. 07-29 분당 2건 → 07-30 분당 30건 이상 | `--pace` 기본값 1. 방어는 `retry.py` 백오프 + 회수 루프. 근본 대책은 벤더 폴백(`-175`) |
 | T28 | 콘솔이 cp949면 `—` 한 글자에 `UnicodeEncodeError` → **`--reset` 직후 죽어 데이터만 지워진 상태**가 됨 | `sys.stdout.reconfigure(utf-8)` + `log()` 최후 방어. 호출자가 `PYTHONIOENCODING`을 기억하지 않게 (T22·T24 계열) |
+| T29 | `python -m uvicorn` 이 시스템 Python 을 타서 `No module named uvicorn` — **exit 0 이라 「완료」로 보인다** | `.venv/Scripts/python.exe -m uvicorn` |
+| T30 | 백그라운드 파이프(`\| tail`)가 서버 로그를 버퍼에 가둔다 — 살아 있는 동안 0바이트 | 파이프 대신 `> file 2>&1` |
+| T31 | `gms window` 가 안 나오는 것을 계측 실패로 오판 — **창은 타이머가 아니라 다음 호출이 닫는다** | 60초 뒤 1건 더 넣으면 나온다 |
+| T32 | `back` jar 이 낡으면 Flyway 가 `Detected applied migration not resolved locally: 6` 으로 기동 거부 | `git pull` 뒤 `./gradlew bootJar` |
+| T33 | `ai/.env` 의 `DATABASE_URL` 이 07-27 잔재 `:5433` — 시연 정본은 `:15432` | preflight 가 BLOCK 한다. 기본값은 그대로 |
+| T34 | 브라우저 로컬 테스트 로그인은 `logged_in=1` **정확 일치** — `true` 는 안 걸린다 | `access_token` + `logged_in=1` + `XSRF-TOKEN` 셋을 심는다 |
+| T35 | 검색이 소유자별로 갈려 계정을 잘못 잡으면 데이터가 없는 것처럼 보인다 | `social_account` 로 member 별 Context 수를 먼저 센다 |
+| T36 | CI 검사를 `dev` 에만 넣으면 **`main` 기반 PR 에 적용되지 않는다**(PR CI 는 head 워크플로로 돈다) | `hotfix/*` 로 `main` 에도 올린다 |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.
