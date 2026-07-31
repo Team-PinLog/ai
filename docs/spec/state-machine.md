@@ -136,8 +136,8 @@ status 조건이 그대로 방어선이 됩니다([deletion-race-control.md](del
 ### 3.2 영향 행 수 0이면 중단
 
 ```python
-affected = await ai_state_repo.try_start(session, context_id, stage)
-if affected == 0:
+start = await ai_state_repo.try_start(session, context_id, stage)
+if not start.started:
     return  # 이 단계를 시작하지 않는다. 예외가 아니다.
 ```
 
@@ -146,8 +146,14 @@ if affected == 0:
 - **영향 행 수 0은 정상 종료입니다.** 예외를 던지거나 에러 로그 레벨로 기록하지 않습니다.
   정상 경합의 결과이며, 검증 시나리오 6(수정 후 구 `context_id` 재처리 요청),
   9(중복 요청), 18(재스캔 후보 선택 후 삭제)의 기대 동작입니다.
-- repository는 `rowcount`를 그대로 반환하고, 중단 여부는 service가 판단합니다.
+- repository는 `rowcount`와 **UPDATE 직전의 단계 상태**를 함께 반환하고, 중단 여부는
+  service가 판단합니다. 직전 상태는 신규 시작(`PENDING`)과 만료 재선점(`PROCESSING`)을
+  가르기 위한 것입니다 — 두 경우가 같은 UPDATE를 타고 같은 `1`을 돌려주므로 `rowcount`
+  만으로는 구분되지 않는데, 재선점은 **앞선 처리가 만료 안에 끝나지 못했다**는 관측
+  가치가 있는 사건입니다(`S15P11A705-197`).
 - 0인 이유를 알기 위해 다시 SELECT하지 않습니다. 이유를 알아도 할 일이 달라지지 않습니다.
+  위의 직전 상태는 추가 조회가 아니라 **같은 UPDATE 문장의 CTE**이며, `1`이 무엇이었는지를
+  알기 위한 것입니다. 이 규칙은 그대로입니다.
 - Embedding 단계가 0으로 중단되어도 Keyword 단계 시도는 별도로 판단합니다.
   Embedding이 이미 COMPLETED여서 0이 나온 경우가 정확히 부분 재개 경로입니다.
 

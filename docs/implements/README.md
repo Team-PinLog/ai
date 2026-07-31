@@ -68,4 +68,6 @@
 
 | I27 | 임베딩 4조건 측정 하네스 `tools/emb_grid/` — 조건 정본 하나(`conditions.py`)를 셸에 `eval` 로 넘겨 값이 갈라지지 않게 하고, 조건이 환경과 어긋나면 **재기 전에 멈춘다**(profile·차원·프리셋 적재 여부·FastAPI 도달). `alter_dim.py` 는 로컬 DB 차원을 바꾸고 되돌린다 — Flyway 를 만들지 않는 것이 이 측정의 계약이다 | [4조건 측정](2026-07-31-embedding-grid.md), [tools/emb_grid/](../../tools/emb_grid/) |
 
+| I28 | GMS 호출·재선점 로그 계측 — 호출 1회당 벤더·모델·상태·결과 분류·지연, 60초 창 실패율 집계, 만료 `PROCESSING` 재선점. `_usage.py`(토큰)와 합치지 않은 근거와 `try_start` CTE 재작성. **httpx 가 요청 URL 을 INFO 로 흘리던 것을 함께 차단** | [GMS 호출 관측](2026-07-31-gms-call-observability.md), [failure-recovery §2.4](../spec/failure-recovery.md) |
+
 > I6·I7·I8은 백엔드 아티팩트라 **back 레포** `docs/ai/implements`에 있습니다.

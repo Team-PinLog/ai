@@ -430,6 +430,21 @@ async def test_request_url_never_appears_in_any_log_record(caplog):
         httpx_logger.setLevel(original)
 
 
+def test_flush_failure_is_swallowed(monkeypatch):
+    """종료 경로의 계측도 종료를 막지 않는다.
+
+    `flush()` 는 lifespan 의 `finally` 에서 불린다(`app/main.py`). 여기서 예외가 새면
+    DB 커넥션 정리가 건너뛰어진다 — 계측이 종료를 망가뜨리는 정확한 경로다.
+    """
+    meter = CallMeter()
+
+    def explode(*_args, **_kwargs):
+        raise RuntimeError("clock is broken")
+
+    monkeypatch.setattr(meter, "_clock", explode)
+    meter.flush()  # 예외가 나면 이 테스트가 실패한다
+
+
 async def test_unclassified_exception_is_flagged(caplog):
     """두 분류 어디에도 안 걸린 예외는 ERROR 다.
 

@@ -70,14 +70,15 @@ _LEVEL = {
 _FAILURES = (TRANSIENT, PERMANENT, SCHEMA, UNCLASSIFIED)
 
 
-def classify_outcome(exc: BaseException | None) -> str:
+def classify_outcome(exc: BaseException) -> str:
     """호출 밖으로 나간 예외를 결과 분류로. `SchemaViolationError` 를 먼저 본다.
 
     그것이 `TransientError` 의 하위 타입이라(errors.py) 순서를 뒤집으면 스키마 위반이
     전부 transient 로 접혀 SCHEMA 칸이 영영 0 이 된다.
+
+    성공 경로는 여기 오지 않는다 — `call()` 이 `OK` 를 직접 넘긴다. `exc=None` 분기를
+    두지 않는 이유이며, 두면 어느 테스트도 밟지 않는 줄이 하나 는다.
     """
-    if exc is None:
-        return OK
     if isinstance(exc, SchemaViolationError):
         return SCHEMA
     if isinstance(exc, TransientError):
