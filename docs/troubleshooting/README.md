@@ -25,7 +25,7 @@
 | [2026-07-31-local-e2e-and-ci-pitfalls.md](2026-07-31-local-e2e-and-ci-pitfalls.md) | 로컬 E2E·CI 함정 — venv·로그 버퍼·jar 낙후·포트·로그인 쿠키 (T29~T36) |
 | [2026-07-31-tau-measurement.md](2026-07-31-tau-measurement.md) | 후보 임계값 τ 측정 — 틀린 진단·인코딩 재발·대조군 부재 (T37~T39) |
 | [2026-07-31-search-cut-measurement.md](2026-07-31-search-cut-measurement.md) | 검색 결과 컷 측정 — 반대 방향 질의 부재·worktree `.env`·배치 구성과 임베딩 재현성 (T40~T42) |
-| [2026-07-31-error-contract-pitfalls.md](2026-07-31-error-contract-pitfalls.md) | 오류 응답 계약 검증 — ASGITransport 예외 전파·GMS 스텁 URL 형식·시연 DB 자격증명 (T43~T45) |
+| [2026-07-31-error-contract-pitfalls.md](2026-07-31-error-contract-pitfalls.md) | 오류 응답 계약 검증 — ASGITransport 예외 전파·GMS 스텁 URL 형식·시연 DB 자격증명·색인 갱신 중복 (T50~T52 · T56) |
 | [2026-07-31-judge-prompt-ab.md](2026-07-31-judge-prompt-ab.md) | 판정 프롬프트 A/B — 죽은 설정 키·라벨 커버리지·조건 노출·사전 기준·1회 분포·번호 충돌 (T43~T49) |
 | [2026-07-31-db-error-pitfalls.md](2026-07-31-db-error-pitfalls.md) | DB 오류 분류 — 접속 실패는 asyncpg 예외가 아니다·`min_size=1` 재현 불가·curl 한글 본문 (T53~T55) |
 
