@@ -1,0 +1,134 @@
+# 현행 τ=0.30 판정이 붙인 83행에 대한 적합성 라벨.
+#
+# **정답 라벨이 없는 문제라 사람이 판정할 수밖에 없다.** 그 판정을 파일로 굳히는 이유는
+# 재현이다 — τ 를 바꿔도 같은 라벨로 다시 세고, 다음 사람이 개별 행에 이의를 제기할 수
+# 있다. 판정자의 머릿속에만 있으면 τ 를 다시 정할 때 처음부터 다시 봐야 한다.
+#
+# ## 판정 기준
+#
+# 각 행은 「이 Context 에 이 키워드가 붙는 것이 맞는가」다. **프리셋의 `description` 을
+# 기준으로 삼는다** — 표시명(`display_name`)의 일상적 어감이 아니라 정의된 의미다.
+# 예: `QUICK_STOP 간단하게` 의 정의는 "짧게 들르는 방문. 테이크아웃·잠깐 요기하는 상황"
+# 이므로 「간단히 맛있었다」 같은 어감은 근거가 되지 않는다.
+#
+#   fit      프리셋의 정의가 본문에 **명시되거나 직접 함의**된다
+#   unfit    본문에 근거가 없다. 장소 종류·통념에서 온 연상이다
+#   unclear  통념상 그럴듯하나 본문이 말하지 않는다. 판정자에 따라 갈린다
+#
+# 두 규칙을 더 둔다. 둘 다 판정 프롬프트(`prompts/keyword_judgment.md`)의 규칙과
+# 같은 것이라, 라벨이 프롬프트보다 엄격해져 판정을 부당하게 깎는 일을 막는다.
+#
+#   부대시설·서비스 언급만으로는 fit 이 아니다 (주차·콘센트 등)
+#   COMPANION 계열은 **동행이 실제로 있었는가**를 본다. 「데이트 장소로 좋을 듯」 같은
+#   추정은 SITUATION(DATE_COURSE)에는 걸려도 COMPANION(WITH_PARTNER)에는 걸리지 않는다
+#
+# ## unclear 를 왜 따로 두는가
+#
+# fit 으로 밀면 τ 상향의 손실이 부풀고, unfit 으로 밀면 이득이 부풀어 **어느 쪽으로 접든
+# 결론이 그쪽으로 기운다.** 따로 세고 두 극단을 함께 보고한다(`score.py` 의 낙관·비관 경계).
+#
+# ## 이 라벨의 한계
+#
+# 판정자는 이 티켓의 작업자 한 명이고 교차 검증이 없다. **본문이 짧은 실사용자 기록에서
+# 특히 흔들린다** — 「가지튀김이 미쳤음」에 무엇이 붙어야 옳은지는 사람마다 다를 수 있다.
+# 다만 unfit 으로 표시한 10건은 대부분 장소 종류와 정면으로 어긋나는 것들이라
+# (라멘집→디저트, 라멘집→산책) 판정자가 바뀌어도 뒤집힐 여지가 작다고 본다.
+#
+# context_id 는 2026-07-31 시점 `pinlog-demo`(:15432) 기준이다. 재시딩하면 바뀐다 —
+# 그때는 `matrix.py` 를 다시 돌리고 이 파일을 본문 기준으로 다시 맞춰야 한다.
+
+meta:
+  labeled_at: "2026-07-31"
+  labeler: "S15P11A705-210 작업 세션"
+  profile: openai-text-embedding-3-small-1536-cosine-v1
+  basis: "현행 SIMILARITY_FLOOR=0.30 · KEYWORD_CANDIDATE_TOP_K=10 판정 결과 83행"
+
+labels:
+  # ── 가공 데모 데이터 (member 75~79) ──────────────────────────────────────
+  # 프리셋을 염두에 두고 작성된 문장이라 근거가 본문에 직접 있다.
+  - {context: 252, code: RAINY_DAY,   verdict: fit,     why: "비 오는 날 방문이 본문에 있다"}
+  - {context: 252, code: COZY,        verdict: fit,     why: "아늑하다고 본문이 직접 말한다"}
+  - {context: 252, code: RETRO,       verdict: fit,     why: "나무 창틀·옛날 다방 분위기"}
+  - {context: 253, code: STUDY_WORK,  verdict: fit,     why: "노트북으로 세 시간 작업"}
+  - {context: 253, code: ALONE,       verdict: fit,     why: "혼자 방문이 명시"}
+  - {context: 253, code: QUIET,       verdict: fit,     why: "말소리가 거의 없다고 명시"}
+  - {context: 254, code: WITH_FRIENDS, verdict: fit,    why: "친구들과 방문이 명시"}
+  - {context: 254, code: MEAL,        verdict: fit,     why: "저녁 식사"}
+  - {context: 254, code: LIVELY,      verdict: fit,     why: "시끌벅적·활기찬 분위기 명시"}
+  - {context: 255, code: VIEW_GOOD,   verdict: fit,     why: "창가 야경 명시"}
+  - {context: 255, code: ANNIVERSARY, verdict: fit,     why: "기념일 방문 명시"}
+  - {context: 255, code: DATE_COURSE, verdict: fit,     why: "연인과 특별한 날 방문"}
+  - {context: 255, code: WITH_PARTNER, verdict: fit,    why: "연인 동행 명시"}
+  - {context: 256, code: WITH_FAMILY, verdict: fit,     why: "부모님 동행 명시"}
+  - {context: 256, code: SPACIOUS,    verdict: fit,     why: "자리가 넓다고 명시"}
+  - {context: 256, code: MEAL,        verdict: fit,     why: "밥을 먹었다고 명시"}
+  - {context: 257, code: WALK,        verdict: fit,     why: "걷기 좋은 길·한 바퀴 돌았다"}
+  - {context: 257, code: EXHIBITION,  verdict: fit,     why: "사진 전시 구경 명시"}
+  - {context: 258, code: ALONE,       verdict: fit,     why: "혼자 앉아 있는 상황"}
+  - {context: 258, code: QUIET,       verdict: fit,     why: "조용할 때·사람 없을 때 명시"}
+  - {context: 259, code: WALK,        verdict: fit,     why: "걸어 올라가며 구경"}
+  - {context: 259, code: WITH_FRIENDS, verdict: unclear, why: "이야기를 나눈 동행은 있으나 친구인지 본문이 말하지 않는다"}
+  - {context: 260, code: DESSERT,     verdict: fit,     why: "케이크 명시"}
+  - {context: 260, code: COFFEE_CHAT, verdict: unclear, why: "커피는 마셨으나 대화·티타임 목적이 아니다"}
+  - {context: 261, code: TRENDY,      verdict: fit,     why: "세련된 인테리어·사진 많이 찍음"}
+  - {context: 261, code: DESSERT,     verdict: fit,     why: "디저트 명시"}
+  - {context: 262, code: GATHERING,   verdict: fit,     why: "여럿이 모이기로 한 자리"}
+  - {context: 262, code: WITH_FRIENDS, verdict: unclear, why: "동행은 있으나 친구인지 본문이 말하지 않는다"}
+  - {context: 262, code: MEAL,        verdict: fit,     why: "다 같이 밥 먹었다"}
+  - {context: 263, code: LIVELY,      verdict: fit,     why: "시끌시끌한 분위기 명시"}
+  - {context: 263, code: DRINK,       verdict: fit,     why: "2차·한잔씩 명시"}
+  - {context: 264, code: RAINY_DAY,   verdict: fit,     why: "비 오는 날 방문 명시"}
+  - {context: 264, code: ALONE,       verdict: fit,     why: "혼자 앉아 있기 좋다고 명시"}
+  - {context: 264, code: QUIET,       verdict: fit,     why: "조용하다고 명시"}
+  - {context: 264, code: COZY,        verdict: fit,     why: "포근하다고 명시"}
+
+  # ── 실사용자 기록 (member 80·81) ────────────────────────────────────────
+  # 본문이 짧고 장소명에만 있는 정보가 많다. unfit 10건이 전부 이 구간에 있다.
+  - {context: 265, code: WALK,        verdict: unfit,   why: "가게 안에 앉아 있는 기록이다. 걸으며 둘러보는 활동이 아니다(RETRO 가 맞으나 미선택)"}
+  - {context: 266, code: DESSERT,     verdict: fit,     why: "브런치 카페 + 리코타 샌드위치. 정의가 브런치를 포함한다"}
+  - {context: 266, code: COFFEE_CHAT, verdict: unclear, why: "카페이나 대화 목적이 본문에 없다. 방문 전 기록이다"}
+  - {context: 266, code: TRENDY,      verdict: unfit,   why: "사진·분위기 언급이 본문에 없다. 카페라는 종류에서 온 연상"}
+  - {context: 267, code: WITH_FRIENDS, verdict: unclear, why: "동행은 명시되나 「님」 호칭이라 친구인지 동료인지 갈린다"}
+  - {context: 267, code: MEAL,        verdict: fit,     why: "만두를 먹은 기록"}
+  - {context: 268, code: MEAL,        verdict: fit,     why: "오차즈케·치킨난반 — 끼니 메뉴"}
+  - {context: 269, code: QUIET,       verdict: unclear, why: "서점이라는 통념에서 온다. 본문은 조용함을 말하지 않는다"}
+  - {context: 269, code: SHOPPING,    verdict: fit,     why: "책을 사는 방문"}
+  - {context: 270, code: DATE_COURSE, verdict: fit,     why: "데이트 장소로 좋겠다고 본문이 말한다"}
+  - {context: 270, code: WITH_PARTNER, verdict: unclear, why: "데이트 장소 추정일 뿐 연인 동행이 아니다. COMPANION 규칙으로는 근거 부족"}
+  - {context: 270, code: COZY,        verdict: unclear, why: "「분위기 좋음」이 포근함인지 본문이 특정하지 않는다"}
+  - {context: 271, code: COZY,        verdict: fit,     why: "소파가 편했다는 언급"}
+  - {context: 273, code: MEAL,        verdict: fit,     why: "보쌈·전골·칼국수 — 끼니"}
+  - {context: 273, code: QUICK_STOP,  verdict: unfit,   why: "보쌈+낙지전골+칼국수는 정찬이다. 짧게 들르는 방문이 아니다"}
+  - {context: 274, code: DRINK,       verdict: unfit,   why: "음주 언급이 없다. 튀김 메뉴에서 온 연상"}
+  - {context: 275, code: TRENDY,      verdict: fit,     why: "우주 컨셉·인테리어 이쁨"}
+  - {context: 275, code: DESSERT,     verdict: fit,     why: "디저트 명시"}
+  - {context: 277, code: WITH_FRIENDS, verdict: fit,    why: "부트캠프 친구들과 명시"}
+  - {context: 277, code: MEAL,        verdict: fit,     why: "돈카츠 — 끼니"}
+  - {context: 278, code: MEAL,        verdict: fit,     why: "두부찌개 — 끼니"}
+  - {context: 279, code: WALK,        verdict: unfit,   why: "라멘집 기록이다. 걷는 활동이 본문에 없다"}
+  - {context: 280, code: WITH_FRIENDS, verdict: fit,    why: "친구들과 명시(2025·2026 두 번)"}
+  - {context: 281, code: MEAL,        verdict: fit,     why: "샌드위치 식당 — 끼니"}
+  - {context: 281, code: QUICK_STOP,  verdict: fit,     why: "샌드위치 — 잠깐 요기에 해당"}
+  - {context: 282, code: WALK,        verdict: fit,     why: "그네 공원에 갔다고 명시"}
+  - {context: 282, code: MEAL,        verdict: fit,     why: "치킨버거를 먹은 기록"}
+  - {context: 282, code: QUICK_STOP,  verdict: fit,     why: "사들고 갔다 — 테이크아웃"}
+  - {context: 283, code: DESSERT,     verdict: unfit,   why: "라멘집이다. 단것과 무관"}
+  - {context: 284, code: MEAL,        verdict: fit,     why: "연어덮밥 — 끼니"}
+  - {context: 284, code: WITH_FAMILY, verdict: unfit,   why: "가족 동행 언급이 없다"}
+  - {context: 285, code: MEAL,        verdict: fit,     why: "돼지국밥 — 끼니"}
+  - {context: 287, code: DESSERT,     verdict: fit,     why: "아이스크림 명시"}
+  - {context: 287, code: WALK,        verdict: fit,     why: "밥먹고 산책했다고 명시"}
+  - {context: 287, code: MEAL,        verdict: fit,     why: "밥먹고 — 끼니"}
+  - {context: 288, code: WITH_COLLEAGUES, verdict: fit, why: "팀플 상담 동행 — 팀 동료 자리"}
+  - {context: 288, code: MEAL,        verdict: fit,     why: "칼국수 — 끼니"}
+  - {context: 289, code: DRINK,       verdict: unfit,   why: "274 와 같은 본문. 음주 언급 없음"}
+  - {context: 290, code: TRENDY,      verdict: fit,     why: "우주 컨셉·인테리어 이쁨"}
+  - {context: 290, code: VIEW_GOOD,   verdict: unfit,   why: "언덕은 접근이 힘들다는 맥락이지 전망이 아니다. 275(같은 본문)에는 붙지 않았다"}
+  - {context: 290, code: DESSERT,     verdict: fit,     why: "디저트 명시"}
+  - {context: 291, code: QUIET,       verdict: unclear, why: "269 와 같은 본문. 서점 통념"}
+  - {context: 291, code: SHOPPING,    verdict: fit,     why: "책을 사는 방문"}
+  - {context: 292, code: DATE_COURSE, verdict: fit,     why: "데이트 장소로 좋겠다고 본문이 말한다"}
+  - {context: 292, code: WITH_PARTNER, verdict: unclear, why: "270 과 같은 본문. 연인 동행 아님"}
+  - {context: 292, code: TRENDY,      verdict: fit,     why: "분위기 좋음 — 292 에서는 분위기 축으로 붙었다"}
+  - {context: 293, code: MEAL,        verdict: fit,     why: "오차즈케·치킨난반 — 끼니"}
+  - {context: 293, code: CELEBRATION, verdict: unfit,   why: "축하 상황 언급이 없다. 268(같은 본문)에는 붙지 않았다"}

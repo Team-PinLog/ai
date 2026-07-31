@@ -28,6 +28,11 @@ env/
 # 들어가므로 원본을 커밋하지 않는다. 수치는 docs/implements/ 문서로 옮겨 남긴다.
 .grid/
 
+# tools/tau_grid 실행 산출물 — 유사도 행렬과 스윕 결과. `matrix.json` 은 Context 본문을
+# **전문 그대로** 담으므로(.grid/ 보다 강하다) 커밋하지 않는다. 수치와 판단은
+# docs/implements/ 로 옮기고, 재현은 matrix.py 를 다시 돌려서 한다.
+.tau/
+
 # tools/keyword_eval (평가 하네스는 test 브랜치 소유)
 tools/keyword_eval/.env
 tools/keyword_eval/.cache/
