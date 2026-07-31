@@ -6,6 +6,8 @@ FOR UPDATE로 embedding COMPLETED + keyword PROCESSING을 재검사한다.
 """
 from __future__ import annotations
 
+import asyncio
+
 import numpy as np
 
 from app.cache.preset_cache import PresetCache, PresetSnapshot
@@ -18,6 +20,7 @@ from app.repository import ai_state_repo, context_embedding_repo, context_keywor
 from app.repository.ai_state_repo import Stage
 from app.schema.context import ContextProcessRequest
 from app.schema.llm import JudgeResult
+from app.service import judge_vote
 from app.service._stage_log import reclaimed as _log_reclaimed
 
 log = get_logger("app.service.keyword")
@@ -98,7 +101,7 @@ class KeywordService:
             for p in candidates
         ]
         try:
-            result = await self._llm.judge(req.text, cand_dicts)
+            result = await self._judge_n(req.text, cand_dicts, req.contextId)
         except PermanentError as exc:
             # §2.2: 이 단계만 PROCESSING → FAILED. embedding이 COMPLETED면 그대로 둔다.
             # 이 핸들러가 없으면 400·401·403이 BackgroundTasks까지 새어 트레이스백만
@@ -122,6 +125,54 @@ class KeywordService:
             # (keyword-preset.md §5.2), 설정값을 그대로 쓰면 그 구분이 거짓이 된다.
             result.model or self._settings.judge_model,
         )
+
+    async def _judge_n(
+        self, text: str, cand_dicts: list[dict], context_id: int
+    ) -> JudgeResult:
+        """같은 입력을 `judge_vote_n` 회 판정해 다수결로 접는다(S15P11A705-223).
+
+        **n=1 이면 이 메서드는 현행과 구분되지 않는다** — 호출 1회, 예외는 그대로 위로
+        올라가고(`return_exceptions` 로 받은 객체를 그대로 다시 던진다), 한 표면
+        `votes*2 > 1` 을 넘으므로 `combine` 이 입력을 그대로 돌려준다. 되돌리기가 설정
+        한 줄이라는 요구가 이 성질에 걸려 있어 테스트로 고정한다.
+
+        **동시에 부른다.** 순차로 돌리면 지연이 n배가 되어 `PROCESSING` 만료(600s) 상한
+        (`llm_client` 머리말 §3.2)을 잡아먹는다. 대신 Context 1건이 만드는 동시 호출이
+        n배가 되므로, 그쪽이 이 방식의 비용이다(구현 리포트 §5).
+
+        정족수를 못 넘기면 **아무것도 저장하지 않고 실패로 되돌린다.** 분모가 n 으로
+        고정돼 있어 정족수 미달로 다수결을 돌리면 선택 0건이 나오는데, 그것은 판정
+        결과가 아니라 판정 실패이고 저장하면 둘이 구분되지 않는다(`judge_vote` 머리말).
+        """
+        n = self._settings.judge_vote_n
+        outcomes = await asyncio.gather(
+            *(self._llm.judge(text, cand_dicts) for _ in range(n)),
+            return_exceptions=True,
+        )
+        results = [r for r in outcomes if isinstance(r, JudgeResult)]
+        errors = [e for e in outcomes if isinstance(e, BaseException)]
+
+        if errors and results:
+            # 정족수를 넘겨 진행하는 경우에도 남긴다 — 조용히 넘어가면 "n 을 켰는데 실제로는
+            # n-1 표로 판정하고 있다"가 관측되지 않는다.
+            log.warning(
+                "ctx=%s stage=keyword vote n=%d succeeded=%d failed=%d: %s",
+                context_id, n, len(results), len(errors),
+                "; ".join(f"{type(e).__name__}: {e}" for e in errors[:3]),
+            )
+        if not judge_vote.has_quorum(len(results), n):
+            # 던질 것을 고른다. transient 가 하나라도 있으면 그쪽이다 — 재스캔이 다시
+            # 부르면 성공할 수 있는 반면, permanent 로 올리면 이 Context 는 FAILED 로
+            # 굳는다. 둘 중 하나가 틀렸을 때 되돌릴 수 있는 쪽을 고른다.
+            for e in errors:
+                if isinstance(e, TransientError):
+                    raise e
+            if errors:
+                raise errors[0]
+            # n>=1 이므로 성공 0 · 실패 0 은 성립하지 않는다(gather 가 n개를 돌려준다).
+            raise TransientError(f"judge vote quorum not met (n={n}, ok=0)")
+
+        return judge_vote.combine(results, n)
 
     async def _resolve_vector(
         self, req: ContextProcessRequest, carried: list[float] | None

@@ -109,6 +109,15 @@ class Settings(BaseSettings):
     # 표현할 수 없고, 벤더 이름 없이는 어느 경로·어느 인증 헤더로 부를지 알 수 없다.
     judge_chain: str = Field(DEFAULT_JUDGE_CHAIN, alias="PINLOG_JUDGE_CHAIN")
 
+    # 판정 다수결 회수 (S15P11A705-223). 같은 입력을 이 횟수만큼 판정해 **엄격 다수결**
+    # (`votes * 2 > n`)로 접는다. 규칙과 근거는 `app.service.judge_vote`.
+    #
+    # 기본값 1 은 현행 동작과 **정확히** 같다 — 호출도 1회고 `votes >= 1` 이 곧 선택이다.
+    # 되돌리기가 설정 한 줄이어야 한다는 요구가 이 기본값의 이유다. 값을 올리면 판정
+    # 호출이 그만큼 늘어난다(Context 1건당 n회). 채택 판단은
+    # `docs/implements/2026-07-31-judge-vote.md` 를 보라.
+    judge_vote_n: int = Field(1, alias="PINLOG_JUDGE_VOTE_N")
+
     # 후보 검색
     keyword_candidate_top_k: int = Field(10, alias="KEYWORD_CANDIDATE_TOP_K")
     similarity_floor: float = Field(0.30, alias="SIMILARITY_FLOOR")
@@ -154,6 +163,28 @@ class Settings(BaseSettings):
         `GMS_BASE_URL` 세그먼트 누락과 같은 종류의 비대칭 장애다.
         """
         parse_judge_chain(self.judge_chain)
+        return self
+
+    @model_validator(mode="after")
+    def _judge_vote_n_shape(self) -> "Settings":
+        """`PINLOG_JUDGE_VOTE_N` 은 1 이상의 **홀수**여야 한다.
+
+        짝수를 막는 이유는 동점이 아니라 **지배당하기 때문**이다. 엄격 다수결
+        (`votes * 2 > n`)은 짝수에서도 동점을 남기지 않는다 — n=4 는 3표를 요구한다.
+        그런데 n=3 도 2표를 요구하므로 n=4 는 호출을 33% 더 쓰면서 규칙만 더 조인 것이고,
+        그런 조합을 원했다면 그것은 n 이 아니라 문턱으로 표현해야 한다. 열어 두면
+        설정 오타 하나로 비용만 더 내는 상태가 만들어진다.
+
+        기동 시에 끊는다. 판정 경로는 첫 Context 요청까지 실행되지 않으므로 미루면
+        서버는 정상으로 보이는데 Keyword 만 통째로 어긋난다 — `judge_chain` 과 같은
+        종류의 비대칭 장애다.
+        """
+        if self.judge_vote_n < 1 or self.judge_vote_n % 2 == 0:
+            raise SettingsError(
+                f"PINLOG_JUDGE_VOTE_N 은 1 이상의 홀수여야 합니다 — 받은 값 "
+                f"{self.judge_vote_n}. 짝수는 바로 아래 홀수보다 호출만 더 쓰고 판정은 "
+                "더 엄격해집니다(n=4 는 3표, n=3 은 2표). 기동 중단."
+            )
         return self
 
     @model_validator(mode="after")
