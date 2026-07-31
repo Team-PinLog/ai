@@ -30,14 +30,12 @@ from __future__ import annotations
 
 import os
 import re
-import subprocess
 from pathlib import Path
 
-from _client import (
-    DEMO_PROVIDER,
-    BackClient,
-    shared_root,
-)
+# `_client`는 import 시점에 `os.chdir()`·`get_settings()`를 하고, `.env`가 없으면
+# 거기서 죽는다. 이 모듈의 판정 로직은 그것 없이 전부 성립하므로 **함수 안에서**
+# 가져온다 — 방어를 일부러 어긋내 RED를 보는 것이 이 코드의 유일한 검증 수단이고,
+# 그 테스트가 `.env`·DB·HTTP를 요구하면 실제로 돌지 않는다.
 
 # ── 1. 쓰기 컬럼 계약 ───────────────────────────────────────────────────────
 #
@@ -119,8 +117,16 @@ async def check_write_contract(conn) -> list[str]:
     problems: list[str] = []
     for table, declared in WRITE_CONTRACT.items():
         schema, name = table.split(".")
+        # `has_default`는 "우리가 값을 주지 않아도 채워지는가"다. `column_default`만
+        # 보면 안 된다 — `GENERATED ALWAYS AS IDENTITY`는 default가 아니라 별도
+        # 속성이라 `column_default`가 NULL이고, 그래서 `id`가 "NOT NULL인데 기본값이
+        # 없다"로 오탐된다. 단위 테스트는 이 쿼리를 타지 않으므로 잡히지 않았고
+        # 실제 스키마에 처음 돌렸을 때 드러났다.
         rows = await conn.fetch(
-            "SELECT column_name, is_nullable, column_default IS NOT NULL AS has_default "
+            "SELECT column_name, is_nullable, "
+            "       (column_default IS NOT NULL "
+            "        OR is_identity = 'YES' "
+            "        OR is_generated = 'ALWAYS') AS has_default "
             "FROM information_schema.columns "
             "WHERE table_schema = $1 AND table_name = $2",
             schema,
@@ -148,6 +154,8 @@ def _back_repo() -> Path | None:
     `shared_root()`를 기준으로 삼는다 — worktree 안에서는 `ai/.claude/worktrees/*`가
     루트라 형제 디렉터리 계산이 틀린다.
     """
+    from _client import shared_root
+
     env = os.environ.get("PINLOG_BACK_REPO")
     if env:
         p = Path(env)
@@ -230,6 +238,8 @@ async def check_back_auth(db, back: str, pem: bytes) -> list[str]:
     `provider_user_id`가 `__preflight__`라 `demo_data.yaml`의 어떤 key와도 겹치지
     않는다 — 겹치면 부분 유니크 인덱스에 걸린다.
     """
+    from _client import DEMO_PROVIDER, BackClient
+
     member_id: int | None = None
     try:
         async with db.transaction() as conn:
@@ -266,6 +276,8 @@ async def check_back_auth(db, back: str, pem: bytes) -> list[str]:
 
 
 async def _drop_probe(conn) -> None:
+    from _client import DEMO_PROVIDER
+
     ids = [
         r["member_id"]
         for r in await conn.fetch(
