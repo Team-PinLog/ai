@@ -28,6 +28,11 @@ from app.service.keyword_service import _to_array, _topk  # noqa: E402
 import embed as H_EMBED  # noqa: E402
 import test_c_judge as H_JUDGE  # noqa: E402
 
+# 운영 판정 경로는 벤더 폴백 체인이지만(S15P11A705-175), 이 도구는 하네스와의 차이를
+# 귀인하는 것이 목적이므로 **하네스와 같은 벤더·모델 하나로 고정**한다. 폴백이 걸리면
+# 벤더 차이가 후보·판정 차이에 섞여 귀인 자체가 성립하지 않는다.
+JUDGE_VENDOR, JUDGE_MODEL = "gemini", "gemini-2.5-flash"
+
 REPEAT = 5
 
 
@@ -47,7 +52,8 @@ async def main() -> None:
 
     ec = EmbeddingClient(base_url=S.gms_base_url, api_key=S.gms_api_key,
                          model=S.embedding_model, dimension=S.embedding_dimension)
-    llm = LLMClient(gms_base_url=S.gms_base_url, api_key=S.gms_api_key, model=S.judge_model)
+    llm = LLMClient(gms_base_url=S.gms_base_url, api_key=S.gms_api_key,
+                    chain=[(JUDGE_VENDOR, JUDGE_MODEL)])
 
     # ---------- A. 샘플 00 후보 경계 ----------
     print("=" * 88)
@@ -106,7 +112,8 @@ async def main() -> None:
         r = await llm.judge(s5["text"], cd)
         sel = tuple(sorted({x.keyword_id for x in r.selected} & set(cand_ids)))
         prod_c[sel] += 1
-        out, _ = H_JUDGE.judge("gemini", S.judge_model, H_JUDGE.build_user(s5["text"], cd), cand_ids)
+        out, _ = H_JUDGE.judge(JUDGE_VENDOR, JUDGE_MODEL,
+                               H_JUDGE.build_user(s5["text"], cd), cand_ids)
         hsel = tuple(sorted({x["keywordId"] for x in out.get("selected", [])} & set(cand_ids)))
         harn_c[hsel] += 1
         print(f"  {i+1}회차  운영 {list(sel)}   하네스 {list(hsel)}")

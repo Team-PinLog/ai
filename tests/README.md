@@ -54,6 +54,13 @@ AI 서버 통합 테스트 규칙. 계약 근거는 [`docs/spec/integration-test
 > 계층이며 DB·Docker·네트워크가 필요 없다. `RetryPolicy`의 `sleep`·`jitter`를 주입해 백오프
 > 수열을 값으로 단언하므로 **실제로 잠들지 않는다**. 재시도 테스트에 실제 대기를 넣지 않는다.
 
+> `test_llm_vendors.py`도 같은 계층이다 — **판정 벤더 폴백**(failure-recovery.md §3.4).
+> `httpx.MockTransport`로 세 프로바이더의 응답 봉투를 직접 만든다. 인터페이스 레벨 Fake로는
+> "429를 받고 다른 벤더로 넘어갔는가"를 볼 수 없다 — 그 전환은 HTTP 응답에서 시작한다.
+> **폴백 순서·모델명을 이 파일에 리터럴로 쓰지 않는다.** 순서를 바꾸는 것은 설정 변경이고,
+> 테스트가 특정 순서에 묶이면 그 변경이 테스트 실패로 나타난다. 설정 기본값이 무엇인지는
+> `test_unit.py`가 한 곳에서 단언한다.
+
 > `test_ci_image_publish_contract.py`는 위 §5 계층에 속하지 않는다 — `.github/workflows/ai-ci.yml`을 계약으로 고정하는 **CI 이미지 발행 계약**이며 **인프라 파트(`-20`) 소관**이다. `pytest tests/` 범위엔 포함되나 **DB·Docker가 필요 없다**(`pytest tests/test_ci_image_publish_contract.py`만 따로 돌리면 컨테이너 없이 검증). AI 파트가 `ai-ci.yml`을 바꾸면 이 테스트가 깨지므로 인프라에 요청·조율한다.
 
 ## 실행

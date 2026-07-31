@@ -255,6 +255,44 @@ async def test_empty_keyword_result_is_completed(db, conn, settings):
         "SELECT count(*) FROM ai.context_keyword_analysis WHERE context_id=1") == 1
 
 
+async def _model_profile(conn, context_id: int) -> str:
+    return await conn.fetchval(
+        "SELECT model_profile FROM ai.context_keyword_analysis WHERE context_id=$1",
+        context_id,
+    )
+
+
+async def test_analysis_records_the_model_that_actually_answered(db, conn, settings):
+    """폴백으로 2·3순위가 답하면 설정 1순위가 아니라 **답한 모델**이 저장된다.
+
+    `model_profile`의 용도는 "어떤 모델의 판단이었는지 구분"(keyword-preset.md §5.2)이다.
+    설정값을 그대로 쓰면 Preset 보정 분석이 잘못된 모델을 근거로 삼는다 — 폴백이 생긴
+    순간부터 설정값은 "답한 모델"과 다를 수 있다.
+    """
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    llm = FakeLLMClient(selected=[(101, 0.9)], model="fallback-model")
+    proc, _, _ = _services(db, settings, llm=llm, cache=cache)
+
+    await proc.process(_req(1))
+
+    assert await _model_profile(conn, 1) == "fallback-model"
+    assert await _model_profile(conn, 1) != settings.judge_model
+
+
+async def test_analysis_falls_back_to_the_configured_model_when_unreported(db, conn, settings):
+    """후보 0개면 LLM을 부르지 않으므로 답한 모델이 없다 — 설정 1순위를 남긴다."""
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "전혀 다른 것"}])
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    llm = FakeLLMClient(selected=[])
+    proc, _, llm = _services(db, settings, llm=llm, cache=cache)
+
+    await proc.process(_req(1, text="유사도가 바닥인 문장"))
+
+    assert llm.call_count == 0
+    assert await _model_profile(conn, 1) == settings.judge_model
+
+
 async def test_blocked_preset_not_in_candidates(db, conn, settings):
     # 시나리오 15: BLOCKED Preset은 후보 집합에서 제외(캐시 적재 시)
     cache = await _load_cache(conn, settings, [

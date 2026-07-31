@@ -1,25 +1,33 @@
-"""LLM 판정 클라이언트 (GMS 게이트웨이, Gemini generateContent).
+"""LLM 판정 클라이언트 (GMS 게이트웨이, 벤더 폴백 체인).
 
-테스트 C-2에서 확정한 호출 방식을 그대로 옮겼다(tools/keyword_eval/test_c_judge.py):
-gemini-2.5-flash + responseSchema(네이티브 구조화 출력) + thinkingBudget=0.
-function-calling은 2.5-flash에서 코드형 호출로 malformed 되므로 쓰지 않는다.
+호출 방식은 벤더마다 다르고 그 차이는 `vendors.py`가 흡수한다. 이 파일이 하는 일은 셋이다 —
+**어느 벤더로 부를지 고르고**, HTTP 실패를 분류하고, 선택 결과를 `JudgeResult`로 옮긴다.
+client는 DB를 모른다(architecture.md §4).
 
-GMS는 도메인별 네이티브 인증을 통과시킨다 — Gemini는 x-goog-api-key.
-client는 DB를 모른다. HTTP 실패는 분류된 오류로 service까지 올린다.
+**시도 예산은 체인 길이에 곱해지지 않는다.** `RetryPolicy.attempts`가 판정 호출 1건의
+**총 HTTP 시도 횟수**이고, n번째 시도가 체인의 n번째 벤더를 쓴다(체인이 짧으면 마지막
+벤더를 반복). 이유는 §3.2의 상한이다 — "두 호출의 타임아웃 합 + 재시도 시간 <
+PROCESSING 만료 600s". 벤더마다 3회씩 재시도하면 최악이 3벤더 × 3시도 × 90s = 810s로
+만료를 넘고, 그러면 재스캔이 아직 살아 있는 판정을 중복 실행해 비용이 배가 된다.
+같은 벤더에 backoff를 걸고 다시 던지는 것보다 **막히지 않은 다른 경로로 즉시 넘어가는
+편이 성공 확률도 높다** — 429는 프로바이더 경로별로 걸린다(vendors.py 실측).
+체인을 벤더 하나로 두면 시도 배분이 그 벤더로 모여 폴백 이전과 정확히 같아진다.
 
-분류는 `classify_http_status` 하나를 쓴다(failure-recovery.md §2.1·§2.2). 이 파일이
-**모든 non-200을 Transient로** 두어 인증 실패가 재스캔 주기(5분)마다 GMS 호출을 만들던 것이
-S15P11A705-121의 결함 3이었다. 구조화 출력 위반은 재시도 대상이되 소진 후 영구 오류다(§2.2).
+`TransientError`(429·5xx·타임아웃·스키마 위반)만 다음 벤더로 넘어간다. `PermanentError`
+(400·401·403)는 넘어가지 않는다 — 키·설정 문제는 다른 벤더에서도 같은 답이고, 재시도가
+GMS 호출만 늘린다(S15P11A705-121 결함 3). 분류는 `classify_http_status` 하나를 쓴다
+(failure-recovery.md §2.1·§2.2). 구조화 출력 위반은 재시도 대상이되 소진 후 영구 오류다(§2.2).
 """
 from __future__ import annotations
 
-import json
-from functools import partial
+import itertools
+from typing import Sequence
 
 import httpx
 
 from app.client._usage import record as record_usage
 from app.client.retry import RetryPolicy, call_with_retry
+from app.client.vendors import VendorCall, resolve_chain
 from app.core.errors import (
     PermanentError,
     SchemaViolationError,
@@ -48,26 +56,6 @@ SYSTEM = (
     "- unmatchedConcepts에는 후보로 표현하지 못한 핵심 개념을 짧게 적습니다(없으면 빈 배열)."
 )
 
-# keywordId enum은 두지 않는다. 후보 밖 값은 매핑 단계에서 폐기한다(keyword-preset.md §4.3).
-_RESPONSE_SCHEMA = {
-    "type": "object",
-    "required": ["selected"],
-    "properties": {
-        "selected": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "required": ["keywordId", "confidence"],
-                "properties": {
-                    "keywordId": {"type": "integer"},
-                    "confidence": {"type": "number"},
-                },
-            },
-        },
-        "unmatchedConcepts": {"type": "array", "items": {"type": "string"}},
-    },
-}
-
 
 def build_user(context_text: str, candidates: list[dict]) -> str:
     lines = []
@@ -85,44 +73,48 @@ class LLMClient:
         self,
         gms_base_url: str,
         api_key: str,
-        model: str,
+        chain: Sequence[tuple[str, str]],
         *,
         retry: RetryPolicy | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
-        # GMS root에서 Gemini 네이티브 경로를 파생한다.
+        """`chain`은 우선순위 순서의 `(vendor, model)` 목록이다(`Settings.judge_vendors`).
+
+        지원하지 않는 벤더나 빈 체인이면 여기서 `ValueError`가 난다. 생성이 lifespan
+        startup에 있으므로 잘못된 체인을 들고 뜨는 상태는 성립하지 않는다.
+        """
+        # GMS root에서 벤더별 네이티브 경로를 파생한다.
         self._root = gms_base_url.split("/gmsapi/")[0] + "/gmsapi"
         self._key = api_key
-        self._model = model
+        self._chain = resolve_chain(chain)
         self._retry = retry or RetryPolicy()
         # transport는 테스트 이음새다(embedding_client와 같은 이유).
         self._transport = transport
 
+    def _call_for(self, attempt: int) -> VendorCall:
+        """n번째 시도가 쓸 벤더. 체인이 시도 횟수보다 짧으면 마지막 벤더를 반복한다.
+
+        `min`을 쓰는 것이 계약이다 — 체인 길이와 `attempts`를 서로 맞추도록 강제하지
+        않는다. 벤더 하나만 남긴 체인은 시도 전부가 그 벤더로 가고, 그것이 폴백 도입
+        이전의 동작이다(설정만으로 되돌릴 수 있어야 한다는 요구).
+        """
+        return self._chain[min(attempt, len(self._chain) - 1)]
+
     async def judge(self, context_text: str, candidates: list[dict]) -> JudgeResult:
         user = build_user(context_text, candidates)
-        url = (
-            f"{self._root}/generativelanguage.googleapis.com/v1beta/models/"
-            f"{self._model}:generateContent"
-        )
-        body = {
-            "systemInstruction": {"parts": [{"text": SYSTEM}]},
-            "contents": [{"role": "user", "parts": [{"text": user}]}],
-            "generationConfig": {
-                "responseMimeType": "application/json",
-                "responseSchema": _RESPONSE_SCHEMA,
-                "maxOutputTokens": 2048,
-                "thinkingConfig": {"thinkingBudget": 0},
-            },
-        }
+        # 시도 번호는 재시도 드라이버가 아니라 이 카운터가 센다. `call_with_retry`는
+        # "같은 op를 다시 부른다"는 계약이므로, 벤더 전환을 op 안에 둬야 백오프·오류
+        # 분류·소진 시 트레이스백 유지를 그 드라이버에서 그대로 물려받을 수 있다.
+        attempts = itertools.count()
         async with httpx.AsyncClient(
             timeout=_TIMEOUT, transport=self._transport
         ) as client:
+
+            async def attempt() -> JudgeResult:
+                return await self._judge_once(client, self._call_for(next(attempts)), user)
+
             try:
-                return await call_with_retry(
-                    partial(self._judge_once, client, url, body),
-                    self._retry,
-                    stage="keyword",
-                )
+                return await call_with_retry(attempt, self._retry, stage="keyword")
             except SchemaViolationError as exc:
                 # §2.2: 재시도 후에도 스키마 위반이면 영구 오류다. 승격을 여기서 끝내
                 # service는 두 분류(Transient/Permanent)만 보게 한다.
@@ -131,40 +123,41 @@ class LLMClient:
                 ) from exc
 
     async def _judge_once(
-        self, client: httpx.AsyncClient, url: str, body: dict
+        self, client: httpx.AsyncClient, call: VendorCall, user: str
     ) -> JudgeResult:
-        """1회 호출. 재시도 여부는 던지는 오류 타입이 결정한다(retry.py)."""
+        """벤더 1곳에 1회 호출. 재시도·폴백 여부는 던지는 오류 타입이 결정한다(retry.py)."""
+        url, headers, body = call.adapter.request(
+            self._root, self._key, call.model, SYSTEM, user
+        )
         try:
-            resp = await client.post(
-                url,
-                headers={
-                    "x-goog-api-key": self._key,
-                    "content-type": "application/json",
-                },
-                json=body,
-            )
+            resp = await client.post(url, headers=headers, json=body)
         except httpx.HTTPError as exc:
-            raise TransientError(f"llm request failed: {exc}") from exc
+            raise TransientError(f"llm request failed ({call.label}): {exc}") from exc
 
         if resp.status_code != 200:
             # 게이트웨이 오류를 일괄 일시 오류로 두지 않는다 — 400·401·403은 키·설정을
-            # 고치기 전까지 같은 답이므로, 재스캔에 맡기면 5분마다 같은 호출을 만든다.
+            # 고치기 전까지 같은 답이므로 다음 벤더로 넘겨도 같은 답이 온다.
+            # 메시지에 벤더를 넣는다 — 폴백이 있으면 "어느 경로가 막혔나"가 원인 그 자체다.
             raise classify_http_status(
-                resp.status_code, f"llm error: {resp.status_code} {resp.text[:200]}"
+                resp.status_code,
+                f"llm error: {call.label} {resp.status_code} {resp.text[:200]}",
             )
 
         try:
             payload = resp.json()
         except ValueError as exc:
-            raise SchemaViolationError(f"llm response not json: {exc}") from exc
-        record_usage("judge", payload)
-        return self._parse(payload)
+            raise SchemaViolationError(
+                f"llm response not json ({call.label}): {exc}"
+            ) from exc
+        # 어느 벤더·모델이 답했는지 남긴다. 폴백이 있으면 설정값(1순위)은 실제로 답한
+        # 모델과 다를 수 있으므로, 사후 비용·품질 집계의 근거는 이 기록뿐이다.
+        record_usage("judge", payload, vendor=call.adapter.vendor, model=call.model)
+        return self._parse(call.adapter.parse(payload), call.model)
 
     @staticmethod
-    def _parse(payload: dict) -> JudgeResult:
+    def _parse(data: dict, model: str) -> JudgeResult:
+        """선택 객체 → `JudgeResult`. 벤더 무관한 변환이므로 한 벌만 둔다."""
         try:
-            text = payload["candidates"][0]["content"]["parts"][0]["text"]
-            data = json.loads(text)
             selected = [
                 KeywordSelection(
                     keyword_id=int(s["keywordId"]),
@@ -179,7 +172,6 @@ class LLMClient:
             ]
             unmatched = [str(x) for x in data.get("unmatchedConcepts", [])]
         except (KeyError, IndexError, TypeError, AttributeError, ValueError) as exc:
-            # 구조화 출력 위반. json.JSONDecodeError는 ValueError 하위다. 후보 절단
-            # (MAX_TOKENS)·안전 차단·타입 위반이 모두 여기로 들어온다.
-            raise SchemaViolationError(f"llm parse failed: {exc}") from exc
-        return JudgeResult(selected=selected, unmatched_concepts=unmatched)
+            # 구조화 출력 위반. 후보 절단(MAX_TOKENS)·안전 차단·타입 위반이 여기로 들어온다.
+            raise SchemaViolationError(f"llm parse failed ({model}): {exc}") from exc
+        return JudgeResult(selected=selected, unmatched_concepts=unmatched, model=model)
