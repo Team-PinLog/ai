@@ -113,6 +113,16 @@ class Settings(BaseSettings):
     keyword_candidate_top_k: int = Field(10, alias="KEYWORD_CANDIDATE_TOP_K")
     similarity_floor: float = Field(0.30, alias="SIMILARITY_FLOOR")
 
+    # 개인 검색 결과 컷 (personal-search.md §6.1). **위 `SIMILARITY_FLOOR` 와 다른 값이다** —
+    # 저쪽은 Keyword 후보 선정에 걸리고 이쪽은 검색 결과에 걸린다. 값이 우연히 같지만
+    # 서로 다른 측정(-210 · -213)이 각각 정했으므로 한쪽을 옮기면 다른 쪽이 따라오면 안 된다.
+    #
+    # 0 이면 그 컷을 끈다. 두 컷은 서로 다른 실패 모드를 막으므로 하나로 대체되지 않는다
+    # (-213 실측: r 은 무관 질의를 15건 중 0건도 침묵시키지 못하고, τ_abs 는 관련 질의의
+    # 꼬리 제거가 같은 안전 마진에서 r 보다 약하다).
+    search_similarity_floor: float = Field(0.30, alias="SEARCH_SIMILARITY_FLOOR")
+    search_top_ratio: float = Field(0.60, alias="SEARCH_TOP_RATIO")
+
     # PROCESSING 재선점 만료 — Spring 재스캔 만료와 동일 값
     processing_expiry_sec: int = Field(600, alias="PROCESSING_EXPIRY_SEC")
 

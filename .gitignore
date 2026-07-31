@@ -37,3 +37,9 @@ env/
 tools/keyword_eval/.env
 tools/keyword_eval/.cache/
 tools/keyword_eval/compare_out.txt
+
+# tools/search_cut 실행 산출물. `matrix.json` 은 **커밋한다** — 다시 뜨려면 GMS 임베딩을
+# 부르고, 이 파일은 tools/tau_grid 와 달리 Context 본문을 담지 않는다(장소명까지).
+# 스윕 결과는 matrix 에서 언제든 재구성되므로 남기지 않는다.
+.search/*
+!.search/matrix.json

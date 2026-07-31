@@ -1,0 +1,2771 @@
+{
+  "profile": "openai-text-embedding-3-small-1536-cosine-v1",
+  "model": "text-embedding-3-small",
+  "record_count": 42,
+  "query_count": 12,
+  "offtopic_count": 15,
+  "queries": [
+    {
+      "query": "비 오는 날 가려고 저장한 곳",
+      "as": "host",
+      "user_id": 75,
+      "expect_key": "rain",
+      "expect_name": "[데모] 골목 안 다방",
+      "expected_rank": 1,
+      "expected_sim": 0.501902,
+      "owned_records": 6,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 252,
+          "context_id": 252,
+          "name": "[데모] 골목 안 다방",
+          "sim": 0.501902,
+          "is_expected": true
+        },
+        {
+          "rank": 2,
+          "record_id": 255,
+          "context_id": 255,
+          "name": "[데모] 언덕 위 야경 식당",
+          "sim": 0.349084,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 257,
+          "context_id": 257,
+          "name": "[데모] 강변 산책로 초입",
+          "sim": 0.297763,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 253,
+          "context_id": 253,
+          "name": "[데모] 창가 작업실 카페",
+          "sim": 0.251845,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 254,
+          "context_id": 254,
+          "name": "[데모] 연남 골목 선술집",
+          "sim": 0.241959,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 256,
+          "context_id": 256,
+          "name": "[데모] 넓은 한상 식당",
+          "sim": 0.229916,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "혼자 조용히 작업하기 좋은 카페",
+      "as": "host",
+      "user_id": 75,
+      "expect_key": "work",
+      "expect_name": "[데모] 창가 작업실 카페",
+      "expected_rank": 1,
+      "expected_sim": 0.496857,
+      "owned_records": 6,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 253,
+          "context_id": 253,
+          "name": "[데모] 창가 작업실 카페",
+          "sim": 0.496857,
+          "is_expected": true
+        },
+        {
+          "rank": 2,
+          "record_id": 256,
+          "context_id": 256,
+          "name": "[데모] 넓은 한상 식당",
+          "sim": 0.329437,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 257,
+          "context_id": 257,
+          "name": "[데모] 강변 산책로 초입",
+          "sim": 0.316406,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 254,
+          "context_id": 254,
+          "name": "[데모] 연남 골목 선술집",
+          "sim": 0.261937,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 255,
+          "context_id": 255,
+          "name": "[데모] 언덕 위 야경 식당",
+          "sim": 0.258329,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 252,
+          "context_id": 252,
+          "name": "[데모] 골목 안 다방",
+          "sim": 0.25768,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "친구들이랑 시끌벅적하게 놀 만한 곳",
+      "as": "host",
+      "user_id": 75,
+      "expect_key": "drink",
+      "expect_name": "[데모] 연남 골목 선술집",
+      "expected_rank": 1,
+      "expected_sim": 0.641396,
+      "owned_records": 6,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 254,
+          "context_id": 254,
+          "name": "[데모] 연남 골목 선술집",
+          "sim": 0.641396,
+          "is_expected": true
+        },
+        {
+          "rank": 2,
+          "record_id": 256,
+          "context_id": 256,
+          "name": "[데모] 넓은 한상 식당",
+          "sim": 0.406873,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 252,
+          "context_id": 252,
+          "name": "[데모] 골목 안 다방",
+          "sim": 0.361706,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 257,
+          "context_id": 257,
+          "name": "[데모] 강변 산책로 초입",
+          "sim": 0.304137,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 255,
+          "context_id": 255,
+          "name": "[데모] 언덕 위 야경 식당",
+          "sim": 0.295119,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 253,
+          "context_id": 253,
+          "name": "[데모] 창가 작업실 카페",
+          "sim": 0.254542,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "기념일에 야경 보면서 식사할 곳",
+      "as": "host",
+      "user_id": 75,
+      "expect_key": "view",
+      "expect_name": "[데모] 언덕 위 야경 식당",
+      "expected_rank": 1,
+      "expected_sim": 0.526619,
+      "owned_records": 6,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 255,
+          "context_id": 255,
+          "name": "[데모] 언덕 위 야경 식당",
+          "sim": 0.526619,
+          "is_expected": true
+        },
+        {
+          "rank": 2,
+          "record_id": 257,
+          "context_id": 257,
+          "name": "[데모] 강변 산책로 초입",
+          "sim": 0.448791,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 254,
+          "context_id": 254,
+          "name": "[데모] 연남 골목 선술집",
+          "sim": 0.346627,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 252,
+          "context_id": 252,
+          "name": "[데모] 골목 안 다방",
+          "sim": 0.303315,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 256,
+          "context_id": 256,
+          "name": "[데모] 넓은 한상 식당",
+          "sim": 0.2912,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 253,
+          "context_id": 253,
+          "name": "[데모] 창가 작업실 카페",
+          "sim": 0.211923,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "돈카츠 먹으러 자주 갔던 곳",
+      "as": "jeongheon",
+      "user_id": 81,
+      "expect_key": "katsuyo",
+      "expect_name": "카츠요",
+      "expected_rank": 1,
+      "expected_sim": 0.60687,
+      "owned_records": 17,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 277,
+          "context_id": 277,
+          "name": "카츠요",
+          "sim": 0.60687,
+          "is_expected": true
+        },
+        {
+          "rank": 2,
+          "record_id": 281,
+          "context_id": 281,
+          "name": "플랜트 연남점",
+          "sim": 0.482503,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 285,
+          "context_id": 285,
+          "name": "월강부산돼지국밥",
+          "sim": 0.410762,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 284,
+          "context_id": 284,
+          "name": "진우네 초밥",
+          "sim": 0.405439,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 282,
+          "context_id": 282,
+          "name": "치킨버거 이스트사이드",
+          "sim": 0.388631,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 278,
+          "context_id": 278,
+          "name": "감나무집기사식당",
+          "sim": 0.380967,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.376037,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 287,
+          "context_id": 287,
+          "name": "동교어린이공원",
+          "sim": 0.365341,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 293,
+          "context_id": 293,
+          "name": "키친갈매기",
+          "sim": 0.356845,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 292,
+          "context_id": 292,
+          "name": "적당",
+          "sim": 0.352964,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 283,
+          "context_id": 283,
+          "name": "쿠로코식당 연남점",
+          "sim": 0.334535,
+          "is_expected": false
+        },
+        {
+          "rank": 12,
+          "record_id": 288,
+          "context_id": 288,
+          "name": "연남칼국수",
+          "sim": 0.311077,
+          "is_expected": false
+        },
+        {
+          "rank": 13,
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.280438,
+          "is_expected": false
+        },
+        {
+          "rank": 14,
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.276961,
+          "is_expected": false
+        },
+        {
+          "rank": 15,
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.264798,
+          "is_expected": false
+        },
+        {
+          "rank": 16,
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.219505,
+          "is_expected": false
+        },
+        {
+          "rank": 17,
+          "record_id": 280,
+          "context_id": 280,
+          "name": "뉴오더클럽 연남",
+          "sim": 0.100974,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "미슐랭에 오른 라멘집",
+      "as": "jeongheon",
+      "user_id": 81,
+      "expect_key": "sarukame",
+      "expect_name": "사루카메",
+      "expected_rank": 1,
+      "expected_sim": 0.519123,
+      "owned_records": 17,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.519123,
+          "is_expected": true
+        },
+        {
+          "rank": 2,
+          "record_id": 283,
+          "context_id": 283,
+          "name": "쿠로코식당 연남점",
+          "sim": 0.51039,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.241186,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.23559,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 281,
+          "context_id": 281,
+          "name": "플랜트 연남점",
+          "sim": 0.222193,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.220907,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 278,
+          "context_id": 278,
+          "name": "감나무집기사식당",
+          "sim": 0.218498,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 277,
+          "context_id": 277,
+          "name": "카츠요",
+          "sim": 0.211545,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 293,
+          "context_id": 293,
+          "name": "키친갈매기",
+          "sim": 0.209543,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 284,
+          "context_id": 284,
+          "name": "진우네 초밥",
+          "sim": 0.181269,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 292,
+          "context_id": 292,
+          "name": "적당",
+          "sim": 0.171539,
+          "is_expected": false
+        },
+        {
+          "rank": 12,
+          "record_id": 288,
+          "context_id": 288,
+          "name": "연남칼국수",
+          "sim": 0.170542,
+          "is_expected": false
+        },
+        {
+          "rank": 13,
+          "record_id": 287,
+          "context_id": 287,
+          "name": "동교어린이공원",
+          "sim": 0.163062,
+          "is_expected": false
+        },
+        {
+          "rank": 14,
+          "record_id": 285,
+          "context_id": 285,
+          "name": "월강부산돼지국밥",
+          "sim": 0.151283,
+          "is_expected": false
+        },
+        {
+          "rank": 15,
+          "record_id": 280,
+          "context_id": 280,
+          "name": "뉴오더클럽 연남",
+          "sim": 0.129667,
+          "is_expected": false
+        },
+        {
+          "rank": 16,
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.129097,
+          "is_expected": false
+        },
+        {
+          "rank": 17,
+          "record_id": 282,
+          "context_id": 282,
+          "name": "치킨버거 이스트사이드",
+          "sim": 0.092359,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "친구들이랑 피자에 맥주 마신 곳",
+      "as": "jeongheon",
+      "user_id": 81,
+      "expect_key": "neworder",
+      "expect_name": "뉴오더클럽 연남",
+      "expected_rank": 3,
+      "expected_sim": 0.36424,
+      "owned_records": 17,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 277,
+          "context_id": 277,
+          "name": "카츠요",
+          "sim": 0.451161,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 287,
+          "context_id": 287,
+          "name": "동교어린이공원",
+          "sim": 0.367551,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 280,
+          "context_id": 280,
+          "name": "뉴오더클럽 연남",
+          "sim": 0.36424,
+          "is_expected": true
+        },
+        {
+          "rank": 4,
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.361555,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 292,
+          "context_id": 292,
+          "name": "적당",
+          "sim": 0.354567,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 278,
+          "context_id": 278,
+          "name": "감나무집기사식당",
+          "sim": 0.353266,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 285,
+          "context_id": 285,
+          "name": "월강부산돼지국밥",
+          "sim": 0.346288,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 282,
+          "context_id": 282,
+          "name": "치킨버거 이스트사이드",
+          "sim": 0.328215,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 284,
+          "context_id": 284,
+          "name": "진우네 초밥",
+          "sim": 0.319054,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 281,
+          "context_id": 281,
+          "name": "플랜트 연남점",
+          "sim": 0.27721,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 288,
+          "context_id": 288,
+          "name": "연남칼국수",
+          "sim": 0.273593,
+          "is_expected": false
+        },
+        {
+          "rank": 12,
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.270861,
+          "is_expected": false
+        },
+        {
+          "rank": 13,
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.26731,
+          "is_expected": false
+        },
+        {
+          "rank": 14,
+          "record_id": 293,
+          "context_id": 293,
+          "name": "키친갈매기",
+          "sim": 0.260462,
+          "is_expected": false
+        },
+        {
+          "rank": 15,
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.257386,
+          "is_expected": false
+        },
+        {
+          "rank": 16,
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.245842,
+          "is_expected": false
+        },
+        {
+          "rank": 17,
+          "record_id": 283,
+          "context_id": 283,
+          "name": "쿠로코식당 연남점",
+          "sim": 0.187633,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "밥 먹고 산책하면서 쉬어가는 공원",
+      "as": "jeongheon",
+      "user_id": 81,
+      "expect_key": "donggyo_park",
+      "expect_name": "동교어린이공원",
+      "expected_rank": 2,
+      "expected_sim": 0.45781,
+      "owned_records": 17,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 282,
+          "context_id": 282,
+          "name": "치킨버거 이스트사이드",
+          "sim": 0.525771,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 287,
+          "context_id": 287,
+          "name": "동교어린이공원",
+          "sim": 0.45781,
+          "is_expected": true
+        },
+        {
+          "rank": 3,
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.398954,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 285,
+          "context_id": 285,
+          "name": "월강부산돼지국밥",
+          "sim": 0.333058,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 283,
+          "context_id": 283,
+          "name": "쿠로코식당 연남점",
+          "sim": 0.325608,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 284,
+          "context_id": 284,
+          "name": "진우네 초밥",
+          "sim": 0.309727,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.289302,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 281,
+          "context_id": 281,
+          "name": "플랜트 연남점",
+          "sim": 0.286293,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 277,
+          "context_id": 277,
+          "name": "카츠요",
+          "sim": 0.268234,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 278,
+          "context_id": 278,
+          "name": "감나무집기사식당",
+          "sim": 0.247238,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.233539,
+          "is_expected": false
+        },
+        {
+          "rank": 12,
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.23325,
+          "is_expected": false
+        },
+        {
+          "rank": 13,
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.230075,
+          "is_expected": false
+        },
+        {
+          "rank": 14,
+          "record_id": 292,
+          "context_id": 292,
+          "name": "적당",
+          "sim": 0.217538,
+          "is_expected": false
+        },
+        {
+          "rank": 15,
+          "record_id": 293,
+          "context_id": 293,
+          "name": "키친갈매기",
+          "sim": 0.212521,
+          "is_expected": false
+        },
+        {
+          "rank": 16,
+          "record_id": 288,
+          "context_id": 288,
+          "name": "연남칼국수",
+          "sim": 0.192411,
+          "is_expected": false
+        },
+        {
+          "rank": 17,
+          "record_id": 280,
+          "context_id": 280,
+          "name": "뉴오더클럽 연남",
+          "sim": 0.119515,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "채식 샌드위치 먹던 단골집",
+      "as": "jeongheon",
+      "user_id": 81,
+      "expect_key": "plant",
+      "expect_name": "플랜트 연남점",
+      "expected_rank": 1,
+      "expected_sim": 0.568156,
+      "owned_records": 17,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 281,
+          "context_id": 281,
+          "name": "플랜트 연남점",
+          "sim": 0.568156,
+          "is_expected": true
+        },
+        {
+          "rank": 2,
+          "record_id": 277,
+          "context_id": 277,
+          "name": "카츠요",
+          "sim": 0.455366,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 282,
+          "context_id": 282,
+          "name": "치킨버거 이스트사이드",
+          "sim": 0.412019,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 278,
+          "context_id": 278,
+          "name": "감나무집기사식당",
+          "sim": 0.39518,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 287,
+          "context_id": 287,
+          "name": "동교어린이공원",
+          "sim": 0.392918,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.390438,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 285,
+          "context_id": 285,
+          "name": "월강부산돼지국밥",
+          "sim": 0.383228,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 284,
+          "context_id": 284,
+          "name": "진우네 초밥",
+          "sim": 0.377711,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 292,
+          "context_id": 292,
+          "name": "적당",
+          "sim": 0.341092,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 293,
+          "context_id": 293,
+          "name": "키친갈매기",
+          "sim": 0.320773,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.305585,
+          "is_expected": false
+        },
+        {
+          "rank": 12,
+          "record_id": 283,
+          "context_id": 283,
+          "name": "쿠로코식당 연남점",
+          "sim": 0.286615,
+          "is_expected": false
+        },
+        {
+          "rank": 13,
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.264956,
+          "is_expected": false
+        },
+        {
+          "rank": 14,
+          "record_id": 288,
+          "context_id": 288,
+          "name": "연남칼국수",
+          "sim": 0.262863,
+          "is_expected": false
+        },
+        {
+          "rank": 15,
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.208866,
+          "is_expected": false
+        },
+        {
+          "rank": 16,
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.207624,
+          "is_expected": false
+        },
+        {
+          "rank": 17,
+          "record_id": 280,
+          "context_id": 280,
+          "name": "뉴오더클럽 연남",
+          "sim": 0.106124,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "책 사면 꽃을 주는 서점",
+      "as": "gahyeon",
+      "user_id": 80,
+      "expect_key": "okeeer",
+      "expect_name": "오케이어 맨션",
+      "expected_rank": 1,
+      "expected_sim": 0.80226,
+      "owned_records": 11,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 269,
+          "context_id": 269,
+          "name": "오케이어 맨션",
+          "sim": 0.80226,
+          "is_expected": true
+        },
+        {
+          "rank": 2,
+          "record_id": 275,
+          "context_id": 275,
+          "name": "힉스커피",
+          "sim": 0.318907,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 272,
+          "context_id": 272,
+          "name": "주토피아 서울",
+          "sim": 0.302943,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 267,
+          "context_id": 267,
+          "name": "애플하우스",
+          "sim": 0.273108,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 270,
+          "context_id": 270,
+          "name": "적당",
+          "sim": 0.270387,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 268,
+          "context_id": 268,
+          "name": "키친갈매기",
+          "sim": 0.263627,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 274,
+          "context_id": 274,
+          "name": "모던아시안누들서비스",
+          "sim": 0.260787,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 271,
+          "context_id": 271,
+          "name": "피넛커피 충북혁신도시점",
+          "sim": 0.260694,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 273,
+          "context_id": 273,
+          "name": "오향절면",
+          "sim": 0.208027,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 266,
+          "context_id": 266,
+          "name": "도피",
+          "sim": 0.205737,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 276,
+          "context_id": 276,
+          "name": "메밀집",
+          "sim": 0.170848,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "화덕에 구운 피자집",
+      "as": "gahyeon",
+      "user_id": 80,
+      "expect_key": "zootopia",
+      "expect_name": "주토피아 서울",
+      "expected_rank": 1,
+      "expected_sim": 0.511586,
+      "owned_records": 11,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 272,
+          "context_id": 272,
+          "name": "주토피아 서울",
+          "sim": 0.511586,
+          "is_expected": true
+        },
+        {
+          "rank": 2,
+          "record_id": 275,
+          "context_id": 275,
+          "name": "힉스커피",
+          "sim": 0.397043,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 267,
+          "context_id": 267,
+          "name": "애플하우스",
+          "sim": 0.339752,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 273,
+          "context_id": 273,
+          "name": "오향절면",
+          "sim": 0.317306,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 270,
+          "context_id": 270,
+          "name": "적당",
+          "sim": 0.305569,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 268,
+          "context_id": 268,
+          "name": "키친갈매기",
+          "sim": 0.303568,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 276,
+          "context_id": 276,
+          "name": "메밀집",
+          "sim": 0.274964,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 266,
+          "context_id": 266,
+          "name": "도피",
+          "sim": 0.270423,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 271,
+          "context_id": 271,
+          "name": "피넛커피 충북혁신도시점",
+          "sim": 0.202107,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 269,
+          "context_id": 269,
+          "name": "오케이어 맨션",
+          "sim": 0.183083,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 274,
+          "context_id": 274,
+          "name": "모던아시안누들서비스",
+          "sim": 0.173201,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "양갱 파는 분위기 좋은 카페",
+      "as": "gahyeon",
+      "user_id": 80,
+      "expect_key": "jeokdang",
+      "expect_name": "적당",
+      "expected_rank": 1,
+      "expected_sim": 0.818755,
+      "owned_records": 11,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 270,
+          "context_id": 270,
+          "name": "적당",
+          "sim": 0.818755,
+          "is_expected": true
+        },
+        {
+          "rank": 2,
+          "record_id": 275,
+          "context_id": 275,
+          "name": "힉스커피",
+          "sim": 0.442161,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 266,
+          "context_id": 266,
+          "name": "도피",
+          "sim": 0.413563,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 267,
+          "context_id": 267,
+          "name": "애플하우스",
+          "sim": 0.335993,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 268,
+          "context_id": 268,
+          "name": "키친갈매기",
+          "sim": 0.331267,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 271,
+          "context_id": 271,
+          "name": "피넛커피 충북혁신도시점",
+          "sim": 0.33112,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 272,
+          "context_id": 272,
+          "name": "주토피아 서울",
+          "sim": 0.316736,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 276,
+          "context_id": 276,
+          "name": "메밀집",
+          "sim": 0.264274,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 273,
+          "context_id": 273,
+          "name": "오향절면",
+          "sim": 0.263985,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 269,
+          "context_id": 269,
+          "name": "오케이어 맨션",
+          "sim": 0.253067,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 274,
+          "context_id": 274,
+          "name": "모던아시안누들서비스",
+          "sim": 0.143909,
+          "is_expected": false
+        }
+      ]
+    }
+  ],
+  "offtopic": [
+    {
+      "query": "자동차 엔진오일 교환 정비소",
+      "as": "host",
+      "user_id": 75,
+      "owned_records": 6,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 252,
+          "context_id": 252,
+          "name": "[데모] 골목 안 다방",
+          "sim": 0.139254,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 257,
+          "context_id": 257,
+          "name": "[데모] 강변 산책로 초입",
+          "sim": 0.122121,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 253,
+          "context_id": 253,
+          "name": "[데모] 창가 작업실 카페",
+          "sim": 0.113806,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 254,
+          "context_id": 254,
+          "name": "[데모] 연남 골목 선술집",
+          "sim": 0.088731,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 256,
+          "context_id": 256,
+          "name": "[데모] 넓은 한상 식당",
+          "sim": 0.085424,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 255,
+          "context_id": 255,
+          "name": "[데모] 언덕 위 야경 식당",
+          "sim": 0.083406,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "자동차 엔진오일 교환 정비소",
+      "as": "jeongheon",
+      "user_id": 81,
+      "owned_records": 17,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.178002,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 293,
+          "context_id": 293,
+          "name": "키친갈매기",
+          "sim": 0.159963,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 281,
+          "context_id": 281,
+          "name": "플랜트 연남점",
+          "sim": 0.149321,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 285,
+          "context_id": 285,
+          "name": "월강부산돼지국밥",
+          "sim": 0.135362,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.135077,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 288,
+          "context_id": 288,
+          "name": "연남칼국수",
+          "sim": 0.129524,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 292,
+          "context_id": 292,
+          "name": "적당",
+          "sim": 0.124254,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 283,
+          "context_id": 283,
+          "name": "쿠로코식당 연남점",
+          "sim": 0.123188,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.119626,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 287,
+          "context_id": 287,
+          "name": "동교어린이공원",
+          "sim": 0.112424,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 278,
+          "context_id": 278,
+          "name": "감나무집기사식당",
+          "sim": 0.108691,
+          "is_expected": false
+        },
+        {
+          "rank": 12,
+          "record_id": 277,
+          "context_id": 277,
+          "name": "카츠요",
+          "sim": 0.107029,
+          "is_expected": false
+        },
+        {
+          "rank": 13,
+          "record_id": 280,
+          "context_id": 280,
+          "name": "뉴오더클럽 연남",
+          "sim": 0.102995,
+          "is_expected": false
+        },
+        {
+          "rank": 14,
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.095048,
+          "is_expected": false
+        },
+        {
+          "rank": 15,
+          "record_id": 282,
+          "context_id": 282,
+          "name": "치킨버거 이스트사이드",
+          "sim": 0.087162,
+          "is_expected": false
+        },
+        {
+          "rank": 16,
+          "record_id": 284,
+          "context_id": 284,
+          "name": "진우네 초밥",
+          "sim": 0.07564,
+          "is_expected": false
+        },
+        {
+          "rank": 17,
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.073137,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "자동차 엔진오일 교환 정비소",
+      "as": "gahyeon",
+      "user_id": 80,
+      "owned_records": 11,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 276,
+          "context_id": 276,
+          "name": "메밀집",
+          "sim": 0.19617,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 268,
+          "context_id": 268,
+          "name": "키친갈매기",
+          "sim": 0.159926,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 272,
+          "context_id": 272,
+          "name": "주토피아 서울",
+          "sim": 0.153708,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 270,
+          "context_id": 270,
+          "name": "적당",
+          "sim": 0.124309,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 275,
+          "context_id": 275,
+          "name": "힉스커피",
+          "sim": 0.119653,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 273,
+          "context_id": 273,
+          "name": "오향절면",
+          "sim": 0.11253,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 267,
+          "context_id": 267,
+          "name": "애플하우스",
+          "sim": 0.097867,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 274,
+          "context_id": 274,
+          "name": "모던아시안누들서비스",
+          "sim": 0.095048,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 269,
+          "context_id": 269,
+          "name": "오케이어 맨션",
+          "sim": 0.073072,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 266,
+          "context_id": 266,
+          "name": "도피",
+          "sim": 0.063832,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 271,
+          "context_id": 271,
+          "name": "피넛커피 충북혁신도시점",
+          "sim": 0.063184,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "치과 임플란트 상담 받을 곳",
+      "as": "host",
+      "user_id": 75,
+      "owned_records": 6,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 253,
+          "context_id": 253,
+          "name": "[데모] 창가 작업실 카페",
+          "sim": 0.268575,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 256,
+          "context_id": 256,
+          "name": "[데모] 넓은 한상 식당",
+          "sim": 0.248273,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 257,
+          "context_id": 257,
+          "name": "[데모] 강변 산책로 초입",
+          "sim": 0.230373,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 254,
+          "context_id": 254,
+          "name": "[데모] 연남 골목 선술집",
+          "sim": 0.191955,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 255,
+          "context_id": 255,
+          "name": "[데모] 언덕 위 야경 식당",
+          "sim": 0.172868,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 252,
+          "context_id": 252,
+          "name": "[데모] 골목 안 다방",
+          "sim": 0.140377,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "치과 임플란트 상담 받을 곳",
+      "as": "jeongheon",
+      "user_id": 81,
+      "owned_records": 17,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 288,
+          "context_id": 288,
+          "name": "연남칼국수",
+          "sim": 0.381861,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 293,
+          "context_id": 293,
+          "name": "키친갈매기",
+          "sim": 0.300625,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.258474,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 292,
+          "context_id": 292,
+          "name": "적당",
+          "sim": 0.255854,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 278,
+          "context_id": 278,
+          "name": "감나무집기사식당",
+          "sim": 0.24836,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 282,
+          "context_id": 282,
+          "name": "치킨버거 이스트사이드",
+          "sim": 0.248023,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 280,
+          "context_id": 280,
+          "name": "뉴오더클럽 연남",
+          "sim": 0.24071,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 277,
+          "context_id": 277,
+          "name": "카츠요",
+          "sim": 0.23932,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.237569,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 283,
+          "context_id": 283,
+          "name": "쿠로코식당 연남점",
+          "sim": 0.23574,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.234368,
+          "is_expected": false
+        },
+        {
+          "rank": 12,
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.221682,
+          "is_expected": false
+        },
+        {
+          "rank": 13,
+          "record_id": 285,
+          "context_id": 285,
+          "name": "월강부산돼지국밥",
+          "sim": 0.211383,
+          "is_expected": false
+        },
+        {
+          "rank": 14,
+          "record_id": 281,
+          "context_id": 281,
+          "name": "플랜트 연남점",
+          "sim": 0.202783,
+          "is_expected": false
+        },
+        {
+          "rank": 15,
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.190341,
+          "is_expected": false
+        },
+        {
+          "rank": 16,
+          "record_id": 284,
+          "context_id": 284,
+          "name": "진우네 초밥",
+          "sim": 0.163001,
+          "is_expected": false
+        },
+        {
+          "rank": 17,
+          "record_id": 287,
+          "context_id": 287,
+          "name": "동교어린이공원",
+          "sim": 0.160992,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "치과 임플란트 상담 받을 곳",
+      "as": "gahyeon",
+      "user_id": 80,
+      "owned_records": 11,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 268,
+          "context_id": 268,
+          "name": "키친갈매기",
+          "sim": 0.300659,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 276,
+          "context_id": 276,
+          "name": "메밀집",
+          "sim": 0.282776,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 273,
+          "context_id": 273,
+          "name": "오향절면",
+          "sim": 0.282586,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 266,
+          "context_id": 266,
+          "name": "도피",
+          "sim": 0.262502,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 274,
+          "context_id": 274,
+          "name": "모던아시안누들서비스",
+          "sim": 0.258474,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 270,
+          "context_id": 270,
+          "name": "적당",
+          "sim": 0.255844,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 267,
+          "context_id": 267,
+          "name": "애플하우스",
+          "sim": 0.249059,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 275,
+          "context_id": 275,
+          "name": "힉스커피",
+          "sim": 0.237539,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 269,
+          "context_id": 269,
+          "name": "오케이어 맨션",
+          "sim": 0.221597,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 271,
+          "context_id": 271,
+          "name": "피넛커피 충북혁신도시점",
+          "sim": 0.214734,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 272,
+          "context_id": 272,
+          "name": "주토피아 서울",
+          "sim": 0.149429,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "겨울 스키장 리프트권 파는 데",
+      "as": "host",
+      "user_id": 75,
+      "owned_records": 6,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 257,
+          "context_id": 257,
+          "name": "[데모] 강변 산책로 초입",
+          "sim": 0.203196,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 253,
+          "context_id": 253,
+          "name": "[데모] 창가 작업실 카페",
+          "sim": 0.197423,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 255,
+          "context_id": 255,
+          "name": "[데모] 언덕 위 야경 식당",
+          "sim": 0.161771,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 252,
+          "context_id": 252,
+          "name": "[데모] 골목 안 다방",
+          "sim": 0.148626,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 256,
+          "context_id": 256,
+          "name": "[데모] 넓은 한상 식당",
+          "sim": 0.08843,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 254,
+          "context_id": 254,
+          "name": "[데모] 연남 골목 선술집",
+          "sim": 0.071633,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "겨울 스키장 리프트권 파는 데",
+      "as": "jeongheon",
+      "user_id": 81,
+      "owned_records": 17,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 293,
+          "context_id": 293,
+          "name": "키친갈매기",
+          "sim": 0.287699,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.27922,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.267237,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 287,
+          "context_id": 287,
+          "name": "동교어린이공원",
+          "sim": 0.266681,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 281,
+          "context_id": 281,
+          "name": "플랜트 연남점",
+          "sim": 0.229035,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 282,
+          "context_id": 282,
+          "name": "치킨버거 이스트사이드",
+          "sim": 0.225423,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 277,
+          "context_id": 277,
+          "name": "카츠요",
+          "sim": 0.222292,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 283,
+          "context_id": 283,
+          "name": "쿠로코식당 연남점",
+          "sim": 0.191097,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.187012,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 292,
+          "context_id": 292,
+          "name": "적당",
+          "sim": 0.17673,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.173468,
+          "is_expected": false
+        },
+        {
+          "rank": 12,
+          "record_id": 285,
+          "context_id": 285,
+          "name": "월강부산돼지국밥",
+          "sim": 0.157137,
+          "is_expected": false
+        },
+        {
+          "rank": 13,
+          "record_id": 278,
+          "context_id": 278,
+          "name": "감나무집기사식당",
+          "sim": 0.15441,
+          "is_expected": false
+        },
+        {
+          "rank": 14,
+          "record_id": 288,
+          "context_id": 288,
+          "name": "연남칼국수",
+          "sim": 0.131431,
+          "is_expected": false
+        },
+        {
+          "rank": 15,
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.121816,
+          "is_expected": false
+        },
+        {
+          "rank": 16,
+          "record_id": 284,
+          "context_id": 284,
+          "name": "진우네 초밥",
+          "sim": 0.113165,
+          "is_expected": false
+        },
+        {
+          "rank": 17,
+          "record_id": 280,
+          "context_id": 280,
+          "name": "뉴오더클럽 연남",
+          "sim": 0.104734,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "겨울 스키장 리프트권 파는 데",
+      "as": "gahyeon",
+      "user_id": 80,
+      "owned_records": 11,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 268,
+          "context_id": 268,
+          "name": "키친갈매기",
+          "sim": 0.287672,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 266,
+          "context_id": 266,
+          "name": "도피",
+          "sim": 0.279635,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 275,
+          "context_id": 275,
+          "name": "힉스커피",
+          "sim": 0.267194,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 272,
+          "context_id": 272,
+          "name": "주토피아 서울",
+          "sim": 0.264281,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 271,
+          "context_id": 271,
+          "name": "피넛커피 충북혁신도시점",
+          "sim": 0.226618,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 269,
+          "context_id": 269,
+          "name": "오케이어 맨션",
+          "sim": 0.187029,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 270,
+          "context_id": 270,
+          "name": "적당",
+          "sim": 0.176702,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 276,
+          "context_id": 276,
+          "name": "메밀집",
+          "sim": 0.145497,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 267,
+          "context_id": 267,
+          "name": "애플하우스",
+          "sim": 0.129561,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 274,
+          "context_id": 274,
+          "name": "모던아시안누들서비스",
+          "sim": 0.121816,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 273,
+          "context_id": 273,
+          "name": "오향절면",
+          "sim": 0.120891,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "노트북 액정 수리 서비스센터",
+      "as": "host",
+      "user_id": 75,
+      "owned_records": 6,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 253,
+          "context_id": 253,
+          "name": "[데모] 창가 작업실 카페",
+          "sim": 0.337131,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 257,
+          "context_id": 257,
+          "name": "[데모] 강변 산책로 초입",
+          "sim": 0.179431,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 256,
+          "context_id": 256,
+          "name": "[데모] 넓은 한상 식당",
+          "sim": 0.136941,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 252,
+          "context_id": 252,
+          "name": "[데모] 골목 안 다방",
+          "sim": 0.103751,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 254,
+          "context_id": 254,
+          "name": "[데모] 연남 골목 선술집",
+          "sim": 0.080782,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 255,
+          "context_id": 255,
+          "name": "[데모] 언덕 위 야경 식당",
+          "sim": 0.053135,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "노트북 액정 수리 서비스센터",
+      "as": "jeongheon",
+      "user_id": 81,
+      "owned_records": 17,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 281,
+          "context_id": 281,
+          "name": "플랜트 연남점",
+          "sim": 0.276852,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 283,
+          "context_id": 283,
+          "name": "쿠로코식당 연남점",
+          "sim": 0.192772,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.188647,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.182723,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 288,
+          "context_id": 288,
+          "name": "연남칼국수",
+          "sim": 0.176888,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.168224,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 277,
+          "context_id": 277,
+          "name": "카츠요",
+          "sim": 0.167692,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 278,
+          "context_id": 278,
+          "name": "감나무집기사식당",
+          "sim": 0.161718,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 287,
+          "context_id": 287,
+          "name": "동교어린이공원",
+          "sim": 0.148149,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 282,
+          "context_id": 282,
+          "name": "치킨버거 이스트사이드",
+          "sim": 0.147901,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 292,
+          "context_id": 292,
+          "name": "적당",
+          "sim": 0.143951,
+          "is_expected": false
+        },
+        {
+          "rank": 12,
+          "record_id": 285,
+          "context_id": 285,
+          "name": "월강부산돼지국밥",
+          "sim": 0.139664,
+          "is_expected": false
+        },
+        {
+          "rank": 13,
+          "record_id": 293,
+          "context_id": 293,
+          "name": "키친갈매기",
+          "sim": 0.134535,
+          "is_expected": false
+        },
+        {
+          "rank": 14,
+          "record_id": 284,
+          "context_id": 284,
+          "name": "진우네 초밥",
+          "sim": 0.126298,
+          "is_expected": false
+        },
+        {
+          "rank": 15,
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.106923,
+          "is_expected": false
+        },
+        {
+          "rank": 16,
+          "record_id": 280,
+          "context_id": 280,
+          "name": "뉴오더클럽 연남",
+          "sim": 0.087897,
+          "is_expected": false
+        },
+        {
+          "rank": 17,
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.078368,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "노트북 액정 수리 서비스센터",
+      "as": "gahyeon",
+      "user_id": 80,
+      "owned_records": 11,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 276,
+          "context_id": 276,
+          "name": "메밀집",
+          "sim": 0.246285,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 266,
+          "context_id": 266,
+          "name": "도피",
+          "sim": 0.2269,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 272,
+          "context_id": 272,
+          "name": "주토피아 서울",
+          "sim": 0.220946,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 271,
+          "context_id": 271,
+          "name": "피넛커피 충북혁신도시점",
+          "sim": 0.220483,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 269,
+          "context_id": 269,
+          "name": "오케이어 맨션",
+          "sim": 0.188609,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 275,
+          "context_id": 275,
+          "name": "힉스커피",
+          "sim": 0.182675,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 270,
+          "context_id": 270,
+          "name": "적당",
+          "sim": 0.143979,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 268,
+          "context_id": 268,
+          "name": "키친갈매기",
+          "sim": 0.134582,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 267,
+          "context_id": 267,
+          "name": "애플하우스",
+          "sim": 0.127443,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 273,
+          "context_id": 273,
+          "name": "오향절면",
+          "sim": 0.122699,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 274,
+          "context_id": 274,
+          "name": "모던아시안누들서비스",
+          "sim": 0.078368,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "강아지 예방접종 동물병원",
+      "as": "host",
+      "user_id": 75,
+      "owned_records": 6,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 256,
+          "context_id": 256,
+          "name": "[데모] 넓은 한상 식당",
+          "sim": 0.211259,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 257,
+          "context_id": 257,
+          "name": "[데모] 강변 산책로 초입",
+          "sim": 0.208487,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 253,
+          "context_id": 253,
+          "name": "[데모] 창가 작업실 카페",
+          "sim": 0.180534,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 252,
+          "context_id": 252,
+          "name": "[데모] 골목 안 다방",
+          "sim": 0.156978,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 255,
+          "context_id": 255,
+          "name": "[데모] 언덕 위 야경 식당",
+          "sim": 0.127443,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 254,
+          "context_id": 254,
+          "name": "[데모] 연남 골목 선술집",
+          "sim": 0.110297,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "강아지 예방접종 동물병원",
+      "as": "jeongheon",
+      "user_id": 81,
+      "owned_records": 17,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 282,
+          "context_id": 282,
+          "name": "치킨버거 이스트사이드",
+          "sim": 0.253324,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 285,
+          "context_id": 285,
+          "name": "월강부산돼지국밥",
+          "sim": 0.232106,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.216816,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 278,
+          "context_id": 278,
+          "name": "감나무집기사식당",
+          "sim": 0.214791,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 288,
+          "context_id": 288,
+          "name": "연남칼국수",
+          "sim": 0.212897,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.205312,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 292,
+          "context_id": 292,
+          "name": "적당",
+          "sim": 0.202909,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 277,
+          "context_id": 277,
+          "name": "카츠요",
+          "sim": 0.192734,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.176217,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 293,
+          "context_id": 293,
+          "name": "키친갈매기",
+          "sim": 0.175947,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 280,
+          "context_id": 280,
+          "name": "뉴오더클럽 연남",
+          "sim": 0.163843,
+          "is_expected": false
+        },
+        {
+          "rank": 12,
+          "record_id": 281,
+          "context_id": 281,
+          "name": "플랜트 연남점",
+          "sim": 0.158913,
+          "is_expected": false
+        },
+        {
+          "rank": 13,
+          "record_id": 284,
+          "context_id": 284,
+          "name": "진우네 초밥",
+          "sim": 0.140667,
+          "is_expected": false
+        },
+        {
+          "rank": 14,
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.130022,
+          "is_expected": false
+        },
+        {
+          "rank": 15,
+          "record_id": 287,
+          "context_id": 287,
+          "name": "동교어린이공원",
+          "sim": 0.123333,
+          "is_expected": false
+        },
+        {
+          "rank": 16,
+          "record_id": 283,
+          "context_id": 283,
+          "name": "쿠로코식당 연남점",
+          "sim": 0.112778,
+          "is_expected": false
+        },
+        {
+          "rank": 17,
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.098402,
+          "is_expected": false
+        }
+      ]
+    },
+    {
+      "query": "강아지 예방접종 동물병원",
+      "as": "gahyeon",
+      "user_id": 80,
+      "owned_records": 11,
+      "results": [
+        {
+          "rank": 1,
+          "record_id": 273,
+          "context_id": 273,
+          "name": "오향절면",
+          "sim": 0.324863,
+          "is_expected": false
+        },
+        {
+          "rank": 2,
+          "record_id": 276,
+          "context_id": 276,
+          "name": "메밀집",
+          "sim": 0.276958,
+          "is_expected": false
+        },
+        {
+          "rank": 3,
+          "record_id": 275,
+          "context_id": 275,
+          "name": "힉스커피",
+          "sim": 0.205144,
+          "is_expected": false
+        },
+        {
+          "rank": 4,
+          "record_id": 270,
+          "context_id": 270,
+          "name": "적당",
+          "sim": 0.202904,
+          "is_expected": false
+        },
+        {
+          "rank": 5,
+          "record_id": 272,
+          "context_id": 272,
+          "name": "주토피아 서울",
+          "sim": 0.179174,
+          "is_expected": false
+        },
+        {
+          "rank": 6,
+          "record_id": 269,
+          "context_id": 269,
+          "name": "오케이어 맨션",
+          "sim": 0.176176,
+          "is_expected": false
+        },
+        {
+          "rank": 7,
+          "record_id": 268,
+          "context_id": 268,
+          "name": "키친갈매기",
+          "sim": 0.175926,
+          "is_expected": false
+        },
+        {
+          "rank": 8,
+          "record_id": 267,
+          "context_id": 267,
+          "name": "애플하우스",
+          "sim": 0.131699,
+          "is_expected": false
+        },
+        {
+          "rank": 9,
+          "record_id": 274,
+          "context_id": 274,
+          "name": "모던아시안누들서비스",
+          "sim": 0.130022,
+          "is_expected": false
+        },
+        {
+          "rank": 10,
+          "record_id": 266,
+          "context_id": 266,
+          "name": "도피",
+          "sim": 0.127422,
+          "is_expected": false
+        },
+        {
+          "rank": 11,
+          "record_id": 271,
+          "context_id": 271,
+          "name": "피넛커피 충북혁신도시점",
+          "sim": 0.113547,
+          "is_expected": false
+        }
+      ]
+    }
+  ]
+}
