@@ -25,14 +25,14 @@ DB 실패는 아무도 분류하지 않아 그대로 500으로 나갔고, 커넥
 | 분류 | 대상 | 근거 |
 |---|---|---|
 | Transient | `OSError` 계열(접속 단계 한정) | 접속 거부·DNS 실패·타임아웃·풀 획득 타임아웃 |
-| Transient | `08xxx` `PostgresConnectionError` | 연결이 끊겼다. DB 재기동 중 질의가 이것으로 끝난다 |
-| Transient | `40xxx` `TransactionRollbackError` | 직렬화 실패·교착. §2.1이 이름으로 지목한다 |
-| Transient | `53xxx` `InsufficientResourcesError` | 커넥션 수 초과·메모리·디스크. 질의가 아니라 자원 |
+| Transient | `08xxx` `PostgresConnectionError` | 연결이 끊겼다. DB 재기동 중 질의가 이것이다 |
+| Transient | `40xxx` `TransactionRollbackError` | 직렬화 실패·교착. §2.1이 이름으로 지목 |
+| Transient | `53xxx` `InsufficientResourcesError` | 커넥션 수·메모리·디스크. 질의가 아니라 자원 |
 | Transient | `57xxx` `OperatorInterventionError` | 재기동·기동 중·statement_timeout 취소 |
 | Transient | `58xxx` `PostgresSystemError` | 서버 파일 I/O |
-| Transient | `55P03` `LockNotAvailableError` | 잠금 타임아웃. §2.1이 이름으로 지목한다 |
+| Transient | `55P03` `LockNotAvailableError` | 잠금 타임아웃. §2.1이 이름으로 지목 |
 | Transient | `25P03`·`25P04` 세션·트랜잭션 타임아웃 | 시간 때문에 끊겼다 |
-| Permanent | `28xxx` 인증 실패 | DB 자격 증명. 재시도해도 같다 — GMS `401`을 502로 두는 것과 같은 이유 |
+| Permanent | `28xxx` 인증 실패 | DB 자격 증명. GMS `401`을 502로 두는 것과 같다 |
 | Permanent | `3D000` 없는 데이터베이스 | 배포 설정 |
 | Permanent | `42501` 권한 없음 | GRANT 문제. 코드를 고쳐 낫지 않는다 |
 | **미분류(500)** | `42xxx` 문법·없는 컬럼/테이블·타입 불일치 | **우리 질의의 결함** |

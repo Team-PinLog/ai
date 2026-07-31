@@ -22,6 +22,7 @@ from app.core.db_errors import (
 )
 from app.core.errors import PermanentError, TransientError
 
+
 # ── 계층: 기존 두 분류의 하위 타입이어야 한다 ────────────
 #
 # 이것이 깨지면 `main.py`의 핸들러가 받지 못하고 전부 500으로 돌아간다.

@@ -342,6 +342,28 @@ async def test_db_statement_canceled_returns_503(search_api, settings, monkeypat
     assert r.status_code == 503
 
 
+# ── 영구 오류 → 502 ─────────────────────────────────────
+async def test_db_misconfigured_target_returns_502(search_api, settings):
+    """존재하지 않는 데이터베이스를 가리킨다(`3D000`) → 502.
+
+    503이 아니다. 기다려도 낫지 않고 **배포 설정을 고쳐야** 낫는다 — GMS의 `401`을
+    502로 두는 것과 같은 판단이며, §2.5가 두 코드를 가른 기준(`재시도가 도움이 되는가`)이
+    DB 축에서도 그대로 성립한다.
+
+    서버까지 실제로 닿아서 서버가 거절한다. TCP는 열려 있으므로 `OSError` 경로가
+    아니라 `asyncpg` 예외 경로로 온다.
+    """
+    dsn = settings.database_url.rsplit("/", 1)[0] + "/no_such_database"
+    wrong = _LazyPoolDatabase(dsn)
+    await wrong.connect()
+    try:
+        async with search_api(_ok, database=wrong) as (client, _):
+            r = await _post_search(client, settings)
+    finally:
+        await wrong.disconnect()
+    assert r.status_code == 502
+
+
 # ── 500은 여전히 「우리 코드의 결함」이다 ────────────────
 async def test_unclassified_db_error_still_returns_500(
     search_api, settings, monkeypatch
