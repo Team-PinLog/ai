@@ -40,6 +40,7 @@
 
 
 | [2026-07-31-search-error-contract.md](2026-07-31-search-error-contract.md) | 구현 | 검색 API 오류 응답 계약 — `TransientError→503` · `PermanentError→502`, 500 을 「우리 코드의 결함」으로 비워 둔다. 운영 버그 `ai#69`(임베딩 502 → 검색 500). **`back` 은 500·503 을 구분하지 않으므로 바뀌는 것은 사용자 화면이 아니라 관측** (S15P11A705-220) |
+| [2026-07-31-db-error-classification.md](2026-07-31-db-error-classification.md) | 구현 | DB 실패의 오류 분류 — `-220` 이 남긴 500 을 메운다. SQLSTATE 군 단위 경계, **미분류(500) 목록이 분류 목록만큼 중요**. `-220` 의 핸들러를 고치지 않고 하위 타입으로 받는다 (S15P11A705-221) |
 
 > **유형**: 구현(무엇을 만들었나) / 검증(어떻게 검증했나) / 감사(티켓·문서가 실물과 맞는가). 검증 성격 문서가 늘면 이 컬럼이 분류 기준이 된다.
 > **분리 트리거**: 리포트가 15개를 넘고 검증 유형이 절반 이상이면 `verification/` 분리를 검토한다.
@@ -81,5 +82,6 @@
 
 
 | I31 | 검색 API 오류 응답 계약 — `app/main.py` 예외 핸들러 2종과 그 계약 테스트 `tests/test_api_error_contract.py`(MockTransport→실제 client→router→응답을 한 요청으로 관통). 분류·재시도는 `-121` 이 이미 맞혔고 **비어 있던 것은 예외가 응답이 되는 지점**이었다. 로컬 스텁으로 502 를 만들어 `origin/dev` 500 ↔ 이 브랜치 503 을 대조 | [오류 응답 계약](2026-07-31-search-error-contract.md), [failure-recovery §2.5](../spec/failure-recovery.md), [ai#69](https://github.com/Team-PinLog/ai/issues/69) |
+| I32 | DB 실패의 오류 분류 `app/core/db_errors.py` — `-220` 이 남긴 항목. **접속 실패는 `asyncpg` 예외가 아니라 stdlib `OSError`** 라서 티켓 문구대로 asyncpg 만 분류했으면 본체를 놓쳤다(T53). 경계는 *"서버·연결의 상태 때문인가, 우리가 보낸 질의 때문인가"* 한 줄이고 **미분류(500) 목록이 분류 목록만큼 중요**하다. 분류를 세션 경계(`db.py`)에 걸어 획득·질의를 함께 덮고, 하위 타입(`DatabaseTransientError`)으로 `-220` 의 핸들러를 그대로 재사용. 전용 컨테이너를 `docker stop` 해 `origin/dev` 500 ↔ 이 브랜치 503 을 대조 | [DB 오류 분류](2026-07-31-db-error-classification.md), [failure-recovery §2.5](../spec/failure-recovery.md), [T53~T55](../troubleshooting/2026-07-31-db-error-pitfalls.md) |
 
 > I6·I7·I8은 백엔드 아티팩트라 **back 레포** `docs/ai/implements`에 있습니다.

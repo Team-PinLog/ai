@@ -28,6 +28,7 @@
 | [2026-07-31-error-contract-pitfalls.md](2026-07-31-error-contract-pitfalls.md) | 오류 응답 계약 검증 — ASGITransport 예외 전파·GMS 스텁 URL 형식·시연 DB 자격증명 (T43~T45) |
 | [2026-07-31-judge-prompt-ab.md](2026-07-31-judge-prompt-ab.md) | 판정 프롬프트 A/B — 죽은 설정 키·라벨 커버리지·조건 노출·사전 기준 (T43~T46) |
 | [2026-07-31-judge-prompt-ab.md](2026-07-31-judge-prompt-ab.md) | 판정 프롬프트 A/B — 죽은 설정 키·라벨 커버리지·조건 노출·사전 기준·1회 분포·번호 충돌 (T43~T49) |
+| [2026-07-31-db-error-pitfalls.md](2026-07-31-db-error-pitfalls.md) | DB 오류 분류 — 접속 실패는 asyncpg 예외가 아니다·`min_size=1` 재현 불가·curl 한글 본문 (T53~T55) |
 
 ## 문제 해결 — 전수 (AI 소유)
 
@@ -83,5 +84,8 @@
 | T47 | DB 에 저장된 판정 **1회분**의 `confidence` 가 라벨을 깨끗이 가르는 것처럼 보인다(fit min 0.70 · unfit 0.30~). 한 번 더 판정받으면 분리가 사라진다 — **confidence 도 비결정적이다.** DB 조회가 공짜라 여러 번 볼 생각을 안 하게 된다 | 저장된 판정에서 발견한 문턱은 후속으로 올리기 전에 같은 조건으로 한 번 더 받아 대조한다(42회·70초). 확인용 회차는 `--outdir` 를 나눈다 |
 | T48 | 트러블슈팅 번호를 **분기 시점**의 마지막 다음으로 매기면, 같은 날 병렬로 병합된 티켓과 겹친다(`-213` 이 T40~T42 를 먼저 썼다). 색인 표는 정렬되지 않아 **중복이 나란히 서지 않는다** | PR 직전 `origin/dev` 로 rebase 한 **뒤에** 번호를 확정한다. 재번호는 매핑 한 번으로(역순 치환은 뒤섞인다), 남의 행은 건드리지 않는다 |
 | T49 | `open(p,'w').write(f(s))` 에서 `f` 가 죽으면 **파일이 0바이트로 남는다** — `'w'` 가 인자 평가 전에 truncate 한다. 고쳐서 재실행하면 빈 파일을 읽어 빈 결과를 써서 **조용히 성공한다** | 변환 결과를 먼저 만들고 임시 파일에 쓴 뒤 `os.replace`. `newline=''` 를 양쪽에. 문서 일괄 수정은 커밋 뒤에 돌린다 |
+| T53 | **DB 접속 실패는 `asyncpg` 예외가 아니다** — 포트 거부·DNS·타임아웃·풀 획득 타임아웃이 전부 stdlib `OSError` 다. `08xxx` 는 *붙어 있던* 연결이 끊길 때의 SQLSTATE 다. asyncpg 만 분류하면 **테스트는 전부 초록인데** 「DB 연결 실패가 503」만 거짓으로 남는다 | 접속 단계에서만 `OSError` 를 함께 번역하고, 분류를 repository 함수가 아니라 **세션 경계**에 건다(`pool.acquire()` 가 함수 밖이다) |
+| T54 | 닿지 않는 주소로 「요청 중 DB 불가」를 재현하려 하면 `create_pool` 이 `min_size` 만큼 즉시 접속해 **픽스처에서 죽는다.** `connect()` 를 건너뛰면 `RuntimeError`(우리 결함·500)라 다른 것을 측정한다 | 테스트용 `min_size=0` 풀로 접속 시점을 첫 `acquire()` 로 미룬다. 풀·드라이버·예외는 실물로 두고 **예외를 주입하지 않는다** |
+| T55 | Git Bash `curl -d` 로 한글 본문을 보내면 `{"detail":"There was an error parsing the body"}` `400` — **스키마 결함처럼 보인다** | 질의어만 ASCII 로 바꿔 같은 요청이 통과하면 원인은 본문 바이트다. 한글이 측정 대상이면 UTF-8 파일 + `--data-binary @file` |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.
