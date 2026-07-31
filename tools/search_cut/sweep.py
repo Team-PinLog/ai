@@ -152,6 +152,19 @@ def distribution(data: dict) -> dict:
     log(f"  기대 정답 r 의 최솟값  {min(hit_ratio):.4f}   ← r 은 이 아래여야 정답을 잃지 않는다")
     out["hit_ratio_min"] = float(min(hit_ratio))
     out["overlap"] = {"hit_min": lo, "irrelevant_max": hi}
+
+    # 정답이 없는 질의의 top-1. `τ_abs` 로 「관련 기록이 없다」를 판정할 수 있는지는
+    # **오직 이 값과 정답 최솟값의 간격**이 정한다. personal-search.md §6 은 무관 질의
+    # 1건으로 간격 +0.2120 을 적었다 — 표본을 늘리면 이 간격이 어떻게 되는지가 핵심이다.
+    off = [q["results"][0]["sim"] for q in data.get("offtopic", [])]
+    if off:
+        log()
+        quantiles("무관 질의 top-1", off)
+        gap = lo - max(off)
+        log(f"  무관 질의 top-1 최댓값 {max(off):.4f}   vs   기대 정답 최솟값 {lo:.4f}")
+        log(f"  → 간격 {gap:+.4f}" + ("   겹친다. 단일 τ_abs 로 가를 수 없다" if gap < 0
+                                       else "   가를 수 있다"))
+        out["offtopic_top1"] = {"max": float(max(off)), "gap_to_hit_min": float(gap)}
     return out
 
 
@@ -211,6 +224,36 @@ def evaluate(data: dict, limit: int, tau: float, ratio: float, base_limit: int |
     }
 
 
+def evaluate_offtopic(data: dict, limit: int, tau: float, ratio: float) -> dict:
+    """정답이 없는 질의에서 컷이 무엇을 하는가.
+
+    **여기서 「0건」은 좋은 것이다.** 검증 질의 표의 `empty` 와 같은 계산이지만 부호가
+    반대다 — 관련 기록이 하나도 없는 사용자에게 억지 결과를 내밀지 않는 것이 옳다.
+    같은 숫자를 한 표에 섞으면 컷을 반대 방향으로 읽게 되므로 표를 가른다.
+    """
+    silenced, returned = 0, 0
+    for q in data.get("offtopic", []):
+        top1 = q["results"][0]["sim"]
+        kept = [x for x in q["results"][:limit] if x["sim"] >= tau and x["sim"] >= ratio * top1]
+        returned += len(kept)
+        if not kept:
+            silenced += 1
+    n = len(data.get("offtopic", []))
+    return {
+        "limit": limit, "tau_abs": tau, "ratio": ratio,
+        "n": n, "silenced": silenced, "returned": returned,
+        "silenced_pct": round(100 * silenced / n, 1) if n else 0.0,
+    }
+
+
+def offtopic_table(title: str, rows: list[dict]) -> None:
+    head(title)
+    log(f"  {'limit':>5} {'τ_abs':>6} {'r':>5} {'반환':>5} {'0건이 된 질의':>14}")
+    for r in rows:
+        log(f"  {r['limit']:>5} {r['tau_abs']:>6.3f} {r['ratio']:>5.2f} {r['returned']:>5} "
+            f"{r['silenced']:>6}/{r['n']:<3} {r['silenced_pct']:>5.1f}%")
+
+
 def table(title: str, rows: list[dict], n_query: int) -> None:
     head(title)
     log(f"  {'limit':>5} {'τ_abs':>6} {'r':>5} {'반환':>5} {'정답누락':>8} {'빈결과':>7} "
@@ -264,14 +307,33 @@ def main() -> int:
     ]
     table(f"limit 단독 — 컷 없이 상위 N 개만 (분모는 limit={base_limit})", limit_rows, n_query)
 
-    combo = [evaluate(data, base_limit, t, r) for t in taus for r in ratios]
+    off_tau = [evaluate_offtopic(data, base_limit, t, 0.0) for t in taus]
+    offtopic_table(f"무관 질의 — τ_abs 단독 (limit={base_limit}) · 0건이 **좋은** 결과다", off_tau)
+    off_ratio = [evaluate_offtopic(data, base_limit, 0.0, r) for r in ratios]
+    offtopic_table(f"무관 질의 — r 단독 (limit={base_limit})", off_ratio)
+
+    combo = []
+    for t in taus:
+        for r in ratios:
+            row = evaluate(data, base_limit, t, r)
+            row["offtopic"] = evaluate_offtopic(data, base_limit, t, r)
+            combo.append(row)
     safe = [c for c in combo if c["miss"] == 0 and c["empty"] == 0]
-    safe.sort(key=lambda c: (-c["tail_strict_removed"], c["tau_abs"], c["ratio"]))
+    # 두 이득을 함께 본다. 꼬리만으로 고르면 무관 질의를 침묵시키는 τ_abs 가 항상 진다
+    # (r 하나로도 꼬리는 잘리므로).
+    safe.sort(key=lambda c: (-(c["tail_strict_removed"] + c["offtopic"]["silenced"]),
+                             c["tau_abs"], c["ratio"]))
     table(
         f"조합 격자 (limit={base_limit}) — 정답 누락 0 · 빈 결과 0 인 조합 상위 12",
         safe[:12],
         n_query,
     )
+    log(f"  {'':>18} ↑ 위 표의 「빈결과」는 검증 질의 기준이다. 무관 질의는 아래 열이다")
+    log(f"\n  {'limit':>5} {'τ_abs':>6} {'r':>5}   무관 질의 15건 중 0건이 된 수")
+    for c in safe[:12]:
+        o = c["offtopic"]
+        log(f"  {c['limit']:>5} {c['tau_abs']:>6.3f} {c['ratio']:>5.2f}   "
+            f"{o['silenced']:>2}/{o['n']:<3} {o['silenced_pct']:>5.1f}%  (반환 {o['returned']}건)")
     log(f"\n  {len(safe)}/{len(combo)} 조합이 정답 누락 0 · 빈 결과 0 이다.")
 
     # 안전선을 벗어나는 첫 지점을 함께 찍는다. 「어디까지 올릴 수 있나」보다
