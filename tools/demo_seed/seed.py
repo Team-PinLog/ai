@@ -197,7 +197,17 @@ async def reset(db: Database) -> None:
 
 
 async def bootstrap_members(db: Database, keys: list[str]) -> dict[str, int]:
-    """member 행을 만들고 `demo-seed` social_account로 표시한다."""
+    """member 행을 만들고 `demo-seed` social_account로 표시한다.
+
+    `email`은 back `V6__social_account_email_not_null.sql`이 `NOT NULL`로 만들었다. 그 전에
+    시딩한 DB에는 이 컬럼이 NULL인 demo-seed 행이 남아 있어 **back이 기동하면서 V6에 걸려
+    죽는다** — 그 마이그레이션은 일부러 백필을 넣지 않았고(채울 값이 없다), 그 판단은
+    운영 기준으로는 옳다. 여기서 값을 만들어 넣는 것은 시딩이 만든 계정이 실제 공급자
+    계정이 아니라서 가능한 것이다.
+
+    `.invalid`는 RFC 2606이 "절대 실재하지 않는다"고 예약한 TLD다. 실재하는 주소로
+    보이는 값을 넣으면 시연 화면에서 진짜 이메일과 구별되지 않는다.
+    """
     ids: dict[str, int] = {}
     async with db.transaction() as conn:
         for key in keys:
@@ -205,11 +215,12 @@ async def bootstrap_members(db: Database, keys: list[str]) -> dict[str, int]:
                 "INSERT INTO core.member DEFAULT VALUES RETURNING id"
             )
             await conn.execute(
-                "INSERT INTO core.social_account (member_id, provider, provider_user_id) "
-                "VALUES ($1, $2, $3)",
+                "INSERT INTO core.social_account "
+                "(member_id, provider, provider_user_id, email) VALUES ($1, $2, $3, $4)",
                 member_id,
                 DEMO_PROVIDER,
                 key,
+                f"{key}@{DEMO_PROVIDER}.invalid",
             )
             ids[key] = member_id
     log(f"member {len(ids)}명 생성: " + ", ".join(f"{k}={v}" for k, v in ids.items()))

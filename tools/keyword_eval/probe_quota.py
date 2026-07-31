@@ -132,7 +132,9 @@ async def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=8, help="조건당 호출 수")
     ap.add_argument("--gap", type=float, default=5.0, help="호출 간격(초)")
-    ap.add_argument("--model", default=None, help="기본값은 .env 의 PINLOG_JUDGE_MODEL")
+    ap.add_argument(
+        "--model", default=None, help="기본값은 .env 의 PINLOG_JUDGE_CHAIN 1순위 모델"
+    )
     args = ap.parse_args()
 
     s = get_settings()
