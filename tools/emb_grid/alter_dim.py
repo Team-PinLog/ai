@@ -32,6 +32,15 @@ from app.core.db import Database  # noqa: E402
 TABLES = ("context_embedding", "keyword_preset")
 ALLOWED = (1536, 3072)
 
+for _s in (sys.stdout, sys.stderr):
+    # seed.py·verify.py 와 같은 이유(T28). 콘솔이 cp949 면 `—` 한 글자에 복구 스크립트가
+    # 죽는다 — ALTER 는 이미 커밋된 뒤라 DB 는 목표 상태인데 출력만 실패해 exit 1 이 되고,
+    # 그것을 보고 "복구가 안 됐다"고 읽게 된다.
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 
 def log(msg: str = "") -> None:
     print(msg, flush=True)
