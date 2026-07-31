@@ -18,6 +18,7 @@ from app.repository import ai_state_repo, context_embedding_repo, context_keywor
 from app.repository.ai_state_repo import Stage
 from app.schema.context import ContextProcessRequest
 from app.schema.llm import JudgeResult
+from app.service._stage_log import reclaimed as _log_reclaimed
 
 log = get_logger("app.service.keyword")
 
@@ -59,11 +60,13 @@ class KeywordService:
         self, req: ContextProcessRequest, carried_vector: list[float] | None
     ) -> None:
         async with self._db.acquire() as conn:
-            affected = await ai_state_repo.try_start(
+            start = await ai_state_repo.try_start(
                 conn, req.contextId, Stage.KEYWORD, self._settings.processing_expiry_sec
             )
-        if affected == 0:
+        if not start.started:
             return  # 시작하지 않음(embedding 미완료·경합·CANCELLED 등)
+        if start.reclaimed:
+            _log_reclaimed(req.contextId, "keyword", self._settings.processing_expiry_sec)
 
         vector = await self._resolve_vector(req, carried_vector)
         if vector is None:

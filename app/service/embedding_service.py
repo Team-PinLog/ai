@@ -13,6 +13,7 @@ from app.core.logging import get_logger
 from app.repository import ai_state_repo, context_embedding_repo
 from app.repository.ai_state_repo import Stage
 from app.schema.context import ContextProcessRequest
+from app.service._stage_log import reclaimed as _log_reclaimed
 
 log = get_logger("app.service.embedding")
 
@@ -48,11 +49,13 @@ class EmbeddingService:
             return None
 
         async with self._db.acquire() as conn:
-            affected = await ai_state_repo.try_start(
+            start = await ai_state_repo.try_start(
                 conn, req.contextId, Stage.EMBEDDING, self._settings.processing_expiry_sec
             )
-        if affected == 0:
+        if not start.started:
             return None  # 시작하지 않음(정상 종료)
+        if start.reclaimed:
+            _log_reclaimed(req.contextId, "embedding", self._settings.processing_expiry_sec)
 
         try:
             vector = await self._client.embed_one(req.text)

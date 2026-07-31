@@ -25,6 +25,7 @@ from typing import Sequence
 
 import httpx
 
+from app.client._calls import meter
 from app.client._usage import record as record_usage
 from app.client.retry import RetryPolicy, call_with_retry
 from app.client.vendors import VendorCall, resolve_chain
@@ -125,34 +126,49 @@ class LLMClient:
     async def _judge_once(
         self, client: httpx.AsyncClient, call: VendorCall, user: str
     ) -> JudgeResult:
-        """벤더 1곳에 1회 호출. 재시도·폴백 여부는 던지는 오류 타입이 결정한다(retry.py)."""
+        """벤더 1곳에 1회 호출. 재시도·폴백 여부는 던지는 오류 타입이 결정한다(retry.py).
+
+        **시도 하나가 계측 단위다.** 폴백은 시도마다 벤더를 바꾸므로(`_call_for`), 판정
+        1건이 아니라 시도 1회를 세야 "어느 경로가 막혔나"가 집계에 남는다(`_calls.py`).
+        """
         url, headers, body = call.adapter.request(
             self._root, self._key, call.model, SYSTEM, user
         )
-        try:
-            resp = await client.post(url, headers=headers, json=body)
-        except httpx.HTTPError as exc:
-            raise TransientError(f"llm request failed ({call.label}): {exc}") from exc
+        async with meter.call(
+            "judge", model=call.model, vendor=call.adapter.vendor
+        ) as rec:
+            try:
+                resp = await client.post(url, headers=headers, json=body)
+            except httpx.HTTPError as exc:
+                # 응답이 없으므로 상태 코드 자리에 예외 타입 이름을 넣는다. 타임아웃과
+                # 연결 실패는 둘 다 transient 지만 처방이 다르다 — 앞은 GMS 가 느린
+                # 것이고 뒤는 경로가 아예 막힌 것이다. 메시지 본문에는 URL 이 섞여
+                # 들어올 수 있어 그쪽이 아니라 타입 이름을 쓴다.
+                rec.status = type(exc).__name__
+                raise TransientError(f"llm request failed ({call.label}): {exc}") from exc
 
-        if resp.status_code != 200:
-            # 게이트웨이 오류를 일괄 일시 오류로 두지 않는다 — 400·401·403은 키·설정을
-            # 고치기 전까지 같은 답이므로 다음 벤더로 넘겨도 같은 답이 온다.
-            # 메시지에 벤더를 넣는다 — 폴백이 있으면 "어느 경로가 막혔나"가 원인 그 자체다.
-            raise classify_http_status(
-                resp.status_code,
-                f"llm error: {call.label} {resp.status_code} {resp.text[:200]}",
-            )
+            rec.status = resp.status_code
+            if resp.status_code != 200:
+                # 게이트웨이 오류를 일괄 일시 오류로 두지 않는다 — 400·401·403은 키·설정을
+                # 고치기 전까지 같은 답이므로 다음 벤더로 넘겨도 같은 답이 온다.
+                # 메시지에 벤더를 넣는다 — 폴백이 있으면 "어느 경로가 막혔나"가 원인 그 자체다.
+                raise classify_http_status(
+                    resp.status_code,
+                    f"llm error: {call.label} {resp.status_code} {resp.text[:200]}",
+                )
 
-        try:
-            payload = resp.json()
-        except ValueError as exc:
-            raise SchemaViolationError(
-                f"llm response not json ({call.label}): {exc}"
-            ) from exc
-        # 어느 벤더·모델이 답했는지 남긴다. 폴백이 있으면 설정값(1순위)은 실제로 답한
-        # 모델과 다를 수 있으므로, 사후 비용·품질 집계의 근거는 이 기록뿐이다.
-        record_usage("judge", payload, vendor=call.adapter.vendor, model=call.model)
-        return self._parse(call.adapter.parse(payload), call.model)
+            try:
+                payload = resp.json()
+            except ValueError as exc:
+                raise SchemaViolationError(
+                    f"llm response not json ({call.label}): {exc}"
+                ) from exc
+            # 어느 벤더·모델이 답했는지 남긴다. 폴백이 있으면 설정값(1순위)은 실제로 답한
+            # 모델과 다를 수 있으므로, 사후 비용·품질 집계의 근거는 이 기록뿐이다.
+            record_usage("judge", payload, vendor=call.adapter.vendor, model=call.model)
+            # 봉투 해석까지 안에 둔다. 200 을 받고도 구조화 출력이 깨지면 그 호출은
+            # 실패이고, 그것이 `_calls.SCHEMA` 로 갈리는 유일한 경로다.
+            return self._parse(call.adapter.parse(payload), call.model)
 
     @staticmethod
     def _parse(data: dict, model: str) -> JudgeResult:

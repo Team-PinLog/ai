@@ -341,6 +341,70 @@ async def test_stale_processing_is_resumable(db, conn, settings):
     assert emb_b.call_count == 0 and st2["embedding_status"] == "PROCESSING"
 
 
+async def test_reclaimed_embedding_stage_is_logged(db, conn, settings, caplog):
+    """시나리오 8의 관측 짝(S15P11A705-197) — 재선점이 **일어났다는 사실**이 남는가.
+
+    위 테스트는 재선점이 일어나는지만 본다. 일어난 사실이 로그에 없으면 dev 에서
+    "처리가 만료(600s) 안에 끝나지 못하고 있다"를 알 방법이 없고, 그것은 GMS 가
+    느려졌거나 프로세스가 죽고 있다는 신호다. 실제 DB 로 stale 행을 만들어 확인한다.
+    """
+    import logging
+    from datetime import datetime, timedelta, timezone
+
+    caplog.set_level(logging.WARNING, logger="app.service.stage")
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    old = datetime.now(timezone.utc) - timedelta(minutes=11)
+    await make_state(conn, context_id=1, embedding_status="PROCESSING",
+                     keyword_status="PENDING", updated_at=old)
+
+    proc, _, _ = _services(db, settings, llm=FakeLLMClient(selected=[(101, 0.7)]), cache=cache)
+    await proc.process(_req(1))
+
+    rows = [r.getMessage() for r in caplog.records if r.name == "app.service.stage"]
+    assert any("ctx=1 stage=embedding reclaimed stale PROCESSING" in m for m in rows)
+    assert any("expiry=600s" in m for m in rows)
+
+
+async def test_reclaimed_keyword_stage_is_logged(db, conn, settings, caplog):
+    """Keyword 단계도 같은 행을 낸다.
+
+    이 단계는 `try_start` 전에 상태를 읽지 않으므로, 호출부가 미리 읽은 값으로는
+    재선점을 가릴 수 없었던 바로 그 경로다(`ai_state_repo.StartOutcome`).
+    """
+    import logging
+    from datetime import datetime, timedelta, timezone
+
+    caplog.set_level(logging.WARNING, logger="app.service.stage")
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    old = datetime.now(timezone.utc) - timedelta(minutes=11)
+    await make_state(conn, context_id=1, embedding_status="COMPLETED",
+                     keyword_status="PROCESSING", updated_at=old)
+    await make_embedding(conn, context_id=1, user_id=1, record_id=1,
+                         embedding_profile=settings.embedding_profile,
+                         text_for_vector="친구랑 저녁")
+
+    proc, emb, llm = _services(db, settings, llm=FakeLLMClient(selected=[(101, 0.7)]), cache=cache)
+    await proc.process(_req(1))
+
+    rows = [r.getMessage() for r in caplog.records if r.name == "app.service.stage"]
+    assert emb.call_count == 0 and llm.call_count == 1  # 부분 재개 경로가 맞다
+    assert any("ctx=1 stage=keyword reclaimed stale PROCESSING" in m for m in rows)
+
+
+async def test_fresh_start_is_not_logged(db, conn, settings, caplog):
+    """신규 시작은 남기지 않는다 — Context 마다 두 번씩 나므로 남기면 재선점 행이 묻힌다."""
+    import logging
+
+    caplog.set_level(logging.WARNING, logger="app.service.stage")
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+
+    proc, _, _ = _services(db, settings, llm=FakeLLMClient(selected=[(101, 0.7)]), cache=cache)
+    await proc.process(_req(1))
+
+    assert [r for r in caplog.records if r.name == "app.service.stage"] == []
+
+
 async def test_fastapi_never_writes_finalizer_failed(db, conn, settings):
     # 시나리오 16: retry 소진 stale. FastAPI는 retry·재시도소진 FAILED 미기록, FAILED 재개 안 함
     await make_state(conn, context_id=1, embedding_status="FAILED",
