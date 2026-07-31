@@ -1,0 +1,66 @@
+# 재판정에서 새로 나온 행의 적합성 라벨. `S15P11A705-219`.
+#
+# `tau_grid/labels.yaml` 은 **현행 τ=0.30 판정이 낸 83행만** 덮는다. 판정을 다시 돌리면
+# 그 목록에 없는 조합이 나온다 — 판정이 비결정적이기 때문이다(`-210` §4 의 `+9`).
+# 그 행들을 빼고 세면 **새로 고른 것이 전부 없는 셈이 되어** 조건 비교가 기운다.
+#
+# **원본 `labels.yaml` 은 한 줄도 고치지 않았다.** 고치면 `-210` 의 수치와 비교가 끊긴다.
+# 기준도 그대로다 — 프리셋 `description` 대조, fit·unfit·unclear 세 값, 부대시설 규칙과
+# COMPANION 실동행 규칙. 이 파일은 **커버리지만 넓힌다.**
+#
+# ## 어떻게 붙였나
+#
+# `score_ab.py --dump-unlabeled` 로 뽑았다. 그 출력은 **어느 조건이 고른 행인지 찍지
+# 않는다** — 보고 붙이면 B 가 새로 고른 것에 후해지고 A 만 고른 것에 박해져, 라벨이
+# 결론을 따라간다. 본문과 `description` 만 보고 붙였다.
+#
+# 같은 본문이 두 `context_id` 로 들어 있는 5쌍(`-210` §4.1)은 **같은 판정을 준다.**
+# 한쪽만 다르게 붙으면 그 차이가 조건 효과로 잘못 읽힌다.
+#
+# ## 이 라벨의 한계
+#
+# 판정자가 이 티켓의 작업자 한 명이고, **그 작업자가 B 프롬프트를 설계한 사람이기도
+# 하다.** 조건을 가리는 것으로 「어느 쪽이 골랐나」는 막았지만 「B 가 노린 유형이
+# 무엇인가」는 이미 알고 있다 — 업종·메뉴 연상과 동행 추정이 그것이다. 그 유형에
+# 해당하는 행을 unfit 으로 붙이는 데 기울었을 수 있다. 원본 라벨과 마찬가지로 교차
+# 검증이 없고, 이 파일 위에 선 수치는 그만큼의 여지를 안고 읽어야 한다.
+#
+# 다만 20/24 가 **본문에 해당 개념이 한 글자도 없는** 것들이라(라멘집→작업,
+# 맛 불평뿐인 글→혼자·활기찬·조용한) 판정자가 바뀌어도 뒤집힐 여지는 작다고 본다.
+
+meta:
+  labeled_at: "2026-07-31"
+  labeler: "S15P11A705-219 작업 세션"
+  basis: "prompt_ab 회차 10개(A5·B5)에서 나온 행 중 labels.yaml 에 없던 24건"
+  method: "조건을 가린 덤프를 본문·description 만 보고 판정"
+
+labels:
+  # ── 가공 데모 데이터 ─────────────────────────────────────────────────
+  - {context: 258, code: COZY,        verdict: unclear, why: "「마음이 가라앉는다」가 차분함인지 포근함인지 갈린다. QUIET 쪽에 가깝다"}
+  - {context: 259, code: DATE_COURSE, verdict: unclear, why: "연인 언급이 없다. 다만 「코스로 이어가기 좋은 상황」은 걷는 길에 걸릴 수 있어 갈린다"}
+  - {context: 259, code: GATHERING,   verdict: unfit,   why: "동행과 이야기를 나눴을 뿐 여럿이 모이는 자리가 아니다"}
+
+  # ── 실사용자 기록 ────────────────────────────────────────────────────
+  - {context: 267, code: DRINK,       verdict: unfit,   why: "음주 언급이 없다. 만두 메뉴에서 온 연상 (274·289 와 같은 유형)"}
+  - {context: 268, code: CELEBRATION, verdict: unfit,   why: "축하 상황 언급이 없다. 293(같은 본문)의 기존 라벨과 같다"}
+  - {context: 269, code: TRENDY,      verdict: unfit,   why: "사진·분위기·인테리어 언급이 없다. 친절함은 서비스라 부대 규칙으로도 제외된다"}
+  - {context: 269, code: VIEW_GOOD,   verdict: unfit,   why: "전망·경치 언급이 전무하다"}
+  - {context: 270, code: TRENDY,      verdict: fit,     why: "「분위기 좋음」이 본문에 있다. 292(같은 본문)의 기존 라벨과 같다"}
+  - {context: 272, code: VIEW_GOOD,   verdict: unfit,   why: "피자집이라는 것 외에 아무 정보가 없다. 전망 언급 없음"}
+  - {context: 275, code: VIEW_GOOD,   verdict: unfit,   why: "언덕은 접근 난이도 맥락이다. 290(같은 본문)의 기존 라벨과 같다"}
+  - {context: 275, code: WITH_FRIENDS, verdict: unfit,  why: "동행 언급이 없다"}
+  - {context: 278, code: GATHERING,   verdict: unfit,   why: "「자주 갔음」은 반복이지 여럿이 모인 자리가 아니다"}
+  - {context: 279, code: DESSERT,     verdict: unfit,   why: "라멘집이다. 283(같은 유형)의 기존 라벨과 같다"}
+  - {context: 282, code: WITH_FAMILY, verdict: unfit,   why: "가족 동행 언급이 없다 (284 와 같은 유형)"}
+  - {context: 282, code: WITH_FRIENDS, verdict: unfit,  why: "동행 언급이 없다"}
+  - {context: 283, code: STUDY_WORK,  verdict: unfit,   why: "「부캠 당시」는 시점이지 그 가게에서 작업했다는 뜻이 아니다. 라멘집이다"}
+  - {context: 283, code: WALK,        verdict: unfit,   why: "라멘집 기록이다. 279 의 기존 라벨과 같다"}
+  # 286 은 현행 판정에서 **0행이던 Context** 다. 본문이 맛 불평뿐이라 붙을 것이 없는데
+  # 재판정에서 넷이 붙었다. 넷 다 본문에 근거가 한 글자도 없다.
+  - {context: 286, code: ALONE,       verdict: unfit,   why: "동행 여부 언급이 없다. 본문은 맛 불평뿐이다"}
+  - {context: 286, code: LIVELY,      verdict: unfit,   why: "분위기 언급이 없다"}
+  - {context: 286, code: QUIET,       verdict: unfit,   why: "분위기 언급이 없다"}
+  - {context: 286, code: TRENDY,      verdict: unfit,   why: "분위기·인테리어 언급이 없다"}
+  - {context: 291, code: TRENDY,      verdict: unfit,   why: "269(같은 본문)와 같다"}
+  - {context: 291, code: VIEW_GOOD,   verdict: unfit,   why: "269(같은 본문)와 같다"}
+  - {context: 292, code: COZY,        verdict: unclear, why: "270(같은 본문)의 기존 라벨과 같다 — 「분위기 좋음」이 포근함인지 특정되지 않는다"}

@@ -33,6 +33,11 @@ env/
 # docs/implements/ 로 옮기고, 재현은 matrix.py 를 다시 돌려서 한다.
 .tau/
 
+# tools/prompt_ab 실행 산출물 — 회차별 판정 결과. `selections` 자체는 코드뿐이지만
+# 회차 파일이 조건 프롬프트 전문을 함께 담고, 무엇보다 **GMS 를 다시 부르면 값이 달라진다**
+# (판정은 비결정적이라 재현이 아니라 재측정이다). 수치와 판단은 docs/implements/ 로 옮긴다.
+.prompt_ab/
+
 # tools/keyword_eval (평가 하네스는 test 브랜치 소유)
 tools/keyword_eval/.env
 tools/keyword_eval/.cache/
