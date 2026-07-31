@@ -39,7 +39,7 @@ jobs:
             release/*|hotfix/*)
               echo "base=main 허용: $HEAD_REF" ;;
             *)
-              echo "::error::main 을 base 로 하는 PR 은 release/* 또는 hotfix/* 만 허용한다."
+              echo "::error::배포 브랜치를 base 로 하는 PR 은 release/* 또는 hotfix/* 만 허용한다."
               echo "일반 작업은 dev 를 base 로 연다 (CONTRIBUTING.md 「Jira와 Git」)."
               echo "  현재 head: $HEAD_REF"
               echo "  고치는 법: PR 화면에서 base 를 dev 로 바꾸면 된다."
