@@ -189,6 +189,35 @@ V6 는 일부러 백필을 넣지 않았고(「채울 값이 없다 — 이메�
 `JWT_PRIVATE_KEY` 는 개행을 지운 한 줄로 넘겨도 된다 — `JwtKeyProvider.fromPem` 이
 `replaceAll("\\s", "")` 로 공백을 전부 지운다.
 
+### 로컬 DB 복구 — 완료했다
+
+측정은 `ai.context_embedding` · `ai.keyword_preset` 두 컬럼을 `vector(3072)` 로 바꾸고 조건별
+`grid-*` profile 로 데이터를 채운다. **Flyway 마이그레이션을 만들지 않았다** — 이 티켓은 측정이고
+차원 채택은 별건이다. 여기서 `V6__…sql` 을 만들면 아직 하지 않은 결정이 스키마 이력에 먼저
+박힌다.
+
+복구 절차와 결과는 아래와 같고, 실행해 확인했다.
+
+```bash
+python tools/emb_grid/alter_dim.py --to 1536      # 두 컬럼 되돌리기
+python -m app.bootstrap.load_presets              # 실배포 profile 로 재적재
+python tools/demo_seed/seed.py --reset --pace 1   # 데모 37건 재시딩
+```
+
+```
+ai.context_embedding · ai.keyword_preset   vector(1536)
+keyword_preset                             27행 · openai-text-embedding-3-small-1536-cosine-v1
+context_embedding                          37행 · 같은 profile
+context_ai_state                           37건 COMPLETED · Keyword 72행
+```
+
+`grid-*` profile 행은 하나도 남지 않았다. `alter_dim.py` 는 차원을 바꿀 때 기존 벡터를 전부
+버리므로(차원이 다른 값은 캐스팅되지 않고 컬럼이 `NOT NULL` 이다) 재시딩이 복구의 일부다.
+
+**서버 두 개는 내려 둔 상태다.** 측정 전 이 환경에는 `-174` 세션이 07-30 에 띄운 uvicorn·jar 가
+남아 있었는데(각각 :8000 · :8080) 조건별 env 로 다시 띄우기 위해 종료했다. 다시 필요하면
+`-174` §7 재현 절차로 띄우면 되고, 데이터는 위 상태 그대로다.
+
 ### 고아 임베딩 행
 
 `--reset` 은 `demo-seed` provider 로 식별된 member 의 데이터만 지우므로, 다른 member 가
