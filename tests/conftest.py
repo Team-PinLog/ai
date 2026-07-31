@@ -45,7 +45,8 @@ _TEST_ENV = {
     "PINLOG_EMBEDDING_DIMENSION": "1536",
     "PINLOG_EMBEDDING_DISTANCE": "cosine",
     "PINLOG_EMBEDDING_PROFILE": "openai-text-embedding-3-small-1536-cosine-v1",
-    "PINLOG_JUDGE_MODEL": "gemini-2.5-flash",
+    # 판정 벤더 체인은 주입하지 않는다 — 정본이 코드에 있고(P45) 통합 테스트는 Fake
+    # 클라이언트를 쓰므로 값이 동작에 들어오지 않는다. 기본값 자체는 test_unit.py가 본다.
     "KEYWORD_CANDIDATE_TOP_K": "10",
     "SIMILARITY_FLOOR": "0.30",
     "PROCESSING_EXPIRY_SEC": "600",

@@ -75,11 +75,14 @@ def _emb(handler, sleep: _SleepRecorder, **kw):
 
 
 def _llm(handler, sleep: _SleepRecorder, **kw):
+    # 체인을 벤더 하나로 둔다 — 이 파일이 고정하는 것은 **단일 벤더에서의** 상태 코드
+    # 분류와 재시도이며, 그것이 폴백 도입 이전과 같아야 한다는 것이 회귀 기준이다.
+    # 폴백 전환 자체는 test_llm_vendors.py가 본다.
     transport, seen = _transport(handler)
     client = LLMClient(
         gms_base_url=_BASE,
         api_key="k",
-        model="gemini-2.5-flash",
+        chain=(("gemini", "gemini-2.5-flash"),),
         retry=_policy(sleep, **kw),
         transport=transport,
     )

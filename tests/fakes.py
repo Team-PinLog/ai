@@ -54,12 +54,17 @@ class FakeLLMClient:
         unmatched: list[str] | None = None,
         on_call: OnCall | None = None,
         raise_exc: Exception | None = None,
+        model: str | None = None,
     ) -> None:
         self.call_count = 0
         self._selected = selected or []
         self._unmatched = unmatched or []
         self._on_call = on_call
         self._raise = raise_exc
+        # 실제 client는 **답한 모델**을 결과에 싣는다(폴백이 있으면 설정 1순위와 다르다).
+        # 기본 None은 "설정값으로 대신하라"는 뜻이고, 값을 주면 폴백이 걸린 상태를
+        # 재현한다 — model_profile에 무엇이 저장되는지 단언하려면 이 주입이 필요하다.
+        self._model = model
 
     async def judge(self, context_text: str, candidates: list[dict]) -> JudgeResult:
         self.call_count += 1
@@ -72,4 +77,5 @@ class FakeLLMClient:
                 KeywordSelection(keyword_id=k, confidence=c) for k, c in self._selected
             ],
             unmatched_concepts=list(self._unmatched),
+            model=self._model,
         )
