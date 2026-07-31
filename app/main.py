@@ -12,6 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.cache.preset_cache import PresetCache
+from app.client._calls import meter as call_meter
 from app.client.embedding_client import EmbeddingClient
 from app.client.llm_client import LLMClient
 from app.core.config import get_settings
@@ -75,6 +76,10 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        # 진행 중인 GMS 집계 창을 마지막으로 한 번 내보낸다. 요약은 다음 호출이 밀어내는
+        # 구조라(`_calls.py`), 이것이 없으면 종료 직전 구간이 통째로 사라진다 — 시연이
+        # 끝나고 파드를 내리는 순간의 실패율이 그렇게 사라진다.
+        call_meter.flush()
         await db.disconnect()
 
 
