@@ -70,9 +70,13 @@ def test_shared_action_receives_only_the_exact_environment_secret_keys():
     action = next(step for step in job["steps"] if step.get("uses") == ACTION)
 
     assert set(action["env"]) == SECRET_KEYS
-    assert action["env"] == {key: f"${{{{ secrets.{key} }}}}" for key in SECRET_KEYS}
-    for key in SECRET_KEYS:
-        assert text.count(f"${{{{ secrets.{key} }}}}") == 1
+    expected_env = {key: f"${{{{ secrets.{key} }}}}" for key in SECRET_KEYS}
+    expected_env["PINLOG_INFRA_SECRET_PR_TOKEN"] = (
+        "${{ secrets.PINLOG_INFRA_IMAGE_PR_TOKEN }}"
+    )
+    assert action["env"] == expected_env
+    for value in expected_env.values():
+        assert text.count(value) == 1
     assert all(
         "${{ secrets." not in str(step)
         for step in job["steps"]
