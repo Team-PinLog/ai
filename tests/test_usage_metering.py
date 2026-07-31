@@ -1,8 +1,12 @@
-"""GMS 토큰 계측 — 환경변수 게이트, 두 응답 형식 파싱, 실패 삼킴.
+"""GMS 토큰 계측 — 환경변수 게이트, 벤더별 응답 형식 파싱, 실패 삼킴.
 
-`app/client/_usage.py`는 임베딩(OpenAI 호환 `usage`)과 판정(Gemini `usageMetadata`)
-응답에 실려 오던 토큰 수를 기록한다. 그 값을 두 클라이언트가 전부 버리고 있어
-비용을 사후에 셀 방법이 없던 것이 신설 이유다(S15P11A705-174).
+`app/client/_usage.py`는 임베딩(OpenAI 호환 `usage`)과 판정 응답에 실려 오던 토큰 수를
+기록한다. 그 값을 두 클라이언트가 전부 버리고 있어 비용을 사후에 셀 방법이 없던 것이
+신설 이유다(S15P11A705-174).
+
+판정은 벤더마다 필드 이름이 다르고, 폴백 체인이 한 배포 안에서 세 형식을 섞는다
+(S15P11A705-175). 벤더별 추출과 실제 client 호출 경로는 `test_llm_vendors.py`가 응답
+봉투째로 덮고, 여기서는 **게이트와 행 형식**을 고정한다.
 
 **게이트가 이 모듈의 핵심 계약이다.** `PINLOG_TOKEN_LOG`가 없으면 아무 파일도 만들지
 않아야 운영 경로에 영향이 없다. 그 조건이 깨지면 모든 요청이 디스크 쓰기를 하게 되므로
@@ -44,7 +48,7 @@ def test_no_env_writes_nothing(tmp_path, monkeypatch):
     target = tmp_path / "should-not-exist.jsonl"
 
     record("embedding", _EMBEDDING_PAYLOAD)
-    record("judge", _JUDGE_PAYLOAD)
+    record("judge", _JUDGE_PAYLOAD, vendor="gemini")
 
     assert not target.exists()
     assert list(tmp_path.iterdir()) == []
@@ -68,7 +72,7 @@ def test_judge_usage_recorded(tmp_path, monkeypatch):
     log = tmp_path / "usage.jsonl"
     monkeypatch.setenv("PINLOG_TOKEN_LOG", str(log))
 
-    record("judge", _JUDGE_PAYLOAD)
+    record("judge", _JUDGE_PAYLOAD, vendor="gemini", model="gemini-2.5-flash")
 
     (row,) = _read(log)
     assert row["kind"] == "judge"
@@ -76,6 +80,35 @@ def test_judge_usage_recorded(tmp_path, monkeypatch):
     assert row["output"] == 49
     assert row["thoughts"] == 0
     assert row["total"] == 839
+    assert row["vendor"] == "gemini" and row["model"] == "gemini-2.5-flash"
+
+
+def test_unknown_judge_vendor_still_records_the_call(tmp_path, monkeypatch):
+    """토큰을 못 읽어도 호출 사실은 남긴다 — 횟수는 세어야 한다.
+
+    벤더 이름이 추출표에 없는 상태 자체는 `test_llm_vendors.py`가 레지스트리 대조로
+    막는다. 여기서 고정하는 것은 그 상태가 되어도 기록이 죽지 않는다는 것이다.
+    """
+    log = tmp_path / "usage.jsonl"
+    monkeypatch.setenv("PINLOG_TOKEN_LOG", str(log))
+
+    record("judge", _JUDGE_PAYLOAD, vendor="unknown-vendor", model="m")
+
+    (row,) = _read(log)
+    assert row["vendor"] == "unknown-vendor"
+    assert (row["prompt"], row["output"], row["total"]) == (None, None, None)
+
+
+def test_embedding_row_has_no_vendor_field(tmp_path, monkeypatch):
+    """임베딩은 폴백 대상이 아니다(프로바이더가 바뀌면 벡터 공간이 달라진다 —
+    model-profile.md §3.2). 경로가 하나뿐이므로 행에 벤더를 붙이지 않는다."""
+    log = tmp_path / "usage.jsonl"
+    monkeypatch.setenv("PINLOG_TOKEN_LOG", str(log))
+
+    record("embedding", _EMBEDDING_PAYLOAD)
+
+    (row,) = _read(log)
+    assert "vendor" not in row
 
 
 def test_appends_not_overwrites(tmp_path, monkeypatch):
@@ -84,7 +117,7 @@ def test_appends_not_overwrites(tmp_path, monkeypatch):
     monkeypatch.setenv("PINLOG_TOKEN_LOG", str(log))
 
     record("embedding", _EMBEDDING_PAYLOAD)
-    record("judge", _JUDGE_PAYLOAD)
+    record("judge", _JUDGE_PAYLOAD, vendor="gemini")
     record("embedding", _EMBEDDING_PAYLOAD)
 
     rows = _read(log)

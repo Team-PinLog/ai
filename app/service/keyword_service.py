@@ -78,8 +78,9 @@ class KeywordService:
         )
 
         if not candidates:
-            # 후보 0개 → LLM 미호출, 선택 0개로 정상 완료
-            await self._persist(req, [], [], snapshot.version)
+            # 후보 0개 → LLM 미호출, 선택 0개로 정상 완료. 부른 모델이 없으므로
+            # model_profile에는 설정 1순위를 남긴다(이 행의 의미는 "판정을 하지 않았다").
+            await self._persist(req, [], [], snapshot.version, self._settings.judge_model)
             return
 
         cand_ids = {p.id for p in candidates}
@@ -109,7 +110,14 @@ class KeywordService:
 
         selections = self._map(result, cand_ids, req.contextId)
         await self._persist(
-            req, selections, result.unmatched_concepts, snapshot.version
+            req,
+            selections,
+            result.unmatched_concepts,
+            snapshot.version,
+            # 폴백으로 2·3순위가 답했으면 설정의 1순위가 아니라 **답한 모델**을 남긴다.
+            # `model_profile`의 용도가 "어떤 모델의 판단이었는지 구분"이므로
+            # (keyword-preset.md §5.2), 설정값을 그대로 쓰면 그 구분이 거짓이 된다.
+            result.model or self._settings.judge_model,
         )
 
     async def _resolve_vector(
@@ -160,6 +168,7 @@ class KeywordService:
         selections: list[tuple[int, float | None]],
         unmatched: list[str],
         preset_version: int,
+        model_profile: str,
     ) -> None:
         try:
             async with self._db.transaction() as conn:
@@ -178,7 +187,7 @@ class KeywordService:
                     req.contextId,
                     preset_version,
                     unmatched,
-                    self._settings.judge_model,
+                    model_profile,
                 )
                 if await ai_state_repo.complete(conn, req.contextId, Stage.KEYWORD) == 0:
                     raise PersistDiscarded()

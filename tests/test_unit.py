@@ -249,11 +249,88 @@ def test_injection_overrides_code_defaults(monkeypatch):
     assert s.embedding_profile == override["PINLOG_EMBEDDING_PROFILE"]
 
 
-# ── GMS_BASE_URL 형식 (기동 시 fail-fast, ai#32 §2) ─────
+# ── 판정 벤더 폴백 체인 (S15P11A705-175) ────────────────
 def _settings_with(monkeypatch, **overrides) -> Settings:
     for k, v in {**_ENV, **overrides}.items():
         monkeypatch.setenv(k, v)
     return Settings(_env_file=None)
+
+
+def test_default_judge_chain_is_the_measured_priority_order(monkeypatch):
+    """2026-07-30 실측으로 확정한 순서다. 조용히 바뀌면 시연 당일 동작이 달라진다.
+
+    1순위 gpt-4o-mini(100% · 0.91s), 2순위 gemini-2.5-flash(현행 기준선),
+    3순위 claude-haiku(프로바이더가 셋째라 동시 장애 가능성이 가장 낮다).
+    """
+    monkeypatch.delenv("PINLOG_JUDGE_CHAIN", raising=False)
+    assert _settings_with(monkeypatch).judge_vendors == (
+        ("openai", "gpt-4o-mini"),
+        ("gemini", "gemini-2.5-flash"),
+        ("anthropic", "claude-haiku-4-5-20251001"),
+    )
+
+
+def test_judge_model_is_the_first_link_of_the_chain(monkeypatch):
+    """진단 도구와 `model_profile` 기본값이 읽는 값 — 두 곳이 갈라지지 않게 파생시킨다."""
+    s = _settings_with(monkeypatch, PINLOG_JUDGE_CHAIN="gemini:only-model")
+    assert s.judge_model == "only-model"
+
+
+def test_judge_chain_can_be_rolled_back_to_a_single_vendor(monkeypatch):
+    """완료 조건 — 단일 벤더로 되돌리는 것이 설정만으로 된다."""
+    s = _settings_with(monkeypatch, PINLOG_JUDGE_CHAIN="gemini:gemini-2.5-flash")
+    assert s.judge_vendors == (("gemini", "gemini-2.5-flash"),)
+
+
+def test_judge_chain_order_is_configurable(monkeypatch):
+    """완료 조건 — 순서를 코드 수정 없이 바꿀 수 있다."""
+    s = _settings_with(
+        monkeypatch, PINLOG_JUDGE_CHAIN="anthropic:c, gemini:g ,openai:o"
+    )
+    assert s.judge_vendors == (("anthropic", "c"), ("gemini", "g"), ("openai", "o"))
+
+
+@pytest.mark.parametrize("spec", ["gpt-4o-mini", "openai:", ":gpt-4o-mini", "openai:a,bad"])
+def test_judge_chain_rejects_malformed_entries(monkeypatch, spec):
+    """벤더 없는 모델명만으로는 어느 경로·어느 인증 헤더로 부를지 알 수 없다."""
+    with pytest.raises(SettingsError, match="PINLOG_JUDGE_CHAIN"):
+        _settings_with(monkeypatch, PINLOG_JUDGE_CHAIN=spec)
+
+
+@pytest.mark.parametrize("spec", ["", "   ", ","])
+def test_judge_chain_rejects_an_empty_chain(monkeypatch, spec):
+    """벤더가 하나도 없으면 Keyword 생성 경로 전체가 죽는다 — 기동에서 막는다."""
+    with pytest.raises(SettingsError, match="비어 있"):
+        _settings_with(monkeypatch, PINLOG_JUDGE_CHAIN=spec)
+
+
+def test_judge_chain_is_validated_at_startup_not_at_first_request(monkeypatch):
+    """판정 경로는 첫 Context 요청까지 실행되지 않는다. 그때까지 미루면 서버는 정상으로
+    보이는데 Keyword만 통째로 안 생기는 비대칭 장애가 된다."""
+    for k, v in {**_ENV, "PINLOG_JUDGE_CHAIN": "openai"}.items():
+        monkeypatch.setenv(k, v)
+    with pytest.raises(SettingsError):
+        Settings(_env_file=None)          # 속성 접근 없이 생성만으로 터진다
+
+
+def test_judge_chain_error_names_the_offending_entry(monkeypatch):
+    """모델명은 공개 값이다(P45) — 무엇이 잘못됐는지 보여야 고칠 수 있다."""
+    with pytest.raises(SettingsError) as excinfo:
+        _settings_with(monkeypatch, PINLOG_JUDGE_CHAIN="openai:gpt-4o-mini,typo-here")
+    assert "typo-here" in str(excinfo.value)
+
+
+def test_judge_chain_error_carries_no_secrets(monkeypatch):
+    """기동 실패 메시지는 배포 로그에 남는다 — 체인 오류에도 키·URL이 실리면 안 된다."""
+    key = "gms-api-key-placeholder-sentinel"
+    with pytest.raises(SettingsError) as excinfo:
+        _settings_with(monkeypatch, GMS_API_KEY=key, PINLOG_JUDGE_CHAIN="broken")
+    rendered = f"{excinfo.value!s} {excinfo.value!r}"
+    assert key not in rendered
+    assert _ENV["DATABASE_URL"] not in rendered
+
+
+# ── GMS_BASE_URL 형식 (기동 시 fail-fast, ai#32 §2) ─────
 
 
 def test_settings_rejects_gms_base_url_without_gmsapi_segment(monkeypatch):
@@ -437,7 +514,7 @@ class _StubEmbeddingClient:
 
 
 class _StubLLMClient:
-    def __init__(self, *, gms_base_url, api_key, model):
+    def __init__(self, *, gms_base_url, api_key, chain):
         pass
 
     async def judge(self, context_text: str, candidates: list[dict]) -> JudgeResult:

@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
     llm_client = LLMClient(
         gms_base_url=settings.gms_base_url,
         api_key=settings.gms_api_key,
-        model=settings.judge_model,
+        chain=settings.judge_vendors,
     )
 
     preset_cache = PresetCache()
