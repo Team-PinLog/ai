@@ -1,6 +1,17 @@
 """발표 시연용 데모 데이터 시딩 — back API 경로로 만든다.
 
     python tools/demo_seed/seed.py [--reset] [--pace 1] [--back URL] [--ai URL]
+                                   [--prune-orphans]
+
+## 시작 전에 preflight가 돈다
+
+`--reset`보다 먼저 `preflight.run()`이 돌고, 걸리면 **아무것도 지우지 않고**
+종료 코드 2로 끝난다. 무엇을 왜 검사하는지는 `preflight.py`에 있다.
+
+`--prune-orphans`는 참조하는 `core.context`가 없는 `ai.*` 행을 지운다. 기본이
+아닌 이유는 그 행들이 **우리 것이 아닐 수 있기 때문**이다 — `--reset`의 삭제
+범위는 `demo-seed` member로 한정되고, 그 밖의 행은 다른 세션의 측정 데이터일
+수 있다. preflight가 개수를 보고하니 사람이 보고 결정한다.
 
 ## 왜 back API인가 (직접 INSERT가 아니라)
 
@@ -70,6 +81,13 @@ from _client import (
     ensure_key,
     load_data,
 )
+from preflight import (
+    ORPHAN_TABLES,
+    count_orphans,
+    delete_orphans,
+    format_orphans,
+    run as preflight,
+)
 
 from app.core.db import Database
 
@@ -122,6 +140,12 @@ async def reset(db: Database) -> None:
     FK 역순으로 지운다. `ai.*`는 `core.context`를 참조하지 않지만(FK 없음)
     남겨 두면 다음 시딩의 새 context_id와 겹치지 않을 뿐 쓰레기로 쌓이므로
     같이 지운다.
+
+    **지울 `ai.*` 테이블 목록은 `preflight.ORPHAN_TABLES`가 정본이다.** 여기에
+    이름을 손으로 나열했더니 `ai.context_keyword_analysis`가 빠진 채로 남았고,
+    FK가 없어 DB도 알려주지 않아 259행 중 222행이 고아가 됐다
+    (`S15P11A705-198` 결함 2). 같은 목록을 preflight의 고아 집계가 쓰므로,
+    새 테이블을 그 목록에 넣지 않으면 **집계가 먼저 그것을 고아로 보고한다.**
     """
     async with db.acquire() as conn:
         member_ids = [
@@ -143,17 +167,9 @@ async def reset(db: Database) -> None:
             )
         ]
         async with conn.transaction():
-            if ctx_ids:
+            for table in ORPHAN_TABLES if ctx_ids else ():
                 await conn.execute(
-                    "DELETE FROM ai.context_keyword WHERE context_id = ANY($1::bigint[])",
-                    ctx_ids,
-                )
-                await conn.execute(
-                    "DELETE FROM ai.context_embedding WHERE context_id = ANY($1::bigint[])",
-                    ctx_ids,
-                )
-                await conn.execute(
-                    "DELETE FROM ai.context_ai_state WHERE context_id = ANY($1::bigint[])",
+                    f"DELETE FROM {table} WHERE context_id = ANY($1::bigint[])",  # noqa: S608
                     ctx_ids,
                 )
             await conn.execute(
@@ -320,6 +336,20 @@ async def main() -> int:
     db = Database(SETTINGS.database_url)
     await db.connect()
     try:
+        # **`--reset`보다 먼저다.** 뒤에 두면 검사가 걸릴 때는 이미 지운 뒤라
+        # 검사의 의미가 없다(T28·결함 3이 둘 다 그 순서로 데이터를 잃었다).
+        if not await preflight(db, SETTINGS.database_url, back, pem, log=log):
+            return 2
+
+        if "--prune-orphans" in argv:
+            async with db.acquire() as conn:
+                removed = await delete_orphans(conn)
+            log(
+                "고아 삭제: "
+                + ", ".join(f"{t}={n}" for t, n in removed.items() if n)
+                + f" (총 {sum(removed.values())}행)"
+            )
+
         if "--reset" in argv:
             await reset(db)
 
@@ -413,6 +443,15 @@ async def main() -> int:
             f"COMPLETED {sum(1 for r in rows if r['embedding_status'] == 'COMPLETED' and r['keyword_status'] == 'COMPLETED')}건 · "
             f"Keyword {kw}행"
         )
+
+        # 시딩이 끝난 뒤에도 센다. 앞의 preflight는 "시작 전에 이미 있었다"를 말하고
+        # 여기는 "이번 시딩이 남겼다"를 말한다 — 둘이 다르면 reset의 삭제 목록이
+        # 실제 테이블 집합보다 좁다는 뜻이고, 그것이 결함 2의 발생 경로였다.
+        async with db.acquire() as conn:
+            leftover = await count_orphans(conn)
+        for line in format_orphans(leftover):
+            log(f"  [WARN] {line}" if not line.startswith("      ") else line)
+
         log("검증은 다음으로: python tools/demo_seed/verify.py")
         return 0 if ok else 1
     finally:
