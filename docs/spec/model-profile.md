@@ -88,9 +88,12 @@ Profile은 세 지점에서 비교됩니다. 각각 동작이 다릅니다.
 - `embedding_status`가 COMPLETED인데 Profile이 다르면 FastAPI가 스스로 재생성하지 않습니다.
   COMPLETED에서 PROCESSING으로 전이할 권한이 없기 때문입니다.
   이 경우 Keyword 판정을 수행할 수 없으므로 §3.3과 동일하게 처리합니다.
-  Context는 불변이고 **기존 State를 PENDING으로 되돌리는 전이도 존재하지 않으므로**
-  (계약 §6.3), Profile 전환 배포에서 기존 Context를 어떻게 재처리할지는 Spring의 운영 결정이며
-  ai 레포의 판단 범위 밖입니다. FastAPI는 어떤 경우에도 스스로 재처리를 시작하지 않습니다.
+  Context는 불변이므로 **수정으로 인한** State 되돌림은 없지만, 운영 재처리를 위한
+  `COMPLETED → PENDING`은 Spring이 명시적으로 수행할 수 있습니다
+  (계약 §7.3, [state-machine.md](state-machine.md) §2). 되살아난 PENDING은 FastAPI가
+  신규 작업처럼 선점해 새 Profile로 다시 생성합니다. 따라서 Profile 전환 배포에서 기존
+  Context를 언제·어떤 범위로 되돌릴지는 Spring의 운영 결정이며 ai 레포의 판단 범위
+  밖입니다. FastAPI는 어떤 경우에도 스스로 재처리를 시작하지 않습니다.
 
 ### 3.3 Context Embedding Profile ≠ Preset Profile (Keyword 판정)
 
