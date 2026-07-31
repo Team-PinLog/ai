@@ -65,7 +65,20 @@ python tools/emb_grid/alter_dim.py --to 3072
 
 기존 벡터를 전부 버린다. 자세한 것은 그 파일 첫머리에 있다.
 
-### 3. 두 서버를 띄운다
+### 3. 프리셋을 이 조건 profile 로 적재한다 — 서버 기동 **전**
+
+```bash
+python tools/emb_grid/run_condition.py A --prepare
+```
+
+**FastAPI 는 프리셋 없이 뜨지 않는다.** `main.py` 의 lifespan 이 현재 profile 로 적재된 Preset 이
+0건이면 기동을 거부한다 — 그렇지 않으면 판정이 후보를 못 찾는 채로 서버가 정상인 척하기
+때문이다. 조건마다 profile 이 달라지므로 적재가 기동보다 앞이다.
+
+이 단계가 토큰 로그도 새로 연다. 프리셋 임베딩 토큰(27건 1배치)은 그 조건의 비용이므로
+시딩분과 같은 로그에 쌓인다.
+
+### 4. 두 서버를 띄운다
 
 ```bash
 .venv/Scripts/python -m uvicorn app.main:app --port 8000
@@ -84,13 +97,13 @@ JWT_PRIVATE_KEY="$(cat ../../../../ai/.demo/demo-jwt-key.pem)" \
 `PINLOG_AI_EMBEDDING_PROFILE` · `PINLOG_AI_EMBEDDING_INCLUDE_PLACE_NAME` 은 1단계 `eval` 이
 셸에 넣어 두었으므로 그 셸에서 띄우면 그대로 상속된다.
 
-### 4. 잰다
+### 5. 잰다
 
 ```bash
 python tools/emb_grid/run_condition.py A
 ```
 
-프리셋 적재 → 시딩(`--reset`) → 검색 12건 → 토큰 → 저장 비용 순으로 돌고
+시딩(`--reset`) → 검색 12건 → 토큰 → 저장 비용 순으로 돌고
 `.grid/condition-A.json` 을 남긴다. 조건이 환경과 어긋나면 **재지 않고 멈춘다.**
 
 조건마다 `--reset` 으로 완전히 초기화한다. profile 로 걸러지므로 벡터는 섞이지 않지만

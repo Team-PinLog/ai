@@ -1,6 +1,12 @@
 """임베딩 4조건 중 **한 조건**을 실경로로 재고 결과를 JSON 으로 남긴다.
 
-    python tools/emb_grid/run_condition.py A
+    python tools/emb_grid/run_condition.py A --prepare   # 서버 기동 **전**
+    python tools/emb_grid/run_condition.py A             # 서버 기동 **후**
+
+두 단계로 갈린 것은 **FastAPI 가 프리셋 없이는 뜨지 않기 때문이다.** `main.py` 의 lifespan 이
+현재 profile 로 적재된 Keyword Preset 이 0건이면 기동을 거부한다(그렇지 않으면 판정이 후보를
+못 찾는 채로 서버가 정상인 척한다). 조건마다 profile 이 달라지므로 적재가 기동보다 앞이다.
+`--prepare` 가 토큰 로그를 새로 열고 프리셋을 이 조건의 profile 로 다시 적재한다.
 
 한 조건만 도는 이유는 조건마다 **프로세스를 다시 띄워야** 하기 때문이다 — 임베딩 모델·차원은
 FastAPI 기동 시 설정으로 굳고, 장소명 결합은 back 기동 시 굳는다. 기동까지 이 스크립트가
@@ -91,6 +97,19 @@ async def preflight(cond, ai: str, db: Database) -> None:
         problems.append(f"이 프로세스 profile={SETTINGS.embedding_profile} ≠ {cond.profile}")
 
     async with db.acquire() as conn:
+        # 프리셋이 이 조건 profile 로 적재됐는가. FastAPI 는 이것 없이 뜨지 않으므로 여기서
+        # 걸리면 대개 `--prepare` 를 건너뛴 것이다.
+        presets = await conn.fetchval(
+            "SELECT count(*) FROM ai.keyword_preset "
+            "WHERE embedding_profile = $1 AND is_active",
+            cond.profile,
+        )
+        if not presets:
+            problems.append(
+                f"ai.keyword_preset 에 profile={cond.profile} 인 활성 행이 0건 "
+                "— run_condition.py --prepare 를 먼저 돌려라"
+            )
+
         for table in ("context_embedding", "keyword_preset"):
             dim = await conn.fetchval(
                 "SELECT a.atttypmod FROM pg_attribute a "
@@ -121,6 +140,7 @@ async def preflight(cond, ai: str, db: Database) -> None:
 
     log(f"  [OK] model={cond.model} dim={cond.dimension}")
     log(f"  [OK] profile={cond.profile}")
+    log(f"  [OK] keyword_preset {presets}행이 이 profile 로 적재돼 있다")
     log(f"  [OK] ai.context_embedding · ai.keyword_preset = vector({cond.dimension})")
     log(f"  [OK] FastAPI /ready → {ready}" + (" (프리셋 미적재)" if ready == 503 else ""))
     log(f"  [--] include_place_name={cond.include_place_name} — back 기동 env 로 확인한다")
@@ -283,23 +303,27 @@ async def main() -> int:
 
     OUT_DIR.mkdir(exist_ok=True)
     token_log = Path(os.environ.get("PINLOG_TOKEN_LOG", OUT_DIR / f"tokens-{cond.key}.jsonl"))
-    # 조건마다 새로 센다. 앞 조건의 행이 남아 있으면 토큰이 누적돼 조건 비교가 무너진다.
-    if token_log.exists():
-        token_log.unlink()
     os.environ["PINLOG_TOKEN_LOG"] = str(token_log)
+
+    if "--prepare" in argv:
+        # 조건마다 새로 센다. 앞 조건의 행이 남아 있으면 토큰이 누적돼 조건 비교가 무너진다.
+        if token_log.exists():
+            token_log.unlink()
+        # `keyword_preset` 은 `code` UNIQUE 라 profile 별로 공존하지 못한다(UPSERT 가 덮어쓴다).
+        # 적재된 profile 이 현재 설정과 다르면 `load_active` 가 0건을 내고 FastAPI 는 아예
+        # 뜨지 않는다. 프리셋 임베딩 토큰도 이 조건의 비용이므로 같은 로그에 쌓인다.
+        run([sys.executable, "-m", "app.bootstrap.load_presets"], f"프리셋 적재 — 조건 {cond.key}")
+        log(f"\n  준비 완료. 이제 FastAPI 와 back 을 이 조건 env 로 띄워라.")
+        return 0
 
     db = Database(SETTINGS.database_url)
     await db.connect()
     try:
         await preflight(cond, ai, db)
 
-        py = sys.executable
-        # 프리셋은 조건마다 다시 적재한다. `keyword_preset` 은 `code` UNIQUE 라 profile 별로
-        # 공존하지 못하고(UPSERT 가 덮어쓴다), 적재된 profile 이 현재 설정과 다르면
-        # `load_active` 가 0건을 내 판정이 통째로 비어 토큰 비교가 성립하지 않는다.
-        preset_sec = run([py, "-m", "app.bootstrap.load_presets"], "프리셋 적재")
         seed_sec = run(
-            [py, "tools/demo_seed/seed.py", "--reset", "--pace", "1"], "시딩 (37건)"
+            [sys.executable, "tools/demo_seed/seed.py", "--reset", "--pace", "1"],
+            "시딩 (37건)",
         )
 
         search = await measure_search(ai, db, load_data())
@@ -315,7 +339,7 @@ async def main() -> int:
         "dimension": cond.dimension,
         "include_place_name": cond.include_place_name,
         "profile": cond.profile,
-        "seconds": {"preset": round(preset_sec, 1), "seed": round(seed_sec, 1)},
+        "seconds": {"seed": round(seed_sec, 1)},
         "accuracy": search,
         "tokens": tokens,
         "storage": storage,
