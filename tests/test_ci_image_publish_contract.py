@@ -198,3 +198,29 @@ def test_coverage_gate_runs_after_tests_and_cannot_be_weakened_from_the_workflow
         step for step in steps if step.get("name") == "Upload app coverage report"
     )
     assert upload["if"] == "always()", "게이트가 막았을 때야말로 리포트가 필요하다"
+
+
+def test_verified_provenance_dispatches_trusted_infra_promotion_without_weakening_publish():
+    workflow, _ = load_workflow()
+    steps = workflow["jobs"]["image-publish"]["steps"]
+    names = [step.get("name") for step in steps]
+    dispatch_index = names.index("Request trusted Infra AI image promotion")
+    upload_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    assert dispatch_index > upload_index
+
+    dispatch = steps[dispatch_index]
+    assert dispatch["continue-on-error"] == "true"
+    assert dispatch["env"] == {
+        "GH_TOKEN": "${{ secrets.PINLOG_INFRA_IMAGE_PR_TOKEN }}"
+    }
+    script = dispatch["run"]
+    assert 'test -n "$GH_TOKEN"' in script
+    assert "gh workflow run ai-image-update.yaml" in script
+    assert "--repo Team-PinLog/infra" in script
+    assert "--ref main" in script
+    assert "IMAGE_DIGEST" not in script
+    assert "provenance.json" not in script
