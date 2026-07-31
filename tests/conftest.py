@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import asyncio
 import os
 from pathlib import Path
 
@@ -44,7 +45,8 @@ _TEST_ENV = {
     "PINLOG_EMBEDDING_DIMENSION": "1536",
     "PINLOG_EMBEDDING_DISTANCE": "cosine",
     "PINLOG_EMBEDDING_PROFILE": "openai-text-embedding-3-small-1536-cosine-v1",
-    "PINLOG_JUDGE_MODEL": "gemini-2.5-flash",
+    # 판정 벤더 체인은 주입하지 않는다 — 정본이 코드에 있고(P45) 통합 테스트는 Fake
+    # 클라이언트를 쓰므로 값이 동작에 들어오지 않는다. 기본값 자체는 test_unit.py가 본다.
     "KEYWORD_CANDIDATE_TOP_K": "10",
     "SIMILARITY_FLOOR": "0.30",
     "PROCESSING_EXPIRY_SEC": "600",
@@ -84,14 +86,36 @@ def settings(dsn) -> Settings:
     return get_settings()
 
 
-@pytest_asyncio.fixture(scope="session")
-async def _schema(dsn):
+async def _apply_schema(dsn: str) -> None:
     conn = await asyncpg.connect(dsn)
     try:
         await conn.execute(_SCHEMA_SQL)
     finally:
         await conn.close()
-    yield
+
+
+async def _truncate_ai_tables(dsn: str) -> None:
+    conn = await asyncpg.connect(dsn)
+    try:
+        await conn.execute(f"TRUNCATE {', '.join(_AI_TABLES)} RESTART IDENTITY CASCADE")
+    finally:
+        await conn.close()
+
+
+# 동기 fixture다. 스크립트 엔트리포인트(`app.bootstrap.load_presets`, `app.smoke.gms_roundtrip`)는
+# 자기가 `asyncio.run()`을 부르므로 그것을 검증하는 테스트도 sync여야 하고, sync 테스트는
+# async fixture를 받을 수 없다. 스키마 적용 자체는 세션당 1회라 어느 쪽이든 비용이 같다.
+# `_SCHEMA_SQL`은 `CREATE SCHEMA ai`로 시작해 멱등이 아니므로 반드시 세션 스코프여야 한다.
+@pytest.fixture(scope="session")
+def _schema(dsn) -> None:
+    asyncio.run(_apply_schema(dsn))
+
+
+@pytest.fixture
+def clean_dsn(settings, _schema) -> str:
+    """동기 테스트용 — 스키마가 적용된 DSN을 주고 ai 테이블을 비운다(`db` fixture의 sync판)."""
+    asyncio.run(_truncate_ai_tables(settings.database_url))
+    return settings.database_url
 
 
 @pytest_asyncio.fixture

@@ -169,6 +169,37 @@ def test_successful_publish_emits_exact_digest_bound_provenance_artifact():
     }
 
 
+def test_coverage_gate_runs_after_tests_and_cannot_be_weakened_from_the_workflow():
+    """게이트가 CI에 실제로 걸려 있고 임계값을 워크플로에서 덮지 못하는지 고정한다.
+
+    `S15P11A705-110`: line·branch 각각 80% 이상이 병합 조건이 됐다. 스크립트가 빠지거나
+    인자로 임계값을 낮추면 게이트는 이름만 남는다. `--cov-branch` 없이 만든 리포트도
+    분기 검사를 무력화하므로 함께 고정한다.
+    """
+    workflow, _ = load_workflow()
+    steps = workflow["jobs"]["check"]["steps"]
+    names = [step.get("name") for step in steps]
+
+    tests = next(step for step in steps if step.get("name") == "Tests and app branch coverage")
+    assert "--cov=app" in tests["run"]
+    assert "--cov-branch" in tests["run"]
+    assert "--cov-report=json:coverage.json" in tests["run"]
+    # 합산 비율 게이트로 되돌아가지 않는다 — line·branch를 따로 보는 것이 이 티켓의 전부다.
+    assert "--cov-fail-under" not in tests["run"]
+
+    gate_index = names.index("Coverage gate (app line·branch >= 80% each)")
+    assert gate_index > names.index("Tests and app branch coverage")
+
+    gate = steps[gate_index]
+    assert gate["run"].strip() == "python tools/check_coverage_gate.py"
+    assert "if" not in gate, "게이트에 조건을 달면 특정 이벤트에서 조용히 건너뛴다"
+
+    upload = next(
+        step for step in steps if step.get("name") == "Upload app coverage report"
+    )
+    assert upload["if"] == "always()", "게이트가 막았을 때야말로 리포트가 필요하다"
+
+
 def test_verified_provenance_dispatches_trusted_infra_promotion_without_weakening_publish():
     workflow, _ = load_workflow()
     steps = workflow["jobs"]["image-publish"]["steps"]

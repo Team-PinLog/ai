@@ -1,4 +1,4 @@
-> 구현 완료. 하네스·저수준 계층(단위·저장소·API, ai#14·#16)과 파이프라인 계층(§3 시나리오, `test_pipeline.py`, ai#18)이 모두 구현됨([../../tests/README.md](../../tests/README.md), `pytest tests/` 66 passed — AI 검증 60 + CI 계약 6. 배포 게이트 14건이 2026-07-29 합류: `/ready` 6·`GMS_BASE_URL` 형식 4·스모크 4). 리포트: [implements/2026-07-24-e3-test-harness.md](../implements/2026-07-24-e3-test-harness.md).
+> 구현 완료. 하네스·저수준 계층(단위·저장소·API, ai#14·#16)과 파이프라인 계층(§3 시나리오, `test_pipeline.py`, ai#18)이 모두 구현됨([../../tests/README.md](../../tests/README.md), `pytest tests/` **181 passed**). 이후 합류분: 배포 게이트 14건(2026-07-29), client 재시도·오류 분류 `S15P11A705-121`, 부트스트랩·기동 계층과 coverage 게이트 `S15P11A705-110`(2026-07-30). 리포트: [implements/2026-07-24-e3-test-harness.md](../implements/2026-07-24-e3-test-harness.md), [implements/2026-07-30-coverage-gate.md](../implements/2026-07-30-coverage-gate.md).
 > 공용 계약은 Team-PinLog/docs의 `static/05_AI_설계.md`를 따릅니다.
 
 # AI 파트 통합 테스트
@@ -248,6 +248,33 @@ user A와 user B의 Embedding을 넣고 user A로 검색합니다.
 
 ### 4.2 외부 Client
 
+**이 절이 적용되는 범위.** 아래 규칙은 **client를 의존성으로 주입받는 쪽**(파이프라인·
+시나리오·API 테스트)이 그 의존성을 무엇으로 대체하는가에 대한 것입니다. **client 자신의
+HTTP 계층을 검증하는 단위 테스트는 이 절의 범위 밖**이며 HTTP 레벨 목을 씁니다.
+
+| 검증 대상 | 대체물 | 이 절 |
+|---|---|---|
+| 파이프라인이 부르는 client | 인터페이스 레벨 Fake (`tests/fakes.py`) | 적용 |
+| client 자신의 HTTP 계층 | `httpx.MockTransport` (`tests/test_client_retry.py`) | 범위 밖 |
+
+두 계층은 검증 대상이 다릅니다. 파이프라인 테스트가 묻는 것은 *"상태 전이가 옳은가"*이고,
+client 단위 테스트가 묻는 것은 *"상태 코드가 어떤 오류 타입이 되는가"*입니다. 후자는
+정의상 인터페이스 레벨 Fake로 볼 수 없습니다 — Fake는 이미 `TransientError`/`PermanentError`를
+받아서 던지므로, 매핑 자체가 Fake의 입력에 숨어 버립니다. 그 공백이 **429를 영구 오류로,
+LLM 401을 일시 오류로** 둔 채 남긴 원인이었습니다(`S15P11A705-121`).
+
+이 구분을 명시적으로 적어 둡니다. 이 절이 *"HTTP 레벨 목이 아니라 인터페이스 레벨 Fake를
+씁니다"*라고만 말해서, client 단위 테스트의 HTTP 목이 명세 위반인지가 `S15P11A705-121`
+작업 중 두 번 질문으로 올라왔습니다. 판정은 **충돌이 아니라 층이 다름**이었고,
+명세에 없었다는 것이 같은 질문이 반복된 이유입니다.
+
+경계는 하나입니다. **`app/client/` 밖의 코드는 HTTP를 몰라야 하고, 따라서 그 코드를
+검증하는 테스트도 HTTP를 몰라야 합니다.** HTTP 목이 파이프라인 테스트에 등장하면 그것은
+계층 위반의 신호이며(client 경계가 새고 있다), 반대로 client 단위 테스트에 인터페이스
+Fake가 등장하면 아무것도 검증하지 않는 테스트입니다.
+
+이하 규칙은 위 표의 "적용" 행에 대한 것입니다.
+
 `embedding_client`와 `llm_client`는 프로토콜로 정의하고 테스트에서 Fake로 교체합니다.
 HTTP 레벨 목이 아니라 인터페이스 레벨 Fake를 씁니다.
 
@@ -301,9 +328,17 @@ preset = make_preset(code="WITH_FRIEND", visibility="PUBLIC")
 | 계층 | 대상 | DB |
 |---|---|---|
 | 단위 | 오류 분류, 후보 TOP-K 계산, LLM 결과 매핑·폐기, Profile 검증 | 없음 |
+| client 단위 | 상태 코드 → 오류 타입 매핑, 재시도 수열 (§4.2 범위 밖) | 없음 |
 | 저장소 | 조건부 UPDATE 영향 행 수, UPSERT SET 절, delete-insert, 검색 Query | 실제 |
+| 부트스트랩 | Preset 적재 멱등성·`ON CONFLICT` SET 절·Profile 주입 | 실제 |
+| 기동 | lifespan 조립, Preset 0건 기동 중단, 종료 시 풀 반납 | 실제 |
 | 파이프라인 | §3의 시나리오 전체 | 실제 |
 | API | 요청 스키마 검증, `202` 반환, 검색 응답 형식, Profile 불일치 `422` | 실제 |
 
 파이프라인 계층이 이 레포 테스트의 중심입니다. 계약 §16의 시나리오는 모두 여러 계층에 걸친
 상태 전이 문제이므로, 단위 테스트만으로는 검증되지 않습니다.
+
+부트스트랩·기동 계층은 시나리오가 아니라 **전제**를 지킵니다. 둘 다 요청 경로 밖이라
+파이프라인 테스트로는 한 줄도 실행되지 않고(`test_api.py`는 lifespan을 우회합니다),
+여기가 비면 서버는 Preset 없이 또는 잘못된 Profile로 떠서 그 사실을 판정 단계에서야
+드러냅니다. `S15P11A705-110` 기준선에서 두 계층 모두 커버리지 0%였습니다.

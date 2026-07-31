@@ -5,8 +5,12 @@
 #
 # ## 규모의 근거 (GMS 실호출 비용)
 #
-# Context 14건 = 임베딩 14 + 판정 14, 프리셋 적재 1배치(27건 1회). 총 29회.
-# 시연 3종이 각각 성립하는 최소 구성이다.
+# 2026-07-30 현재 Context **37건** = 임베딩 37 + 판정 37 + 프리셋 1배치. 총 75회.
+# 아래 14건은 시연 3종을 위한 최소 가공 구성이고, 나머지 23건은 그날 추가한
+# 실제 사용자 기록이다(파일 아래쪽 구분선 참조). 시딩 시간은 판정 건수에 선형이라
+# `--pace 25` 기준 약 15분이 든다 — 14건일 때의 6분에서 늘어난 값이다.
+#
+# 최소 구성의 근거는 그대로 유효하므로 남겨 둔다.
 #
 #   자연어 검색 : 주인공 1명 × Context 6건. 정답 1건과 경쟁 5건이 있어야 순위가
 #                 의미를 갖는다. 6건은 2026-07-27 E2E가 분리도 +0.2120을 실측한 규모다.
@@ -19,11 +23,51 @@
 # 분당 2건 안팎만 통과한다(2026-07-29 실측, T27). 건수를 늘리면 시딩 시간이 선형으로
 # 늘고 재시도 구간이 넓어진다. 시연에 보탬이 되지 않는 Context는 그 시간을 값 없이 쓴다.
 #
-# ## 데이터 성격
+# ## 데이터 성격 — 값마다 출처가 다르다. 세 층으로 읽어라
 #
-# 장소·본문은 전부 가공이다. `[데모]` 접두사와 `demo-seed-*` kakaoPlaceId, 주소의
-# "(데모 시딩 데이터)" 표기로 시연용임이 화면과 DB 양쪽에서 드러난다. 실재하는 상호를
-# 쓰지 않는다 — 시연 화면이 특정 가게에 대한 실제 후기처럼 보이면 안 된다.
+# 이 파일의 값을 전부 "데이터"로 뭉뚱그리면 검증 결과를 잘못 읽는다.
+#
+# ### ① 원본 — 검증의 실질
+#
+#   name · context
+#
+# 실데이터 구간(gahyeon·jeongheon)에서는 제공받은 원본 그대로다. 한 글자도
+# 고치지 않았다. **임베딩과 판정이 받는 것은 `context` 하나뿐이므로**, 검색
+# 정확도·Keyword·토큰·소요 시간은 전부 이 층에서만 결정된다.
+#
+# ### ② 계약 자리채움 — 어디에도 쓰이지 않는다
+#
+#   kakaoPlaceId · address · lat · lng
+#
+# back 의 `PlacePayload` 가 `@NotBlank`·`@NotNull` 로 요구해서 채운 값이다.
+# 실제 앱에서는 프론트가 카카오 로컬 API 응답을 그대로 넘기고, 시딩은 그 역할을
+# 대신한다. **검색·판정·피드 어디에서도 읽지 않는다** — 임베딩은 context 만 받고
+# Feed MVP 는 region 을 제외했다(S15P11A705-119).
+#
+# 그래서 실데이터 구간은 전 건이 같은 좌표와 "미확인" 주소를 쓴다. 장소마다
+# 다른 좌표를 넣으면 **실측한 것처럼 보인다** — 원본에 지역 정보가 있던 것은
+# 세 곳뿐이었다. 카카오 API 로 채우는 것은 그 값을 읽는 코드가 생긴 뒤에 한다.
+#
+# ### ③ 시연 구성 — AI 파트가 만들었고 피드 결과에 직접 영향을 준다
+#
+#   collections · follows · role · key
+#
+# 계약이 요구하지 않는다. 시연 3종이 성립하도록 AI 파트가 묶고 이은 것이다.
+# **검증 보고서의 「탐색 피드 PASS」는 이 구조 위에서 나온 결과다** — 실제
+# 사용자가 그렇게 묶었을지는 알 수 없다.
+#
+# ## 가공 / 실데이터
+#
+# **가공**(host·walker·dessert·host_party·rainy) — `[데모]` 접두사와 주소의
+# "(데모 시딩 데이터)" 표기로 시연용임이 화면과 DB 양쪽에서 드러난다. 실재하는
+# 상호를 쓰지 않는다 — 시연 화면이 특정 가게의 실제 후기처럼 보이면 안 된다.
+#
+# **실데이터**(gahyeon·jeongheon, 2026-07-30 추가) — 실재 상호와 본인이 쓴 실제
+# 기록이다. 가공으로 위장하면 오히려 오해를 만들어 접두사를 붙이지 않았다.
+# **발표 화면에 쓰려면 본인 동의를 받아야 한다.**
+#
+# 양쪽 모두 `demo-seed-` kakaoPlaceId 와 provider `demo-seed` 로 시딩분임이
+# 판별되며, 그것이 `--reset` 의 삭제 범위다.
 #
 # `core.member`에는 이름 컬럼이 없다(익명 서비스). 아래 `key`는 이 파일과 로그에서만
 # 쓰는 식별자이며 DB에 사람 이름이 저장되지 않는다.
@@ -195,8 +239,123 @@ members:
           lng: 126.9910
         context: "예전 간판 그대로 두고 쓰는 가게. 낡은 나무 의자에 앉아 있으면 옛날 생각이 나서 자꾸 다시 가게 된다"
 
+  # ══════════════════════════════════════════════════════════════════════
+  # 아래 둘은 **실제 사용자 기록**이다 (2026-07-30 추가). 위쪽 가공 데이터와
+  # 성격이 다르므로 구분해 둔다.
+  #
+  #   목적      E2E 실경로 검증과 비동기 처리 소요 시간 측정
+  #   상호명    실재하는 가게다. `[데모]` 접두사를 붙이지 않았다 — 실제 후기라서
+  #             가공으로 위장하는 것이 오히려 오해를 만든다
+  #   판별      kakao_place_id 의 `demo-seed-` 접두사와 provider `demo-seed` 로
+  #             시딩 데이터임이 DB 에서 드러난다. `--reset` 의 삭제 범위도 그것이다
+  #   원본      name 과 context 뿐이다. 두 컬럼짜리 텍스트로 받았다
+  #   자리채움   address·lat·lng 는 전 건 동일하다. 계약 통과용이고 아무 코드도
+  #             읽지 않는다. 장소마다 다른 값을 넣으면 실측한 것처럼 보인다
+  #   구성      collections·follows 는 AI 파트가 만들었다. 원본에 없다 —
+  #             피드 검증 결과가 이 구조 위에서 나온다는 뜻이다
+  #
+  # **발표 화면에 그대로 쓰려면 본인 동의가 필요하다.** 개인의 실제 방문 기록이다.
+  # ══════════════════════════════════════════════════════════════════════
+
+  - key: gahyeon
+    role: "실데이터 · 카페·맛집 탐방 (피드 후보 겸 검색 주체)"
+    follows: [walker]
+    collections:
+      - title: "가보고 싶은 카페"
+        records: [dopi, peanut, hicks, jeokdang]
+      - title: "다녀온 맛집"
+        records: [applehouse, kitchen, ohyang, modern, memil]
+      - title: "분위기 좋은 곳"
+        records: [okeeer, jeokdang, hicks]
+    records:
+      - key: dopi
+        place: {name: "도피", kakao_place_id: "demo-seed-gahyeon-dopi", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "브런치 카페. 라따뚜이, 복숭아리코타 샌드위치 맛있어보임."
+      - key: applehouse
+        place: {name: "애플하우스", kakao_place_id: "demo-seed-gahyeon-applehouse", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "썸머 신영님이랑 같이 감. 무침군만두가 맛있었던 곳."
+      - key: kitchen
+        place: {name: "키친갈매기", kakao_place_id: "demo-seed-gahyeon-kitchen", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "연어오차즈케, 치킨 난반 맛있어보임."
+      - key: okeeer
+        place: {name: "오케이어 맨션", kakao_place_id: "demo-seed-gahyeon-okeeer", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "책을 사면 꽃을 주는 서점. 서점지기님이 너무 친절하심"
+      - key: jeokdang
+        place: {name: "적당", kakao_place_id: "demo-seed-gahyeon-jeokdang", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "양갱 파는 카페. 분위기 좋음. 데이트 장소로도 좋을 듯?"
+      - key: peanut
+        place: {name: "피넛커피 충북혁신도시점", kakao_place_id: "demo-seed-gahyeon-peanut", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "소파가 아주 편했다는 소문이 자자한 카페. 궁금함."
+      - key: zootopia
+        place: {name: "주토피아 서울", kakao_place_id: "demo-seed-gahyeon-zootopia", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "대구랑 서울에만 있다는 화덕피자집"
+      - key: ohyang
+        place: {name: "오향절면", kakao_place_id: "demo-seed-gahyeon-ohyang", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "마늘보쌈과 낙지전골을 같이 먹을 수 있는 곳. 칼국수 면 주문해야함. 우끼끼랑 양재 더클 가기 전에 먹음."
+      - key: modern
+        place: {name: "모던아시안누들서비스", kakao_place_id: "demo-seed-gahyeon-modern", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "가지튀김이 미쳤음"
+      - key: hicks
+        place: {name: "힉스커피", kakao_place_id: "demo-seed-gahyeon-hicks", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "우주 컨셉의 카페. 좀 언덕에 있어서 올라가기 힘듦. 디저트랑 인테리어 이쁨"
+      - key: memil
+        place: {name: "메밀집", kakao_place_id: "demo-seed-gahyeon-memil", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "트러플감자전 짱맛…"
+
+  - key: jeongheon
+    role: "실데이터 · 연남동 단골 기록 (자연어 검색 주체)"
+    follows: [gahyeon, dessert]
+    collections:
+      - title: "연남 단골"
+        records: [plant, kuroko, jinwoo, wolgang, yeonnam_kalguksu]
+      - title: "부캠 시절 밥집"
+        records: [katsuyo, gamnamu, plant, kuroko, jinwoo]
+      - title: "그네팟 코스"
+        records: [chickenburger, donggyo_park]
+      - title: "면 요리"
+        records: [sarukame, kuroko, yeonnam_kalguksu]
+    records:
+      - key: katsuyo
+        place: {name: "카츠요", kakao_place_id: "demo-seed-jeongheon-katsuyo", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "6개월 동안 신한 부트캠프 친구들과 자주 먹었던 돈카츠 집"
+      - key: gamnamu
+        place: {name: "감나무집기사식당", kakao_place_id: "demo-seed-jeongheon-gamnamu", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "무한도전 방영된 맛집. 예전에 윤우가 가자고 했는데 못갔고, 2025년 신한 부캠 때 자주갔음. 여기 두부찌개가 맛있더라"
+      - key: sarukame
+        place: {name: "사루카메", kakao_place_id: "demo-seed-jeongheon-sarukame", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "미슐랭 가이드 선정된 일본인 쉐프의 라멘집. 차슈밥 추가하면 맛있음"
+      - key: neworder
+        place: {name: "뉴오더클럽 연남", kakao_place_id: "demo-seed-jeongheon-neworder", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "2025년에 신한 친구들이랑 피맥했고, 2026년 재영이형, 형순이형, 덕이랑 같이 가서 피맥함"
+      - key: plant
+        place: {name: "플랜트 연남점", kakao_place_id: "demo-seed-jeongheon-plant", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "신한 부캠 때 거의 일주일마다 가던 비건 샌드위치 식당"
+      - key: chickenburger
+        place: {name: "치킨버거 이스트사이드", kakao_place_id: "demo-seed-jeongheon-chickenburger", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "치킨버거 맛있더라. 이거 사들고 그네 공원 갔음"
+      - key: kuroko
+        place: {name: "쿠로코식당 연남점", kakao_place_id: "demo-seed-jeongheon-kuroko", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "신한 부캠 당시 자주 가던 라멘집"
+      - key: jinwoo
+        place: {name: "진우네 초밥", kakao_place_id: "demo-seed-jeongheon-jinwoo", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "구운연어덮밥(구연덮)이 맛있었음. 신한 부캠 당시 자주 가던 일식집!"
+      - key: wolgang
+        place: {name: "월강부산돼지국밥", kakao_place_id: "demo-seed-jeongheon-wolgang", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "연남동(동교동) 쪽에서 돼지국밥 먹었음"
+      - key: justtendon
+        place: {name: "저스트텐동 연남본점", kakao_place_id: "demo-seed-jeongheon-justtendon", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "여기 느끼해서 다신 안감. 다른 지점 갈 것"
+      - key: donggyo_park
+        place: {name: "동교어린이공원", kakao_place_id: "demo-seed-jeongheon-donggyopark", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "그네팟 스팟. 밥먹고 산책하면서 여기 머물다가 끝날 때 아이스크림 할인점도 갔음."
+      - key: yeonnam_kalguksu
+        place: {name: "연남칼국수", kakao_place_id: "demo-seed-jeongheon-kalguksu", address: "(좌표·주소 미확인 — 시딩 자리채움)", lat: 37.5665, lng: 126.9780}
+        context: "아부라 칼국수 맛있음! 여기에서 기도형이랑 팀플 관련 상담도 했음."
+
 # 시연에서 실행할 검색 질의. verify.py가 이 목록으로 검색 품질을 확인한다.
 # `expect`는 위 records의 key다.
+# `as`는 검색 주체 member key다 — 생략하면 host. 검색은 userId로 갈리므로
+# 다른 사람의 Record를 기대값으로 두려면 반드시 지정해야 한다.
 demo_queries:
   - query: "비 오는 날 가려고 저장한 곳"
     expect: rain
@@ -206,3 +365,29 @@ demo_queries:
     expect: drink
   - query: "기념일에 야경 보면서 식사할 곳"
     expect: view
+
+  # ── 실데이터 질의 (2026-07-30). 검색 주체가 host 가 아니므로 `as` 가 필수다.
+  - query: "돈카츠 먹으러 자주 갔던 곳"
+    expect: katsuyo
+    as: jeongheon
+  - query: "미슐랭에 오른 라멘집"
+    expect: sarukame
+    as: jeongheon
+  - query: "친구들이랑 피자에 맥주 마신 곳"
+    expect: neworder
+    as: jeongheon
+  - query: "밥 먹고 산책하면서 쉬어가는 공원"
+    expect: donggyo_park
+    as: jeongheon
+  - query: "채식 샌드위치 먹던 단골집"
+    expect: plant
+    as: jeongheon
+  - query: "책 사면 꽃을 주는 서점"
+    expect: okeeer
+    as: gahyeon
+  - query: "화덕에 구운 피자집"
+    expect: zootopia
+    as: gahyeon
+  - query: "양갱 파는 분위기 좋은 카페"
+    expect: jeokdang
+    as: gahyeon

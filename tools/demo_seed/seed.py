@@ -1,6 +1,17 @@
 """발표 시연용 데모 데이터 시딩 — back API 경로로 만든다.
 
-    python tools/demo_seed/seed.py [--reset] [--pace 20] [--back URL] [--ai URL]
+    python tools/demo_seed/seed.py [--reset] [--pace 1] [--back URL] [--ai URL]
+                                   [--prune-orphans]
+
+## 시작 전에 preflight가 돈다
+
+`--reset`보다 먼저 `preflight.run()`이 돌고, 걸리면 **아무것도 지우지 않고**
+종료 코드 2로 끝난다. 무엇을 왜 검사하는지는 `preflight.py`에 있다.
+
+`--prune-orphans`는 참조하는 `core.context`가 없는 `ai.*` 행을 지운다. 기본이
+아닌 이유는 그 행들이 **우리 것이 아닐 수 있기 때문**이다 — `--reset`의 삭제
+범위는 `demo-seed` member로 한정되고, 그 밖의 행은 다른 세션의 측정 데이터일
+수 있다. preflight가 개수를 보고하니 사람이 보고 결정한다.
 
 ## 왜 back API인가 (직접 INSERT가 아니라)
 
@@ -32,11 +43,26 @@ API로 만들면 그 경로가 실제로 탄다. 그래서 이 스크립트는 �
 
 ## GMS 429와 pace
 
-판정(Gemini)은 GMS 게이트웨이에서 지속적으로 분당 2건 안팎만 통과한다
-(2026-07-29 실측). Record를 몰아서 만들면 판정이 무더기로 429를 받고, 그때
-keyword_status는 `PROCESSING`으로 남아 재스캔을 기다린다. 로컬에는 재스캔이
-없으므로 이 스크립트가 그 역할을 대신한다 — `--pace` 간격으로 생성한 뒤,
-미완료 건을 **한 건씩** 되살린다.
+**GMS 쿼터는 상수가 아니다.** SSAFY 공용 게이트웨이라 우리 전용 할당이 아니고,
+시점과 프로바이더 경로에 따라 크게 다르다(T27).
+
+```
+2026-07-29   판정 분당 약 2건. 15초 간격에도 429가 났다
+2026-07-30   같은 코드가 분당 30건 이상 통과. 동시 10건도 막히지 않았다
+```
+
+그래서 `--pace` 기본값을 **1초**로 둔다. 선제적으로 느리게 던지는 것은 한산한
+날의 시간을 버리기만 한다 — 같은 데이터가 `--pace 25`에서 15분 8초, `--pace 1`
+에서 **42초**였고 토큰과 결과는 같았다.
+
+혼잡할 때의 방어는 두 겹으로 남아 있다.
+
+* `retry.py`의 지수 백오프 — 429를 `TransientError`로 받아 호출 단위로 재시도
+* 아래 회수 루프 — 그래도 미완료로 남은 건을 **한 건씩** `PENDING`으로 되살린다
+
+`--pace`를 올리는 것은 429가 실제로 나는 것을 본 뒤에 한다. 운영에는 재스캔
+Scheduler(`S15P11A705-159`)가 같은 역할을 하며, `back#104` 병합 이후로는
+로컬에서도 그것이 돈다.
 """
 from __future__ import annotations
 
@@ -55,17 +81,54 @@ from _client import (
     ensure_key,
     load_data,
 )
+from preflight import (
+    ORPHAN_TABLES,
+    count_orphans,
+    delete_orphans,
+    format_orphans,
+    run as preflight,
+)
 
 from app.core.db import Database
 
-# 미완료 건 회수의 상한. 14건 × (429 재시도 포함) 여유를 본 값이다.
+# 미완료 건 회수의 상한. 혼잡한 날(2026-07-29 수준)에도 완주하도록 넉넉히 둔다.
 RECOVER_DEADLINE_SEC = 1800
-# 한 건을 되살린 뒤 다음 건까지 쉬는 시간. 판정 통과율(분당 2건)에 맞춘다.
+# 한 건을 되살린 뒤 다음 건까지 쉬는 시간.
+#
+# 여기는 `--pace`와 달리 보수적으로 둔다 — 회수가 도는 시점은 **이미 429를 본
+# 뒤**라 그날 게이트웨이가 혼잡하다는 증거가 있다. 한산하면 애초에 이 루프가
+# 돌지 않으므로(2026-07-30 실측 회수 0회) 이 값이 총 시간을 늘리지 않는다.
 RECOVER_INTERVAL_SEC = 20
 
 
+def _make_stdout_utf8_safe() -> None:
+    """콘솔 인코딩이 UTF-8이 아니어도 로그 한 줄 때문에 시딩이 죽지 않게 한다.
+
+    2026-07-30 실측 — 백그라운드 실행에서 stdout이 cp949로 잡혀 `—`(em-dash) 한
+    글자에 UnicodeEncodeError가 났다. **`--reset`이 이미 기존 데이터를 지운 뒤
+    첫 로그 출력에서 죽어**, DB에 member만 남고 Context가 0건인 상태가 됐다.
+    GMS 호출 전이라 비용 손실은 없었지만 복구는 전량 재시딩이었다.
+
+    호출자가 `PYTHONIOENCODING=utf-8`을 기억해야 하는 구조를 두지 않는다.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            # 파이프로 감싸여 reconfigure가 없는 경우. 아래 log()가 받아낸다.
+            pass
+
+
+_make_stdout_utf8_safe()
+
+
 def log(msg: str) -> None:
-    print(msg, flush=True)
+    try:
+        print(msg, flush=True)
+    except UnicodeEncodeError:
+        # 최후 방어. 로그가 시딩을 죽이는 것보다 글자가 깨지는 편이 낫다.
+        enc = sys.stdout.encoding or "ascii"
+        print(msg.encode(enc, errors="replace").decode(enc), flush=True)
 
 
 # ── reset ──────────────────────────────────────────────────────────────────
@@ -77,6 +140,12 @@ async def reset(db: Database) -> None:
     FK 역순으로 지운다. `ai.*`는 `core.context`를 참조하지 않지만(FK 없음)
     남겨 두면 다음 시딩의 새 context_id와 겹치지 않을 뿐 쓰레기로 쌓이므로
     같이 지운다.
+
+    **지울 `ai.*` 테이블 목록은 `preflight.ORPHAN_TABLES`가 정본이다.** 여기에
+    이름을 손으로 나열했더니 `ai.context_keyword_analysis`가 빠진 채로 남았고,
+    FK가 없어 DB도 알려주지 않아 259행 중 222행이 고아가 됐다
+    (`S15P11A705-198` 결함 2). 같은 목록을 preflight의 고아 집계가 쓰므로,
+    새 테이블을 그 목록에 넣지 않으면 **집계가 먼저 그것을 고아로 보고한다.**
     """
     async with db.acquire() as conn:
         member_ids = [
@@ -98,17 +167,9 @@ async def reset(db: Database) -> None:
             )
         ]
         async with conn.transaction():
-            if ctx_ids:
+            for table in ORPHAN_TABLES if ctx_ids else ():
                 await conn.execute(
-                    "DELETE FROM ai.context_keyword WHERE context_id = ANY($1::bigint[])",
-                    ctx_ids,
-                )
-                await conn.execute(
-                    "DELETE FROM ai.context_embedding WHERE context_id = ANY($1::bigint[])",
-                    ctx_ids,
-                )
-                await conn.execute(
-                    "DELETE FROM ai.context_ai_state WHERE context_id = ANY($1::bigint[])",
+                    f"DELETE FROM {table} WHERE context_id = ANY($1::bigint[])",  # noqa: S608
                     ctx_ids,
                 )
             await conn.execute(
@@ -152,7 +213,17 @@ async def reset(db: Database) -> None:
 
 
 async def bootstrap_members(db: Database, keys: list[str]) -> dict[str, int]:
-    """member 행을 만들고 `demo-seed` social_account로 표시한다."""
+    """member 행을 만들고 `demo-seed` social_account로 표시한다.
+
+    `email`은 back `V6__social_account_email_not_null.sql`이 `NOT NULL`로 만들었다. 그 전에
+    시딩한 DB에는 이 컬럼이 NULL인 demo-seed 행이 남아 있어 **back이 기동하면서 V6에 걸려
+    죽는다** — 그 마이그레이션은 일부러 백필을 넣지 않았고(채울 값이 없다), 그 판단은
+    운영 기준으로는 옳다. 여기서 값을 만들어 넣는 것은 시딩이 만든 계정이 실제 공급자
+    계정이 아니라서 가능한 것이다.
+
+    `.invalid`는 RFC 2606이 "절대 실재하지 않는다"고 예약한 TLD다. 실재하는 주소로
+    보이는 값을 넣으면 시연 화면에서 진짜 이메일과 구별되지 않는다.
+    """
     ids: dict[str, int] = {}
     async with db.transaction() as conn:
         for key in keys:
@@ -160,11 +231,12 @@ async def bootstrap_members(db: Database, keys: list[str]) -> dict[str, int]:
                 "INSERT INTO core.member DEFAULT VALUES RETURNING id"
             )
             await conn.execute(
-                "INSERT INTO core.social_account (member_id, provider, provider_user_id) "
-                "VALUES ($1, $2, $3)",
+                "INSERT INTO core.social_account "
+                "(member_id, provider, provider_user_id, email) VALUES ($1, $2, $3, $4)",
                 member_id,
                 DEMO_PROVIDER,
                 key,
+                f"{key}@{DEMO_PROVIDER}.invalid",
             )
             ids[key] = member_id
     log(f"member {len(ids)}명 생성: " + ", ".join(f"{k}={v}" for k, v in ids.items()))
@@ -257,13 +329,27 @@ async def main() -> int:
     argv = sys.argv
     back = back_base(argv)
     ai = ai_base(argv)
-    pace = float(argv[argv.index("--pace") + 1]) if "--pace" in argv else 20.0
+    pace = float(argv[argv.index("--pace") + 1]) if "--pace" in argv else 1.0
     data = load_data()
     pem = ensure_key()
 
     db = Database(SETTINGS.database_url)
     await db.connect()
     try:
+        # **`--reset`보다 먼저다.** 뒤에 두면 검사가 걸릴 때는 이미 지운 뒤라
+        # 검사의 의미가 없다(T28·결함 3이 둘 다 그 순서로 데이터를 잃었다).
+        if not await preflight(db, SETTINGS.database_url, back, pem, log=log):
+            return 2
+
+        if "--prune-orphans" in argv:
+            async with db.acquire() as conn:
+                removed = await delete_orphans(conn)
+            log(
+                "고아 삭제: "
+                + ", ".join(f"{t}={n}" for t, n in removed.items() if n)
+                + f" (총 {sum(removed.values())}행)"
+            )
+
         if "--reset" in argv:
             await reset(db)
 
@@ -357,6 +443,15 @@ async def main() -> int:
             f"COMPLETED {sum(1 for r in rows if r['embedding_status'] == 'COMPLETED' and r['keyword_status'] == 'COMPLETED')}건 · "
             f"Keyword {kw}행"
         )
+
+        # 시딩이 끝난 뒤에도 센다. 앞의 preflight는 "시작 전에 이미 있었다"를 말하고
+        # 여기는 "이번 시딩이 남겼다"를 말한다 — 둘이 다르면 reset의 삭제 목록이
+        # 실제 테이블 집합보다 좁다는 뜻이고, 그것이 결함 2의 발생 경로였다.
+        async with db.acquire() as conn:
+            leftover = await count_orphans(conn)
+        for line in format_orphans(leftover):
+            log(f"  [WARN] {line}" if not line.startswith("      ") else line)
+
         log("검증은 다음으로: python tools/demo_seed/verify.py")
         return 0 if ok else 1
     finally:

@@ -35,8 +35,20 @@ PASS = "PASS"
 FAIL = "FAIL"
 
 
+for _stream in (sys.stdout, sys.stderr):
+    # seed.py와 같은 이유. 콘솔이 cp949면 `—`·`←` 한 글자에 검증이 죽는다.
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
+
 def log(msg: str = "") -> None:
-    print(msg, flush=True)
+    try:
+        print(msg, flush=True)
+    except UnicodeEncodeError:
+        enc = sys.stdout.encoding or "ascii"
+        print(msg.encode(enc, errors="replace").decode(enc), flush=True)
 
 
 def head(title: str) -> None:
@@ -83,28 +95,36 @@ async def load_ids(db: Database) -> tuple[dict[str, int], dict[int, str], dict[i
 
 
 async def verify_search(
-    ai: str, host_id: int, data: dict, place_by_ctx: dict[int, str]
+    ai: str, members: dict[str, int], data: dict, place_by_ctx: dict[int, str]
 ) -> bool:
     """A. 자연어 검색 — 시연 질의가 의도한 Record를 1위로 낸다."""
     head("A. 자연어 검색 — POST /internal/v1/search (실제 GMS 임베딩)")
 
     # place 이름으로 기대값을 맞춘다. seed.py가 만든 record_id를 파일로 넘기지
     # 않으므로, demo_data.yaml의 place name이 둘을 잇는 유일한 키다.
+    #
+    # 소유자를 가리지 않고 전부 모은다. 검색은 userId로 갈리므로 다른 사람의
+    # Record가 결과에 섞이지 않고, 질의가 `as`로 주체를 고를 수 있어야
+    # 실데이터 소유자(2026-07-30 추가)도 검증 대상이 된다.
     expect_place = {
         rec["key"]: rec["place"]["name"]
         for m in data["members"]
-        if m["key"] == "host"
         for rec in m["records"]
     }
 
     ok = True
     async with httpx.AsyncClient(timeout=60.0) as client:
         for q in data["demo_queries"]:
+            who = q.get("as", "host")          # 없으면 주인공. 기존 질의와 호환된다
+            if who not in members:
+                log(f"  [{FAIL}] '{q['query']}' → member '{who}' 가 DB에 없다")
+                ok = False
+                continue
             resp = await client.post(
                 f"{ai}/internal/v1/search",
                 headers={"X-Internal-Secret": SETTINGS.internal_shared_secret},
                 json={
-                    "userId": host_id,
+                    "userId": members[who],
                     "query": q["query"],
                     "limit": 5,
                     "embeddingProfile": SETTINGS.embedding_profile,
@@ -116,7 +136,7 @@ async def verify_search(
                 continue
             results = resp.json()["results"]
             want = expect_place[q["expect"]]
-            log(f"\n  질의: {q['query']}")
+            log(f"\n  질의: {q['query']}   (as={who})")
             for i, r in enumerate(results, 1):
                 name = place_by_ctx.get(r["contextId"], f"ctx={r['contextId']}")
                 mark = "  ← 의도" if name == want and i == 1 else ""
@@ -241,7 +261,7 @@ async def main() -> int:
             return 1
         host_id = members["host"]
 
-        a = await verify_search(ai, host_id, data, place_by_ctx)
+        a = await verify_search(ai, members, data, place_by_ctx)
         b, items = verify_feed(back, host_id, pem, owner_by_collection)
         c = await verify_keywords(db, back, host_id, pem, items)
     finally:

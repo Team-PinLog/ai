@@ -31,6 +31,14 @@ from app.service.keyword_service import _to_array, _topk  # noqa: E402
 import embed as H_EMBED  # noqa: E402
 import test_c_judge as H_JUDGE  # noqa: E402
 
+# 이 도구가 재는 것은 "하네스와 운영이 **같은 입력에 같은 판정**을 내는가"다. 그러려면
+# 양쪽 모델이 같아야 한다. 운영 판정 경로는 이제 벤더 폴백 체인이지만
+# (S15P11A705-175), 폴백이 걸리면 벤더 차이가 동등성 측정에 섞여 프롬프트 1줄 차이의
+# 영향과 구별할 수 없게 된다. 그래서 여기서는 **하네스와 같은 벤더·모델 하나로 고정**한다
+# — 설정의 체인(`S.judge_vendors`)을 쓰지 않는 것이 의도다. 벤더별 비교는
+# `tools/keyword_eval/probe_vendors.py` 의 일이다.
+JUDGE_VENDOR, JUDGE_MODEL = "gemini", "gemini-2.5-flash"
+
 N_SAMPLES = 10
 
 
@@ -60,9 +68,10 @@ async def main() -> None:
         model=S.embedding_model, dimension=S.embedding_dimension,
     )
     prod_vecs = await ec.embed(texts)
-    llm = LLMClient(gms_base_url=S.gms_base_url, api_key=S.gms_api_key, model=S.judge_model)
+    llm = LLMClient(gms_base_url=S.gms_base_url, api_key=S.gms_api_key,
+                    chain=[(JUDGE_VENDOR, JUDGE_MODEL)])
 
-    print(f"운영 프리셋 캐시 {n}건 · 샘플 {len(samples)}건 · judge={S.judge_model}")
+    print(f"운영 프리셋 캐시 {n}건 · 샘플 {len(samples)}건 · judge={JUDGE_VENDOR}:{JUDGE_MODEL}")
 
     # ---- 하네스 경로 준비: 자체 프리셋 임베딩 + 자체 샘플 임베딩 ----
     h_presets = H_EMBED.load_presets()
@@ -121,7 +130,7 @@ async def main() -> None:
             continue
         n_judged += 1
         user = H_JUDGE.build_user(s["text"], cd)
-        out, meta = H_JUDGE.judge("gemini", S.judge_model, user, p_ids)
+        out, meta = H_JUDGE.judge(JUDGE_VENDOR, JUDGE_MODEL, user, p_ids)
         h_sel = {x["keywordId"] for x in out.get("selected", [])} & set(p_ids)
         same = sel1 == h_sel
         judge_same += same

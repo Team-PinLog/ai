@@ -48,6 +48,11 @@ cd ../back && docker compose -p pinlog-demo up -d
 back과 시딩 스크립트가 **같은 RSA 개인키**를 써야 한다. 키가 없으면 스크립트가
 `.demo/demo-jwt-key.pem`에 만든다(gitignore 대상, 커밋하지 않는다).
 
+경로는 `git worktree` 안에서 실행해도 **메인 워킹트리의 `.demo/`** 하나로 고정된다
+(`_client.shared_root()`). worktree 기준으로 잡으면 `.demo/`가 거기 없어 새 키가
+생기고, back에 주입된 키와 갈라져 **전 요청이 401인데 back 로그에는 아무것도 남지
+않는다**(`S15P11A705-198` 결함 3). 다른 키를 쓰려면 `PINLOG_DEMO_JWT_KEY`로 명시한다.
+
 ```bash
 python -c "import sys; sys.path.insert(0,'tools/demo_seed'); import _client; _client.ensure_key()"
 ```
@@ -88,18 +93,69 @@ python tools/demo_seed/verify.py            # 시연 3종 확인
 | 옵션 | 기본 | 뜻 |
 |---|---|---|
 | `--reset` | 없음 | 기존 데모 데이터를 hard delete한 뒤 만든다 |
-| `--pace` | 20 | Record 생성 간격(초). GMS 429를 피하기 위한 값 |
+| `--prune-orphans` | 없음 | 참조하는 `core.context`가 없는 `ai.*` 행을 지운다. **아래를 읽고 쓰라** |
+| `--pace` | **1** | Record 생성 간격(초). 2026-07-30 실측에서 37건이 42초에 완주했다. 429가 실제로 날 때만 올린다 |
 | `--back` | `http://localhost:8080/api/core` | back base URL |
 | `--ai` | `http://localhost:8000` | FastAPI base URL |
 
-## 왜 느린가 — GMS 429
+## preflight — `--reset` 보다 먼저 돈다
 
-판정(Gemini)은 GMS 게이트웨이에서 **지속적으로 분당 2건 안팎만 통과한다**
-(2026-07-29 실측). 몰아서 호출하면 429가 나고, 그때 `keyword_status`는
-`PROCESSING`으로 남아 재스캔을 기다린다. 로컬에는 재스캔이 없으므로 `seed.py`가
-그 역할을 대신한다 — 미완료 건을 한 건씩 `PENDING`으로 되돌리고 다시 호출한다.
+시딩을 시작하면 [`preflight.py`](preflight.py)가 먼저 환경을 검사하고, 걸리면
+**아무것도 지우지 않은 채** 종료 코드 2로 끝난다. 단독 실행도 된다.
 
-`--pace`를 줄이면 총 시간이 줄지 않는다. 앞에서 몰아 던진 만큼 뒤에서 회수한다.
+```bash
+python tools/demo_seed/preflight.py
+```
+
+```
+1  어느 DB에 붙었는가       접속 대상을 첫 줄에 찍는다(비밀번호는 가린다)
+2  쓰기 컬럼 계약           back이 core.member·core.social_account에 컬럼을 더했는가   차단
+3  미적용 back 마이그레이션  back 레포에 있고 이 DB엔 없는 것 중 위 두 테이블을 건드리는 것  차단
+4  JWT 키                   back이 이 키를 받아들이는지 실제로 한 번 통과시켜 본다      차단
+5  고아 ai.* 행             세어서 보여준다                                        경고
+```
+
+**왜 시작 전인가**: 2·4는 시딩이 진행된 뒤에 알아도 소용이 없다. `--reset`이
+이미 지운 뒤이기 때문이다. 실제로 그 순서로 두 번 데이터를 잃었다
+([T28](../../docs/troubleshooting/2026-07-30-seeding-quota-and-encoding.md)·`S15P11A705-198` 결함 3).
+
+**2가 겨누는 것은 NOT NULL 제약이 아니라 우리가 값을 주지 않는 컬럼이다.**
+`email`은 `V4`에서 nullable로 태어났고 우리는 그 존재를 모른 채 NULL로 두었다.
+며칠 뒤 back이 `V6`로 `SET NOT NULL`을 걸면서 back 기동이 죽었다. 컬럼이 생기는
+시점에는 아무 오류도 나지 않으므로, 그때 멈춰 세우는 것이 유일한 기회다.
+새 컬럼을 만나면 `preflight.WRITE_CONTRACT`에 **어떻게 다룰지 선언**해야 통과한다.
+
+### 고아 행을 자동으로 지우지 않는 이유
+
+`--reset`의 삭제 범위는 `demo-seed` member로 한정된다. 그 밖의 `ai.*` 행은
+남겨지고, 그중에는 **지워서는 안 되는 것이 섞여 있다** — `tools/e2e/`의 검증
+데이터는 `core`에 대응 행이 없는 것이 정상이다(아래 "주의"). 동시에 그 행들이
+집계를 틀리게 만드는 것도 사실이다(`-191`에서 저장 비용 평균이 8행만큼 틀렸다).
+
+둘 다 참이므로 도구가 고르지 않는다. preflight가 세어서 보여주고,
+지울지는 `--prune-orphans`로 사람이 정한다.
+
+## 얼마나 걸리나 — 그날 GMS 상태에 달렸다
+
+**쿼터가 상수가 아니다.** GMS는 SSAFY 공용 게이트웨이라 우리 전용 할당이 아니고,
+시점과 프로바이더 경로에 따라 달라진다([T27](../../docs/troubleshooting/2026-07-30-seeding-quota-and-encoding.md)).
+
+```
+2026-07-29   판정 분당 약 2건 · 15초 간격에도 429
+2026-07-30   분당 30건 이상 · 동시 10건도 통과
+```
+
+같은 데이터 37건을 두 번 시딩한 실측이다.
+
+| | 시간 | 회수 | 토큰 |
+|---|---|---|---|
+| `--pace 25` | 15분 8초 | 0회 | 32,912 |
+| `--pace 1` | **42초** | 0회 | 32,967 |
+
+**결과와 토큰은 같다.** 차이는 우리가 쉰 시간뿐이었다. 그래서 기본값이 1이다.
+
+429가 나면 `retry.py`의 지수 백오프가 호출 단위로 재시도하고, 그래도 미완료면
+아래 회수 루프가 한 건씩 되살린다. **429를 실제로 본 뒤에 `--pace`를 올려라.**
 
 ## 데이터를 바꾸려면
 

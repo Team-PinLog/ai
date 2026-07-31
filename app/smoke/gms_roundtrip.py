@@ -63,11 +63,16 @@ async def _check_judge(settings: Settings) -> None:
 
     선택 결과가 비어 있어도 성공이다. 판정은 비결정적이라 내용을 단언하면 스모크가
     간헐 실패한다 — 여기서 증명할 것은 인증·경로·모델이 살아 있다는 사실뿐이다.
+
+    **폴백 체인 전체가 아니라 판정 경로 하나를 증명한다.** 1순위가 429면 이 검사는
+    2순위로 넘어가 통과하므로, 통과가 "체인의 세 벤더가 모두 살아 있다"를 뜻하지는
+    않는다. 벤더별 가용성은 `tools/keyword_eval/probe_vendors.py`가 수동으로 잰다 —
+    스모크에서 벤더마다 실호출하면 배포 게이트가 GMS 쿼터에 3배로 묶인다.
     """
     client = LLMClient(
         gms_base_url=settings.gms_base_url,
         api_key=settings.gms_api_key,
-        model=settings.judge_model,
+        chain=settings.judge_vendors,
     )
     await client.judge(_PROBE_TEXT, _PROBE_CANDIDATES)
 

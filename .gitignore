@@ -7,6 +7,8 @@ __pycache__/
 .ruff_cache/
 .coverage
 coverage.xml
+# coverage 게이트(tools/check_coverage_gate.py)의 입력. CI 는 artifact 로만 올린다.
+coverage.json
 htmlcov/
 
 # venv
@@ -21,6 +23,10 @@ env/
 # 데모 시딩 로컬 산출물 — JWT 서명 키(RSA 개인키)와 실행 로그가 들어간다.
 # 키는 tools/demo_seed 가 없으면 만들고 있으면 재사용한다. 절대 커밋하지 않는다.
 .demo/
+
+# tools/emb_grid 실행 산출물 — 조건별 결과 JSON 과 토큰 로그. 실사용자 기록의 장소명이
+# 들어가므로 원본을 커밋하지 않는다. 수치는 docs/implements/ 문서로 옮겨 남긴다.
+.grid/
 
 # tools/keyword_eval (평가 하네스는 test 브랜치 소유)
 tools/keyword_eval/.env

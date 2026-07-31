@@ -7,8 +7,10 @@ Fake로 직접 조립한다. 21번(AI 미완 Collection)은 BE 소관이라 제�
 from __future__ import annotations
 
 import asyncio
+from contextlib import asynccontextmanager
 
 from app.cache.preset_cache import PresetCache
+from app.core.errors import PermanentError, TransientError
 from app.repository import ai_state_repo, context_embedding_repo, keyword_preset_repo
 from app.repository.ai_state_repo import Stage
 from app.schema.context import ContextProcessRequest
@@ -253,6 +255,44 @@ async def test_empty_keyword_result_is_completed(db, conn, settings):
         "SELECT count(*) FROM ai.context_keyword_analysis WHERE context_id=1") == 1
 
 
+async def _model_profile(conn, context_id: int) -> str:
+    return await conn.fetchval(
+        "SELECT model_profile FROM ai.context_keyword_analysis WHERE context_id=$1",
+        context_id,
+    )
+
+
+async def test_analysis_records_the_model_that_actually_answered(db, conn, settings):
+    """폴백으로 2·3순위가 답하면 설정 1순위가 아니라 **답한 모델**이 저장된다.
+
+    `model_profile`의 용도는 "어떤 모델의 판단이었는지 구분"(keyword-preset.md §5.2)이다.
+    설정값을 그대로 쓰면 Preset 보정 분석이 잘못된 모델을 근거로 삼는다 — 폴백이 생긴
+    순간부터 설정값은 "답한 모델"과 다를 수 있다.
+    """
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    llm = FakeLLMClient(selected=[(101, 0.9)], model="fallback-model")
+    proc, _, _ = _services(db, settings, llm=llm, cache=cache)
+
+    await proc.process(_req(1))
+
+    assert await _model_profile(conn, 1) == "fallback-model"
+    assert await _model_profile(conn, 1) != settings.judge_model
+
+
+async def test_analysis_falls_back_to_the_configured_model_when_unreported(db, conn, settings):
+    """후보 0개면 LLM을 부르지 않으므로 답한 모델이 없다 — 설정 1순위를 남긴다."""
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "전혀 다른 것"}])
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    llm = FakeLLMClient(selected=[])
+    proc, _, llm = _services(db, settings, llm=llm, cache=cache)
+
+    await proc.process(_req(1, text="유사도가 바닥인 문장"))
+
+    assert llm.call_count == 0
+    assert await _model_profile(conn, 1) == settings.judge_model
+
+
 async def test_blocked_preset_not_in_candidates(db, conn, settings):
     # 시나리오 15: BLOCKED Preset은 후보 집합에서 제외(캐시 적재 시)
     cache = await _load_cache(conn, settings, [
@@ -322,6 +362,95 @@ async def test_failed_transition_does_not_overwrite_cancelled(db, conn, settings
     assert st["embedding_status"] == "CANCELLED"
 
 
+# ── 외부 API 오류 경로 (§3-8, failure-recovery §2.1·§2.2) ─
+# `raise_exc`로 client가 분류한 오류를 주입한다. 이 파라미터가 어느 테스트에서도 쓰이지 않아
+# Transient/Permanent 파이프라인 경로가 한 번도 실행된 적이 없던 것이 결함 5였다.
+async def test_embedding_transient_keeps_processing(db, conn, settings):
+    # §2.1: 상태를 건드리지 않고 PROCESSING으로 둔다 → 만료 후 Spring 재스캔이 회수
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    emb = FakeEmbeddingClient(raise_exc=TransientError("embedding error: 429"))
+    proc, emb, llm = _services(db, settings, emb=emb)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["embedding_status"] == "PROCESSING"   # FAILED로 내리지 않음(재스캔 대상 유지)
+    assert st["keyword_status"] == "PENDING"        # 다른 단계는 건드리지 않음
+    assert st["retry_count"] == 0                   # retry_count는 Spring 소관(§1)
+    assert await _emb_count(conn, 1) == 0           # 부분 결과 없음
+    assert emb.call_count == 1 and llm.call_count == 0
+
+
+async def test_embedding_permanent_fails_only_that_stage(db, conn, settings):
+    # §2.2: 해당 단계만 PROCESSING → FAILED
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    emb = FakeEmbeddingClient(raise_exc=PermanentError("embedding error: 401"))
+    proc, emb, llm = _services(db, settings, emb=emb)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["embedding_status"] == "FAILED"
+    assert st["keyword_status"] == "PENDING"        # keyword는 시작조차 못 함
+    assert await _emb_count(conn, 1) == 0
+    assert emb.call_count == 1 and llm.call_count == 0
+
+
+async def test_judge_transient_keeps_keyword_processing(db, conn, settings):
+    # §2.1: judge 일시 오류 → keyword PROCESSING 유지, 완료된 embedding은 보존
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    await make_state(conn, context_id=1, embedding_status="COMPLETED", keyword_status="PENDING")
+    await make_embedding(conn, context_id=1, user_id=1, record_id=1,
+                         embedding_profile=settings.embedding_profile,
+                         embedding=deterministic_vector("친구랑 저녁"))
+    llm = FakeLLMClient(raise_exc=TransientError("llm error: 503"))
+    proc, emb, llm = _services(db, settings, llm=llm, cache=cache)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["keyword_status"] == "PROCESSING"     # 재스캔이 회수할 상태로 남김
+    assert st["embedding_status"] == "COMPLETED"    # COMPLETED 단계는 그대로(§2.2)
+    assert await _kw_count(conn, 1) == 0
+    assert llm.call_count == 1 and emb.call_count == 0
+
+
+async def test_judge_permanent_fails_keyword_stage(db, conn, settings):
+    # §2.2: judge 영구 오류 → keyword만 FAILED. 이 결선이 없으면 예외가
+    # BackgroundTasks까지 새어 단계가 PROCESSING에 머문다(결함 3의 나머지 절반).
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    await make_state(conn, context_id=1, embedding_status="COMPLETED", keyword_status="PENDING")
+    await make_embedding(conn, context_id=1, user_id=1, record_id=1,
+                         embedding_profile=settings.embedding_profile,
+                         embedding=deterministic_vector("친구랑 저녁"))
+    llm = FakeLLMClient(raise_exc=PermanentError("llm error: 401"))
+    proc, emb, llm = _services(db, settings, llm=llm, cache=cache)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["keyword_status"] == "FAILED"
+    assert st["embedding_status"] == "COMPLETED"    # 완료 단계를 되돌리지 않음
+    assert await _kw_count(conn, 1) == 0
+    assert llm.call_count == 1
+
+
+async def test_transient_error_does_not_overwrite_cancelled(db, conn, settings, dsn):
+    # §2.1 + §11.1: 일시 오류는 상태를 쓰지 않으므로 그 사이 CANCELLED가 되어도 안전하다
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    emb = FakeEmbeddingClient(on_call=_cancel_hook(dsn, 1),
+                              raise_exc=TransientError("embedding error: 503"))
+    proc, emb, llm = _services(db, settings, emb=emb)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["embedding_status"] == "CANCELLED"    # PROCESSING으로 되살리지 않음
+    assert st["keyword_status"] == "CANCELLED"
+
+
+async def test_permanent_error_does_not_overwrite_cancelled(db, conn, settings, dsn):
+    # §2.2: FAILED 전이의 WHERE PROCESSING 가드가 CANCELLED를 지킨다(검증 시나리오 17)
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    emb = FakeEmbeddingClient(on_call=_cancel_hook(dsn, 1),
+                              raise_exc=PermanentError("embedding error: 400"))
+    proc, emb, llm = _services(db, settings, emb=emb)
+    await proc.process(_req(1))
+    st = await _state(conn, 1)
+    assert st["embedding_status"] == "CANCELLED"    # FAILED로 덮이지 않음
+    assert st["keyword_status"] == "CANCELLED"
+
+
 # ── 계약위반/경합 ───────────────────────────────────────
 async def test_context_edit_isolates_old_and_new_context(db, conn, settings):
     # 시나리오 1: 구 CANCELLED·신 PENDING. 구 저장 거부, 신 정상(구 Embedding 재사용 안 함)
@@ -375,3 +504,124 @@ async def test_concurrent_process_requests_single_effect(db, conn, settings):
     assert emb.call_count == 1                          # 조건부 UPDATE가 중복 실행 흡수
     assert await _emb_count(conn, 1) == 1               # Embedding 1행
     assert await _kw_count(conn, 1) == 1               # 판정 결과 개수와 일치(2배 아님)
+
+
+# ── Keyword 단계 내부 경로 (S15P11A705-110) ─────────────
+# 아래 셋은 기준선에서 한 번도 실행되지 않은 keyword_service 분기다. 전부 "판정 불가와
+# 결과 0개를 구분한다"는 같은 계약의 다른 면이라 한 묶음으로 둔다.
+async def test_no_candidate_above_floor_completes_without_calling_llm(db, conn, settings):
+    """후보 0개 → LLM 미호출, 선택 0개로 정상 COMPLETED(keyword-preset.md §3).
+
+    시나리오 14(LLM이 빈 selected 반환)와 다른 경로다. 저쪽은 호출한 뒤 0개고, 이쪽은
+    아예 부르지 않는다 — 유사도 하한이 사라지면 이 테스트만 깨진다.
+    """
+    # Preset 벡터를 Context 텍스트와 무관한 값으로 둬 코사인 유사도를 floor 아래로 떨어뜨린다.
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "전혀 다른 주제"}])
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    proc, emb, llm = _services(db, settings, cache=cache)
+
+    await proc.process(_req(1, text="친구랑 저녁"))
+
+    assert llm.call_count == 0                          # 후보가 없으면 비용을 쓰지 않는다
+    st = await _state(conn, 1)
+    assert st["keyword_status"] == "COMPLETED"          # 후보 0개도 정상 완료
+    assert await _kw_count(conn, 1) == 0
+    assert await conn.fetchval(
+        "SELECT count(*) FROM ai.context_keyword_analysis WHERE context_id=1") == 1
+
+
+async def test_keyword_fails_when_embedding_row_is_missing(db, conn, settings):
+    """embedding_status는 COMPLETED인데 벡터 행이 없다 — 스스로 복구할 수 없는 영구 오류.
+
+    embedding 단계를 FAILED로 옮기지 않는 것도 함께 단언한다(§2.2: 해당 단계만).
+    """
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    await make_state(conn, context_id=1, embedding_status="COMPLETED", keyword_status="PENDING")
+    proc, emb, llm = _services(db, settings, cache=cache)
+
+    await proc.process(_req(1))
+
+    assert emb.call_count == 0 and llm.call_count == 0
+    st = await _state(conn, 1)
+    assert st["keyword_status"] == "FAILED"
+    assert st["embedding_status"] == "COMPLETED"        # 다른 단계를 건드리지 않는다
+    assert await _kw_count(conn, 1) == 0
+
+
+async def test_keyword_falls_back_to_stored_vector_when_not_carried(db, conn, settings):
+    """경합 경로: 다른 워커가 embedding을 끝내 이 워커는 벡터를 들고 있지 않다.
+
+    파이프라인을 통과시키면 `ensure`가 벡터를 실어 주므로 이 fallback 조회가 실행되지
+    않는다. 그래서 `carried_vector=None`으로 keyword 단계를 직접 부른다 — 재현하려는 것이
+    "벡터 없이 keyword가 시작된 상태"이기 때문이다(keyword_service `_resolve_vector`).
+    """
+    cache = await _load_cache(conn, settings, [{"id": 101, "code": "F", "vec": "친구랑 저녁"}])
+    await make_state(conn, context_id=1, embedding_status="COMPLETED", keyword_status="PENDING")
+    await make_embedding(conn, context_id=1, user_id=1, record_id=1,
+                         embedding_profile=settings.embedding_profile,
+                         embedding=deterministic_vector("친구랑 저녁"))
+    llm = FakeLLMClient(selected=[(101, 0.77)])
+    service = KeywordService(db, llm, cache, settings)
+
+    await service.run(_req(1), carried_vector=None)
+
+    assert llm.call_count == 1                          # 저장된 벡터로 후보를 찾아 판정했다
+    st = await _state(conn, 1)
+    assert st["keyword_status"] == "COMPLETED"
+    assert await _kw_count(conn, 1) == 1
+
+
+class _DeleteStateAfterFirstAcquire:
+    """precheck 와 load_resume 사이에 State 행이 사라지는 창을 재현한다.
+
+    두 조회는 서로 다른 `acquire()`라 그 사이가 열려 있다 — Spring이 그 순간 Context를
+    삭제하면 두 번째 조회가 None을 돌려준다. `sleep` 대신 커넥션 반납 시점을 훅으로 잡아
+    순서를 고정한다(integration-tests.md §4.4). Fake Client의 `on_call` 훅과 같은 기법이며,
+    창이 client 호출이 아니라 커넥션 경계에 있을 뿐이다.
+    """
+
+    def __init__(self, db, dsn: str, context_id: int) -> None:
+        self._db = db
+        self._dsn = dsn
+        self._context_id = context_id
+        self.acquires = 0
+
+    @asynccontextmanager
+    async def acquire(self):
+        async with self._db.acquire() as conn:
+            yield conn
+        self.acquires += 1
+        if self.acquires == 1:  # precheck 직후
+            other = await raw_connect(self._dsn)
+            try:
+                await other.execute(
+                    "DELETE FROM ai.context_ai_state WHERE context_id=$1", self._context_id
+                )
+            finally:
+                await other.close()
+
+
+async def test_context_deleted_between_precheck_and_resume_ends_quietly(
+    db, conn, settings, dsn
+):
+    """사전 검사는 통과했는데 재개 판정 시점에 State가 없다 → 아무 것도 하지 않고 종료.
+
+    예외로 죽으면 BackgroundTasks에 트레이스백만 남고, 계속 진행하면 사라진 Context의
+    벡터를 되살린다. 정상 종료가 계약이다(deletion-race-control.md §3.2).
+    """
+    await make_state(conn, context_id=1, embedding_status="PENDING", keyword_status="PENDING")
+    emb, llm = FakeEmbeddingClient(), FakeLLMClient()
+    cache = PresetCache()
+    cache.load([])
+    racing_db = _DeleteStateAfterFirstAcquire(db, dsn, context_id=1)
+    proc = ContextProcessingService(
+        racing_db,
+        EmbeddingService(db, emb, settings),
+        KeywordService(db, llm, cache, settings),
+    )
+
+    await proc.process(_req(1))  # 예외 없이 끝나야 한다
+
+    assert racing_db.acquires == 2                      # precheck·load_resume 둘 다 돌았다
+    assert emb.call_count == 0 and llm.call_count == 0
+    assert await _emb_count(conn, 1) == 0 and await _kw_count(conn, 1) == 0
