@@ -22,6 +22,8 @@
 | [2026-07-27-e2e-env-issues.md](2026-07-27-e2e-env-issues.md) | E2E 검증 환경 이슈 — `.env` CRLF·register_vector 미등록·한글 인코딩 (T22~T24) |
 | [2026-07-28-shared-worktree-and-env-cache.md](2026-07-28-shared-worktree-and-env-cache.md) | 멀티세션 워킹트리 오염 · import 시점 `.env` 캐시 (T25·T26) |
 | [2026-07-30-seeding-quota-and-encoding.md](2026-07-30-seeding-quota-and-encoding.md) | GMS 판정 쿼터·콘솔 인코딩으로 인한 시딩 중단 (T27·T28) |
+| [2026-07-31-local-e2e-and-ci-pitfalls.md](2026-07-31-local-e2e-and-ci-pitfalls.md) | 로컬 E2E·CI 함정 — venv·로그 버퍼·jar 낙후·포트·로그인 쿠키 (T29~T36) |
+| [2026-07-31-tau-measurement.md](2026-07-31-tau-measurement.md) | 후보 임계값 τ 측정 — 틀린 진단·인코딩 재발·대조군 부재 (T37~T39) |
 
 ## 문제 해결 — 전수 (AI 소유)
 
@@ -61,5 +63,8 @@
 | T34 | 브라우저 로컬 테스트 로그인은 `logged_in=1` **정확 일치** — `true` 는 안 걸린다 | `access_token` + `logged_in=1` + `XSRF-TOKEN` 셋을 심는다 |
 | T35 | 검색이 소유자별로 갈려 계정을 잘못 잡으면 데이터가 없는 것처럼 보인다 | `social_account` 로 member 별 Context 수를 먼저 센다 |
 | T36 | CI 검사를 `dev` 에만 넣으면 **`main` 기반 PR 에 적용되지 않는다**(PR CI 는 head 워크플로로 돈다) | `hotfix/*` 로 `main` 에도 올린다 |
+| T37 | 「후보 임계값이 없어서 오분류가 난다」는 진단이 **틀렸다** — `_topk` 에 이미 있었고 테스트도 둘 있었다. 후보도 10개가 아니라 평균 7.4개 | 「기능이 없어서」는 grep 한 줄로 확인하고 쓴다. 실제 원인은 적합·부적합 유사도 분포의 겹침 |
+| T38 | 스크립트에만 T28 방어를 넣으면 탐색용 `python -c` 한 줄에서 다시 죽는다 — **앞줄은 이미 찍혀서 완료로 보인다** | 한 줄에는 `PYTHONIOENCODING=utf-8`, 반복할 것이면 파일로 옮긴다 |
+| T39 | 재판정 차이를 대조군 없이 읽으면 전부 조건 탓이 된다 — **같은 τ 로 다시 판정만 해도 Context 26% 가 흔들린다** | 판정(LLM) 계층 측정은 대조군을 같이 돌린다. 임베딩은 결정적이라 불필요 |
 
 > T9(H2·pgvector)·T10(flyway.schemas)은 백엔드 아티팩트라 **back 레포** `docs/ai/troubleshooting`에 있습니다.
