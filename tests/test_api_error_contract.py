@@ -1,4 +1,4 @@
-"""검색 경로 전체 — 업스트림 실패가 **어떤 HTTP 상태로 나가는가**.
+"""검색 경로 전체 — 실패가 **어떤 HTTP 상태로 나가는가**.
 
 `test_client_retry.py`가 `502 → TransientError`를 정확히 검증하고 있었는데도 운영에서
 검색이 500으로 실패했다(`ai#69`). 분류도 재시도도 맞았고, **그 예외가 응답이 되는 지점을
@@ -16,17 +16,27 @@
 - **`test_api.py`와 별도 파일인 이유**는 조립이 다르기 때문이다. 저쪽은 Fake를 꽂아
   형식·인증·프로브를 보고, 여기는 전송 계층부터 실물을 세운다.
 - 실제로 잠들지 않는다. `RetryPolicy.sleep`에 즉시 반환 코루틴을 주입한다.
+
+`S15P11A705-221`에서 **DB 축**을 더했다(맨 아래 절). 업스트림과 같은 질문을 DB에 대해
+묻는다 — 검색 도중 DB가 죽으면 무엇이 나가는가. 같은 원칙을 지킨다: **DB도 Fake로
+바꾸지 않는다.** 예외를 주입하는 대신 실제 `asyncpg` 풀을 실제로 실패시킨다(닿지 않는
+주소, 서버가 실제로 취소한 질의). 예외 객체를 손으로 만들어 넣으면 분류 경로를 건너뛰고,
+그러면 `db_errors.py`의 경계가 바뀌어도 이 파일이 통과한다 — `ai#69`를 놓친 구멍과
+같은 모양이다.
 """
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
+import asyncpg
 import httpx
 import pytest
 
 from app.client.embedding_client import EmbeddingClient
 from app.client.retry import RetryPolicy
+from app.core.db import Database
 from app.main import create_app
+from app.repository import context_embedding_repo
 from app.service.search_service import SearchService
 
 HDR = {"X-Internal-Secret": "test-secret"}
@@ -86,8 +96,9 @@ async def _search_api(db, settings, handler, *, raise_app_exceptions: bool = Tru
 
 @pytest.fixture
 def search_api(db, settings):
-    def factory(handler, **kw):
-        return _search_api(db, settings, handler, **kw)
+    def factory(handler, *, database=None, **kw):
+        # database=... 는 DB 축 전용이다. 기본값은 Testcontainers 풀(정상 DB).
+        return _search_api(database or db, settings, handler, **kw)
 
     return factory
 
@@ -239,3 +250,185 @@ async def test_error_response_does_not_echo_the_user_query(search_api, settings)
     async with search_api(_always(502)) as (client, _):
         r = await _post_search(client, settings, query="비 오는 날 혼자 갔던 그 카페")
     assert "카페" not in r.text
+
+
+# ══ DB 축 (S15P11A705-221, failure-recovery.md §2.5) ══════════════════════
+#
+# 임베딩은 성공하고 **그 다음 DB가 실패한다**. 그래서 아래 전부 `_ok` 트랜스포트를 쓴다 —
+# 업스트림이 멀쩡한데도 503이 나가는 것이 이 절의 요점이다.
+
+# 접속 불가를 재현할 DSN. 실제 자격 증명이 아니라 이 파일이 지어낸 값이며, 아래
+# 노출 테스트가 **이 값들이 응답에 없음**을 단언하는 데 그대로 쓴다.
+_DEAD_HOST = "127.0.0.1"
+_DEAD_PORT = 1
+_DEAD_USER = "probe-user"
+_DEAD_PASSWORD = "probe-password-not-a-real-secret"
+_DEAD_DSN = (
+    f"postgresql://{_DEAD_USER}:{_DEAD_PASSWORD}@{_DEAD_HOST}:{_DEAD_PORT}/pinlog"
+)
+
+
+class _LazyPoolDatabase(Database):
+    """`min_size=0` 풀. 접속을 첫 `acquire()`까지 미룬다.
+
+    운영 `Database.connect()`는 `min_size=1`이라 **기동 시점**에 접속이 깨진다 — 그건
+    lifespan 실패이지 요청 경로가 아니다. 이 티켓이 겨냥한 것은 *서버가 떠 있는 동안*
+    DB가 닿지 않게 되는 쪽(풀 재충전 실패·DB 재기동)이고, `min_size=0`이 그 순간을
+    요청 안으로 옮겨 놓는다. 풀·드라이버·예외는 전부 실물이다.
+    """
+
+    async def connect(self) -> None:
+        self._pool = await asyncpg.create_pool(self._dsn, min_size=0, max_size=1)
+
+
+def _repo_runs(monkeypatch, sql: str):
+    """저장소의 검색 질의만 다른 SQL로 바꾼다.
+
+    **커넥션도 세션 경계도 실물이다.** 예외를 만들어 던지는 대신 서버가 실제로 그 오류를
+    내게 한다 — 분류 경로(`db.acquire()` → `db_errors.py`)를 건너뛰지 않기 위해서다.
+    """
+
+    async def fake_search(conn, *_args, **_kwargs):
+        return await conn.fetch(sql)
+
+    monkeypatch.setattr(context_embedding_repo, "search", fake_search)
+
+
+# ── 일시 오류 → 503 ─────────────────────────────────────
+async def test_db_unreachable_returns_503(search_api, settings):
+    """DB에 닿지 않는다 → 503. 이 티켓의 본체.
+
+    이전에는 500이었다 — 커넥션 풀 고갈이나 DB 재기동처럼 **기다리면 낫는 상황**이
+    "우리 코드가 깨졌다"와 같은 코드를 썼고, `-220`이 500을 비워 둔 전제가 그만큼
+    깨져 있었다.
+
+    접속 실패는 `asyncpg` 예외가 아니라 stdlib `OSError`(`ConnectionRefusedError`)로
+    온다. 그것이 이 경로에서 가장 놓치기 쉬운 사실이라 여기서 못박는다.
+    """
+    dead = _LazyPoolDatabase(_DEAD_DSN)
+    await dead.connect()
+    try:
+        async with search_api(_ok, database=dead) as (client, seen):
+            r = await _post_search(client, settings)
+    finally:
+        await dead.disconnect()
+    assert r.status_code == 503
+    assert len(seen) == 1  # 임베딩은 성공했다. 실패한 것은 그 다음이다
+
+
+async def test_db_connection_dropped_midflight_returns_503(
+    search_api, settings, monkeypatch
+):
+    """질의 도중 커넥션이 끊긴다 → 503. DB 재기동이 이 모양으로 보인다.
+
+    서버가 실제로 백엔드를 죽이므로 `asyncpg`가 `08003`을 올린다(실측).
+    """
+    _repo_runs(monkeypatch, "SELECT pg_terminate_backend(pg_backend_pid())")
+    async with search_api(_ok) as (client, _):
+        r = await _post_search(client, settings)
+    assert r.status_code == 503
+
+
+async def test_db_statement_canceled_returns_503(search_api, settings, monkeypatch):
+    """서버가 질의를 취소했다(`57014`) → 503. 느린 DB는 우리 결함이 아니다."""
+
+    async def fake_search(conn, *_args, **_kwargs):
+        await conn.execute("SET statement_timeout = 50")
+        return await conn.fetch("SELECT pg_sleep(1)")
+
+    monkeypatch.setattr(context_embedding_repo, "search", fake_search)
+    async with search_api(_ok) as (client, _):
+        r = await _post_search(client, settings)
+    assert r.status_code == 503
+
+
+# ── 영구 오류 → 502 ─────────────────────────────────────
+async def test_db_misconfigured_target_returns_502(search_api, settings):
+    """존재하지 않는 데이터베이스를 가리킨다(`3D000`) → 502.
+
+    503이 아니다. 기다려도 낫지 않고 **배포 설정을 고쳐야** 낫는다 — GMS의 `401`을
+    502로 두는 것과 같은 판단이며, §2.5가 두 코드를 가른 기준(`재시도가 도움이 되는가`)이
+    DB 축에서도 그대로 성립한다.
+
+    서버까지 실제로 닿아서 서버가 거절한다. TCP는 열려 있으므로 `OSError` 경로가
+    아니라 `asyncpg` 예외 경로로 온다.
+    """
+    dsn = settings.database_url.rsplit("/", 1)[0] + "/no_such_database"
+    wrong = _LazyPoolDatabase(dsn)
+    await wrong.connect()
+    try:
+        async with search_api(_ok, database=wrong) as (client, _):
+            r = await _post_search(client, settings)
+    finally:
+        await wrong.disconnect()
+    assert r.status_code == 502
+
+
+# ── 500은 여전히 「우리 코드의 결함」이다 ────────────────
+async def test_unclassified_db_error_still_returns_500(
+    search_api, settings, monkeypatch
+):
+    """없는 컬럼을 참조하면 500이다. **이 단언이 이 티켓의 절반이다.**
+
+    `test_unclassified_exception_still_returns_500`과 같은 경계다. DB 실패를 통째로
+    503으로 감싸면 이런 질의 결함이 "일시적으로 사용할 수 없습니다" 뒤에 영구히 숨는다 —
+    재시도해도 낫지 않는데 알림은 울리지 않는다. 그래서 `42xxx`(문법·없는 컬럼/테이블·
+    타입 불일치)는 분류하지 않고 500에 남긴다.
+    """
+    _repo_runs(monkeypatch, "SELECT no_such_column FROM ai.context_embedding")
+    async with search_api(_ok, raise_app_exceptions=False) as (client, _):
+        r = await _post_search(client, settings)
+    assert r.status_code == 500
+
+
+async def test_db_interface_misuse_still_returns_500(search_api, settings, monkeypatch):
+    """`asyncpg.InterfaceError`도 500이다.
+
+    이 한 타입이 "connection is closed"(수명주기)와 "the server expects N arguments"
+    (우리 결함)를 함께 쓴다(실측). 통째로 일시 오류로 두면 후자가 숨으므로 분류하지
+    않는다 — `db_errors.py`의 판단 중 가장 논쟁적인 곳이라 테스트로 고정한다.
+    """
+
+    async def fake_search(conn, *_args, **_kwargs):
+        return await conn.fetch("SELECT $1::int, $2::int", 1)  # 인자 하나 모자란다
+
+    monkeypatch.setattr(context_embedding_repo, "search", fake_search)
+    async with search_api(_ok, raise_app_exceptions=False) as (client, _):
+        r = await _post_search(client, settings)
+    assert r.status_code == 500
+
+
+# ── 응답이 무엇을 말하지 않는가 (DB판) ───────────────────
+async def test_db_error_response_exposes_no_connection_details(search_api, settings):
+    """접속 정보를 응답에 싣지 않는다.
+
+    업스트림 축의 `test_error_response_exposes_no_configured_values`와 같은 기준이다.
+    DSN에는 **DB 비밀번호**가 들어 있고 접속 실패 예외에는 host·port가 섞여 들어올 수
+    있다. `db_errors.py`가 예외 메시지에 타입 이름과 SQLSTATE만 담는 것이 그 대응이며,
+    이 단언이 그것을 지킨다.
+    """
+    dead = _LazyPoolDatabase(_DEAD_DSN)
+    await dead.connect()
+    try:
+        async with search_api(_ok, database=dead) as (client, _):
+            r = await _post_search(client, settings)
+    finally:
+        await dead.disconnect()
+    body = r.text
+    for value in (
+        _DEAD_PASSWORD,
+        _DEAD_USER,
+        _DEAD_DSN,
+        settings.database_url,
+        f"{_DEAD_HOST}:{_DEAD_PORT}",
+    ):
+        assert value not in body
+
+
+# ── 회귀: 살아 있는 DB 경로를 죽이지 않았는가 ────────────
+async def test_healthy_db_still_returns_200(search_api, settings):
+    """`acquire()`가 획득·반납을 직접 하도록 바뀌었다. 정상 경로가 그대로 산다."""
+    async with search_api(_ok) as (client, seen):
+        r = await _post_search(client, settings)
+    assert r.status_code == 200 and r.json() == {"results": []}
+    assert len(seen) == 1
