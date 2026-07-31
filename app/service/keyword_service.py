@@ -164,13 +164,14 @@ class KeywordService:
             # 던질 것을 고른다. transient 가 하나라도 있으면 그쪽이다 — 재스캔이 다시
             # 부르면 성공할 수 있는 반면, permanent 로 올리면 이 Context 는 FAILED 로
             # 굳는다. 둘 중 하나가 틀렸을 때 되돌릴 수 있는 쪽을 고른다.
+            #
+            # `errors` 가 비어 있을 수는 없다 — 성공 + 실패 = n 인데 실패가 0 이면
+            # 성공이 n 이고 `has_quorum(n, n)` 은 n>=1 에서 항상 참이다. 그래서 빈
+            # 경우를 위한 분기를 두지 않는다(두면 영원히 실행되지 않는 줄이 남는다).
             for e in errors:
                 if isinstance(e, TransientError):
                     raise e
-            if errors:
-                raise errors[0]
-            # n>=1 이므로 성공 0 · 실패 0 은 성립하지 않는다(gather 가 n개를 돌려준다).
-            raise TransientError(f"judge vote quorum not met (n={n}, ok=0)")
+            raise errors[0]
 
         return judge_vote.combine(results, n)
 
