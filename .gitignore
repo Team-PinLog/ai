@@ -38,6 +38,15 @@ env/
 # (판정은 비결정적이라 재현이 아니라 재측정이다). 수치와 판단은 docs/implements/ 로 옮긴다.
 .prompt_ab/
 
+# tools/prompt_ab 실행 산출물 — 회차별 판정 결과. `.tau/matrix.json` 에서 온 Context
+# 본문을 직접 담지는 않지만 그 본문에 대한 판정 기록이라 같은 취급으로 둔다.
+# `-219` 가 이 줄을 빠뜨려 회차 파일이 추적 대상으로 보였다(`-223` T57).
+.prompt_ab/
+
+# tools/judge_vote 실행 산출물 — 회차를 n회 다수결로 접은 합성 회차와 집계.
+# `.prompt_ab/` 에서 언제든 재구성되므로 남기지 않는다.
+.judge_vote/
+
 # tools/keyword_eval (평가 하네스는 test 브랜치 소유)
 tools/keyword_eval/.env
 tools/keyword_eval/.cache/
