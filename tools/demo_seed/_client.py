@@ -19,8 +19,10 @@ back의 `JwtTokenProvider`가 그대로 검증한다. 키가 틀리면 401을 �
 from __future__ import annotations
 
 import base64
+import functools
 import json
 import os
+import subprocess
 import sys
 import time
 import uuid
@@ -37,7 +39,34 @@ from app.core.config import get_settings  # noqa: E402
 SETTINGS = get_settings()
 DATA_YAML = HERE / "demo_data.yaml"
 
-DEMO_DIR = ROOT / ".demo"
+
+@functools.lru_cache(maxsize=1)
+def shared_root() -> Path:
+    """worktree 안에서 실행해도 **메인 워킹트리**를 가리키는 경로.
+
+    `ROOT`(`_client.py` 위치 기준)를 쓰면 worktree마다 다른 곳을 가리킨다.
+    코드는 그래야 맞지만 **키는 그러면 안 된다** — `.demo/`는 gitignore라
+    worktree에 존재하지 않고, `ensure_key()`가 거기서 새 키를 만들면 back에
+    주입된 키와 갈라진다. 그 결과가 전 요청 401이며 back 로그에는 아무것도
+    남지 않는다(`S15P11A705-198` 결함 3).
+
+    `--git-common-dir`은 worktree에서도 메인 레포의 `.git`을 준다. 그 부모가
+    메인 워킹트리다. git이 없거나 형식이 예상과 다르면 `ROOT`로 물러선다 —
+    이 함수 때문에 시딩이 못 도는 일은 없어야 한다.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(HERE), "rev-parse", "--path-format=absolute",
+             "--git-common-dir"],
+            capture_output=True, text=True, timeout=5, check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return ROOT
+    common = Path(out) if out else None
+    return common.parent if common is not None and common.name == ".git" else ROOT
+
+
+DEMO_DIR = shared_root() / ".demo"
 KEY_PATH = Path(os.environ.get("PINLOG_DEMO_JWT_KEY", DEMO_DIR / "demo-jwt-key.pem"))
 
 DEFAULT_BACK_BASE = "http://localhost:8080/api/core"
@@ -77,13 +106,25 @@ def load_data() -> dict:
 
 
 def ensure_key() -> bytes:
-    """서명 키를 읽고, 없으면 만든다. back에 주입한 키와 같은 파일이어야 한다."""
+    """서명 키를 읽고, 없으면 만든다. back에 주입한 키와 같은 파일이어야 한다.
+
+    **키를 새로 만드는 것 자체가 신호다.** 이미 back이 떠 있는 환경에서 이 경로가
+    비어 있다는 것은 대개 환경이 갈라졌다는 뜻이고, 그대로 두면 401만 보게 된다.
+    조용히 만들지 않고 stderr로 말한다.
+    """
     if KEY_PATH.exists():
         return KEY_PATH.read_bytes()
 
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric import rsa
 
+    print(
+        f"[demo_seed] 서명 키가 없어 새로 만든다: {KEY_PATH}\n"
+        f"            back에 이 키를 JWT_PRIVATE_KEY로 주입하지 않았다면 "
+        f"모든 요청이 401이 된다.",
+        file=sys.stderr,
+        flush=True,
+    )
     KEY_PATH.parent.mkdir(parents=True, exist_ok=True)
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     pem = key.private_bytes(
