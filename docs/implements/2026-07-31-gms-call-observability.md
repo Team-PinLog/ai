@@ -156,7 +156,7 @@ endpoint 미노출 기준을 정면으로 어기고, §2.4의 "성공은 조용�
 | 값 노출 | 키·URL·Context 원문·응답 본문이 성공/실패 **양 분기** 모두에서 로그에 없음 |
 | `tests/test_pipeline.py` (3건 추가) | Testcontainers 실 DB로 stale `PROCESSING`을 만들어 두 단계의 재선점 행 확인. 신규 시작은 0건 |
 | `tests/test_repo.py` (5건 추가) | `prev_status`·`reclaimed` 조합, keyword 가드가 CTE 재작성 후에도 유지되는지 |
-| 전체 | 240 → **269 passed** · line 99.81% · branch 98.72% · `check_coverage_gate.py` ok |
+| 전체 | 254 → **283 passed** · line 99.81% · branch 98.72% · `check_coverage_gate.py` ok |
 
 미달로 남은 2 line · 2 branch는 이번 변경과 무관하다 — `FOR UPDATE`로 잠근 직후의
 재검사라 같은 트랜잭션에서 도달 불가이며, `-110`에서 **`pragma`를 붙이지 않고 미달로
