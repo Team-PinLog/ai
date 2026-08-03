@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import hashlib
 import random
+import re
 import struct
 import zlib
 from dataclasses import dataclass
@@ -182,6 +183,15 @@ def catalog() -> tuple[str, ...]:
     return tuple(name for name, _, _, _ in _SPEC)
 
 
+# 게이트웨이 본문 상한을 좁히는 이분 탐색용. `px512-n27` 처럼 줄 수를 이름에 적으면
+# 표에 없어도 만들어 준다. **상한이 어디인지 모르는 채로는 조건표를 미리 못 적기 때문**
+# 이고, 탐색이 끝나 값이 정해지면 그 조건만 `_SPEC` 으로 옮긴다.
+#
+# 치수는 512×512 로 고정한다 — 탐색 대상이 본문 바이트이지 치수가 아니다. 이름 규칙이
+# `_SPEC` 의 `px512-n64` 와 같아서 기록의 `id` 는 어느 쪽에서 왔든 같은 뜻이다.
+_ADHOC = re.compile(r"^px512-n(\d+)$")
+
+
 def build(image_id: str) -> Image:
     """조건 이름으로 이미지를 만든다(같은 프로세스 안에서는 캐시한다).
 
@@ -190,7 +200,11 @@ def build(image_id: str) -> Image:
     """
     if image_id in _CACHE:
         return _CACHE[image_id]
-    for name, w, h, rows in _SPEC:
+    spec = _SPEC
+    adhoc = _ADHOC.match(image_id)
+    if adhoc and not any(name == image_id for name, *_ in _SPEC):
+        spec = ((image_id, 512, 512, int(adhoc.group(1))),)
+    for name, w, h, rows in spec:
         if name == image_id:
             img = Image(
                 id=name, width=w, height=h, noise_rows=rows, data=png(w, h, noise_rows=rows)

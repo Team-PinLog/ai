@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import json
 import sys
 from pathlib import Path
 
@@ -248,12 +249,15 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", choices=tuple(PLANS), help="생략하면 계획만 낸다")
     ap.add_argument("--plan", action="store_true")
+    # 상한 이분 탐색. 다음에 무엇을 잴지가 **직전 응답에 달려 있어** 계획표로 못 적는다.
+    #   --adhoc openai:px512-n27
+    ap.add_argument("--adhoc", help="'vendor:image_id' 쉼표 목록. PLANS 대신 이것을 돈다")
     ap.add_argument("--out", default="axis-b.jsonl")
     ap.add_argument("--limit", type=int, default=MAX_CALLS)
     ap.add_argument("--used", type=int, default=0, help="이전 실행이 이미 쓴 호출 수")
     args = ap.parse_args()
 
-    if args.plan or not args.run:
+    if args.plan or not (args.run or args.adhoc):
         total = 0
         for name, plan in PLANS.items():
             n = sum(reps for _, _, _, reps in plan)
@@ -274,12 +278,19 @@ def main() -> int:
     rec = Recorder(args.out)
     log(f"축 B · root={root} · {now_kst()} · 남은 상한 {budget.left}회")
 
+    if args.adhoc:
+        plan = tuple(
+            (v, i, None, 1) for v, _, i in (x.partition(":") for x in args.adhoc.split(","))
+        )
+    else:
+        plan = PLANS[args.run]
+
     # 12.6 MB 업로드가 있다. write 타임아웃을 넉넉히 준다 — 끊기면 그것이 게이트웨이 상한인지
     # 우리 타임아웃인지 못 가른다.
     timeout = httpx.Timeout(connect=15.0, read=180.0, write=300.0, pool=15.0)
     try:
         with httpx.Client(timeout=timeout) as client:
-            for vendor, image_id, detail, reps in PLANS[args.run]:
+            for vendor, image_id, detail, reps in plan:
                 img = build(image_id)
                 path, headers, body = _body(vendor, img.data, detail)
                 headers = {k: v.replace("{key}", key) for k, v in headers.items()}
@@ -306,6 +317,10 @@ def main() -> int:
                         "detail": detail,
                         "image": img.fingerprint(),
                         "b64_bytes": (img.nbytes + 2) // 3 * 4,
+                        # 게이트웨이가 보는 것은 base64 가 아니라 **요청 본문 전체**다.
+                        # 상한을 base64 바이트로 말하면 JSON 껍데기만큼 어긋난다.
+                        # httpx 의 `json=` 직렬화와 같은 계산(기본 separators·ensure_ascii).
+                        "req_bytes": len(json.dumps(body).encode("utf-8")),
                         "usage": usage,
                         "answer": _answer(vendor, result["payload"]),
                         **result,
