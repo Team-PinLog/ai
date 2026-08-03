@@ -9,6 +9,10 @@
     사고 1·4  T## 중복 (-219/-220 이 같은 번호, -223 이 세는 사이 -221 이 병합됨)
     사고 2    merge=union 이 갱신된 색인 행의 낡은 판을 되살려 같은 문서가 두 줄
     사고 3    번호 재조정 때 전수 표만 고쳐 파일 표가 낡음
+
+`S15P11A705-230` 이 더한 것 — 구현 리포트 파일 표에 번호 컬럼을 넣어 ④ 의 반대 방향
+(파일 표에 번호가 있는데 전수 표에 없다)을 그쪽만 검사한다(⑤). 트러블슈팅은 이 컬럼이
+없으므로 대상이 아니고, 「없음」 명시는 통과다 — 여전히 누락만 본다.
 """
 from pathlib import Path
 
@@ -311,6 +315,131 @@ def test_두_색인_모두_검사한다():
         ("docs/troubleshooting", "T"),
         ("docs/implements", "I"),
     }
+
+
+IMPLEMENTS_WITH_NUMBERS = """# 구현 리포트
+
+## 개별 리포트
+
+| 번호 | 문서 | 유형 | 내용 |
+|---|---|---|---|
+{file_rows}
+
+## 구현·산출 — 전수 (AI 소유)
+
+| I | 산출 | 반영처 |
+|---|---|---|
+{ledger_rows}
+"""
+
+
+def build_implements_repo(tmp_path, *, files, indexed, numbers):
+    """구현 리포트의 번호 컬럼(⑤)만 검사하는 전용 빌더. 트러블슈팅은 항상 정합 상태로 둔다.
+
+    `files` 는 실제로 만들 파일, `indexed` 는 파일 표 행 `(번호 셀, 파일명)` 목록,
+    `numbers` 는 전수 표에 실제로 있는 번호(정수) 목록이다.
+    """
+    troubleshooting = tmp_path / "docs" / "troubleshooting"
+    implements = tmp_path / "docs" / "implements"
+    troubleshooting.mkdir(parents=True)
+    implements.mkdir(parents=True)
+
+    (troubleshooting / "a.md").write_text("# 본문\n", encoding="utf-8")
+    (troubleshooting / "README.md").write_text(
+        TROUBLESHOOTING.format(
+            file_rows="| [a.md](a.md) | 내용 |",
+            ledger_rows="| T1 | 증상 | 해결 |",
+        ),
+        encoding="utf-8",
+    )
+
+    for name in files:
+        (implements / name).write_text("# 본문\n", encoding="utf-8")
+
+    (implements / "README.md").write_text(
+        IMPLEMENTS_WITH_NUMBERS.format(
+            file_rows="\n".join(
+                f"| {cell} | [{name}]({name}) | 구현 | 내용 |" for cell, name in indexed
+            ),
+            ledger_rows="\n".join(f"| I{n} | 산출 | 반영처 |" for n in numbers),
+        ),
+        encoding="utf-8",
+    )
+    return tmp_path
+
+
+def implements_findings_of(root):
+    return [
+        finding
+        for report in check_repository(root)
+        for finding in report.findings
+        if finding.label == "구현 리포트"
+    ]
+
+
+def test_파일_표_번호가_전수_표에_없으면_잡는다(tmp_path):
+    """파일 표가 `I99`를 가리키는데 전수 표에 `I99`가 없다 — ④의 반대 방향(⑤)."""
+    root = build_implements_repo(
+        tmp_path,
+        files=["a.md"],
+        indexed=[("I99", "a.md")],
+        numbers=[1, 2],
+    )
+    findings = implements_findings_of(root)
+    assert [finding.kind for finding in findings] == ["번호 미등록"]
+    assert "I99" in findings[0].detail
+    assert "a.md" in findings[0].detail
+    assert "없음" in findings[0].remedy
+
+
+def test_파일_표_번호가_없음이면_통과한다(tmp_path):
+    """「없음」은 명시적 상태다 — -219 산출물처럼 아직 번호가 없는 문서가 이 경로다."""
+    root = build_implements_repo(
+        tmp_path,
+        files=["a.md"],
+        indexed=[("없음", "a.md")],
+        numbers=[1],
+    )
+    assert implements_findings_of(root) == []
+
+
+def test_파일_표_번호가_전수_표에_있으면_통과한다(tmp_path):
+    root = build_implements_repo(
+        tmp_path,
+        files=["a.md"],
+        indexed=[("I1", "a.md")],
+        numbers=[1],
+    )
+    assert implements_findings_of(root) == []
+
+
+def test_파일_표_번호_칸_형식_위반을_잡는다(tmp_path):
+    """`I`도 `없음`도 아닌 표기는 조용히 넘기지 않는다 — 판정 불가는 오류다."""
+    root = build_implements_repo(
+        tmp_path,
+        files=["a.md"],
+        indexed=[("모름", "a.md")],
+        numbers=[1],
+    )
+    findings = implements_findings_of(root)
+    assert [finding.kind for finding in findings] == ["번호 컬럼 형식"]
+
+
+def test_트러블슈팅은_번호_컬럼_검사_대상이_아니다(tmp_path):
+    """트러블슈팅 파일 표에는 번호 컬럼이 없다 — ⑤가 그쪽에서 오탐하면 안 된다."""
+    root = build_implements_repo(
+        tmp_path,
+        files=["a.md"],
+        indexed=[("I1", "a.md")],
+        numbers=[1],
+    )
+    findings = [
+        finding
+        for report in check_repository(root)
+        for finding in report.findings
+        if finding.label == "트러블슈팅"
+    ]
+    assert findings == []
 
 
 def test_ci_가_이_검사를_조건_없이_돌린다():

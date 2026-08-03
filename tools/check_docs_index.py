@@ -12,6 +12,7 @@ T53 중복, 하네스 소실. **대응이 다섯 번 다 「문서에 문장 추
     ① 번호 중복    전수 표에서 T## · I## 이 같은 번호를 두 번 쓰면 실패
     ③ 고아 · 누락  파일 표가 가리키는 파일이 없거나, 있는 파일이 파일 표에 없으면 실패
     ④ 표 누락      전수 표가 가리키는 문서가 파일 표에 없으면 실패
+    ⑤ 번호 미등록  파일 표 번호 칸이 가리키는 번호가 전수 표에 없으면 실패 (구현 리포트만)
 
 번호가 **연속인지는 검사하지 않는다.** `T9`·`T10` 은 백엔드 아티팩트라 `back` 레포에
 있고, 결번은 정상 상태다. 결번을 오류로 만들면 이 검사가 없는 규칙을 만들어 낸다.
@@ -30,6 +31,17 @@ T53 중복, 하네스 소실. **대응이 다섯 번 다 「문서에 문장 추
 **구조가 해소되면 ④ 는 불필요하다.** 표를 하나로 줄이거나 파일 표에 번호 컬럼을 두어
 매핑을 한 곳에 모으면 「두 곳에 같은 사실을 적는다」가 사라지고, 그때 이 검사를 지운다.
 남겨 두면 나중에 왜 있는지 모르는 검사가 된다.
+
+**`docs/implements` 는 파일 표에 번호 컬럼을 넣어 ⑤ 를 켰다(`S15P11A705-230`).** 반대
+방향(파일 표에 번호가 있는데 전수 표에 없다)을 이제 구현 리포트 쪽만 검사할 수 있다 —
+번호 컬럼이 「이 문서가 몇 번인지」를 파일 표 자신이 명시하기 때문이다. **여전히 누락만
+본다** — 번호가 「없음」이면 통과이고, 두 표의 설명 문구가 같은지는 여전히 안 본다(§2-b
+는 어기지 않는다). `docs/troubleshooting` 은 이 컬럼이 없으므로 ⑤ 가 적용되지 않는다 —
+그쪽 전수 표는 여전히 설계상 문서를 가리키지 않아 컬럼을 넣어도 매핑의 출처가 되지
+못한다(T↔문서는 파일 표의 `(T16~T18)` 표기가 유일한 출처, 위와 같음).
+
+**구조가 하나로 합쳐지면 ⑤ 도 ④ 와 함께 지운다** — 번호 컬럼이 있는 표 하나만 남으면
+「번호가 등록됐는가」를 별도로 셀 이유가 없다.
 
 로컬과 CI 가 같은 코드를 쓰도록 Python 으로 둔다(셸이면 CI 전용이 된다).
 `tests/test_docs_index.py` 가 같은 함수를 부르므로 `pytest` 만 돌려도 신호가 나온다.
@@ -65,6 +77,12 @@ class IndexSpec:
     prefix: str
     file_section: str
     ledger_section: str
+    number_column: bool = False
+    """파일 표 맨 앞 칸이 전수 표 번호(또는 「없음」)인가. `True`면 ⑤ 를 켠다.
+
+    `docs/troubleshooting` 는 이 컬럼이 없다 — 그쪽 전수 표는 설계상 문서를 가리키지
+    않아(모듈 docstring 참조) 컬럼을 넣어도 대조할 출처가 되지 못한다.
+    """
 
 
 INDEXES = (
@@ -81,6 +99,7 @@ INDEXES = (
         prefix="I",
         file_section="개별 리포트",
         ledger_section="구현·산출 — 전수 (AI 소유)",
+        number_column=True,
     ),
 )
 
@@ -174,6 +193,38 @@ def parse_table_links(lines: list[str], offset: int) -> dict[str, list[int]]:
                 continue
             entries.setdefault(target, []).append(offset + index + 1)
     return entries
+
+
+def parse_file_number_column(
+    lines: list[str], offset: int, prefix: str
+) -> tuple[dict[str, tuple[str, int]], list[tuple[int, str]]]:
+    """파일 표 맨 앞 칸(번호)을 문서별로 뽑는다. (파일명 -> (셀 값, 줄번호), 형식 위반 행)
+
+    `spec.number_column` 이 `True` 인 색인에서만 부른다 — 그 컬럼이 없는 표에 부르면
+    첫 칸이 문서 링크 자체가 되어 전부 형식 위반으로 잡힌다.
+    """
+    pattern = re.compile(rf"{prefix}(\d+)")
+    declarations: dict[str, tuple[str, int]] = {}
+    malformed: list[tuple[int, str]] = []
+
+    for index, line in enumerate(lines):
+        cell = first_cell(line)
+        if cell is None or not cell:
+            continue
+        if set(cell) <= {"-", ":"}:  # 구분선
+            continue
+        if cell == "번호":  # 헤더
+            continue
+        targets = [target for target in LOCAL_MD_LINK.findall(line) if "/" not in target]
+        if not targets:
+            continue
+        if cell != "없음" and pattern.fullmatch(cell) is None:
+            malformed.append((offset + index + 1, cell))
+            continue
+        for target in targets:
+            declarations[target] = (cell, offset + index + 1)
+
+    return declarations, malformed
 
 
 @dataclass(frozen=True)
@@ -344,6 +395,57 @@ def check_index(root: Path, spec: IndexSpec) -> IndexReport:
             )
         )
 
+    # ⑤ 번호 미등록 — 파일 표가 번호를 선언했는데 전수 표에 그 번호가 없다. ④ 의 반대
+    #    방향이고, 파일 표에 번호 컬럼을 명시했기 때문에 비로소 가능해진 검사다
+    #    (`S15P11A705-230`). 「없음」 은 명시적 상태이므로 통과다 — 이 검사도 누락만
+    #    본다(§2-b 를 어기지 않는다). 구조가 하나로 합쳐지면 ④ 와 함께 지운다.
+    if spec.number_column:
+        file_numbers, malformed_numbers = parse_file_number_column(
+            file_lines, file_offset, spec.prefix
+        )
+
+        for lineno, cell in malformed_numbers:
+            findings.append(
+                Finding(
+                    label=spec.label,
+                    kind="번호 컬럼 형식",
+                    detail=(
+                        f"파일 표 번호 칸이 `{spec.prefix}nn` 또는 `없음` 형식이 아니다: "
+                        f"{cell!r} ({source}:{lineno})"
+                    ),
+                    remedy=(
+                        f"파일 표의 번호 칸은 전수 표 번호 하나(`{spec.prefix}61` 같은 형태)이거나 "
+                        "번호가 없는 문서는 `없음`이라고 명시적으로 적는다.\n"
+                        "빈 칸이나 다른 표기로 두면 이 검사가 판정할 수 없다."
+                    ),
+                )
+            )
+
+        number_pattern = re.compile(rf"{spec.prefix}(\d+)")
+        for name, (cell, lineno) in sorted(file_numbers.items()):
+            if cell == "없음":
+                continue
+            match = number_pattern.fullmatch(cell)
+            if match is None:
+                continue  # 형식 위반은 위에서 이미 잡았다 — 같은 문제에 두 줄을 내지 않는다.
+            if int(match.group(1)) in numbers:
+                continue
+            findings.append(
+                Finding(
+                    label=spec.label,
+                    kind="번호 미등록",
+                    detail=(
+                        f"파일 표의 {name} 이 {cell} 을 가리키는데 전수 표에 {cell} 이 없다 "
+                        f"({source}:{lineno})"
+                    ),
+                    remedy=(
+                        f"{source} 의 「{spec.ledger_section}」 표에 `{cell}` 행을 추가하거나, "
+                        "번호를 잘못 적었으면 실제 전수 표 번호로 고친다.\n"
+                        "이 문서에 번호가 아직 없으면 파일 표의 칸을 `없음`으로 바꾼다."
+                    ),
+                )
+            )
+
     return IndexReport(
         spec=spec,
         findings=findings,
@@ -364,7 +466,9 @@ def main() -> int:
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
 
-    parser = argparse.ArgumentParser(description="문서 색인 정합 검사 (번호 중복 · 고아/누락)")
+    parser = argparse.ArgumentParser(
+        description="문서 색인 정합 검사 (번호 중복 · 고아/누락 · 번호 미등록)"
+    )
     parser.add_argument(
         "--root",
         default=str(ROOT),
