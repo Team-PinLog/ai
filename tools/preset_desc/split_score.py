@@ -139,13 +139,33 @@ def main() -> int:
     log(f"  고친 5종      오분류 {t_unfit:+.2f}행 · 정상 {t_fit:+.2f}행")
     log(f"  안 고친 22종  오분류 {o_unfit:+.2f}행 · 정상 {o_fit:+.2f}행")
     log()
-    if t_unfit < 0 and o_unfit >= 0 and o_fit >= 0:
-        log("  → 고친 것에서만 줄고 안 고친 것은 안 나빠졌다. 부작용 없는 국소 효과다")
-    elif t_unfit < 0 and (o_unfit > 0 or o_fit < 0):
-        log("  → 고친 것에서 줄었으나 **안 고친 22종이 대가를 치른다.** 개정이 후보")
-        log("    분포를 흔들어 다른 프리셋을 밀어낸 것이다 — 총합만 보면 안 보인다")
-    elif t_unfit >= 0:
+    # **부호만 보고 판정하지 않는다.** 이동이 -0.40 이고 p=0.31 인 것을 「대가를 치른다」로
+    # 찍으면 회차 운을 부작용으로 읽는다. 이 파일이 겨눈 것은 과적합이지 노이즈가 아니다.
+    o_fit_real = o_fit < 0 and (
+        result["others"]["fit"]["disjoint"] or result["others"]["fit"]["p"] < 0.05
+    )
+    o_unfit_worse = o_unfit > 0 and (
+        result["others"]["unfit"]["disjoint"] or result["others"]["unfit"]["p"] < 0.05
+    )
+    if t_unfit >= 0:
         log("  → 겨눈 5종에서조차 줄지 않았다. 개정이 표적에 닿지 않았다")
+    elif o_fit_real or o_unfit_worse:
+        log("  → 고친 것에서 줄었으나 **안 고친 22종이 대가를 치른다**(유의). 개정이")
+        log("    후보 분포를 흔들어 다른 프리셋을 밀어낸 것이다 — 총합만 보면 안 보인다")
+    else:
+        log("  → 고친 것에서 줄고 **안 고친 22종의 이동은 유의하지 않다.**")
+        log("    과적합의 전형적 모양(5종만 개선·22종 악화)이 아니다")
+    log(
+        f"    (안 고친 22종 정상 Δ {o_fit:+.2f} p={result['others']['fit']['p']:.4f} · "
+        f"오분류 Δ {o_unfit:+.2f} p={result['others']['unfit']['p']:.4f})"
+    )
+    log()
+    log("  **라벨 없는 행이 어느 무리에서 나오는지도 함께 본다** — 후보 슬롯이 k 개로")
+    log("  고정이라 겨눈 프리셋을 좁히면 다른 프리셋이 그 자리를 가져간다.")
+    log(
+        f"    고친 5종 {result['targets']['unlabeled']['delta']:+.2f} · "
+        f"안 고친 22종 {result['others']['unlabeled']['delta']:+.2f}"
+    )
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
