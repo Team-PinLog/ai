@@ -32,6 +32,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import sys
 from pathlib import Path
 
@@ -48,12 +49,22 @@ from tools.gms_image.gateway import (  # noqa: E402
     log,
     now_kst,
 )
+from tools.gms_image.synth import png_dims  # noqa: E402
 
 # 칩이 준 상한. 사람이 세지 않는다.
 MAX_CALLS = 20
 
 # 생성 프롬프트. 합성 도형 하나 — 개인정보도, 인물도, 상표도 들어갈 여지가 없다.
 PROMPT = "a plain solid blue square centered on a white background, flat vector, no text"
+
+# 안전 정책 거절을 **일부러** 유발하는 프롬프트. 거절이 어떤 모양으로 오는지가 측정
+# 대상이다 — `ai#97` 이 사용자 입력에서 표지를 만든다면 「정책 거절」과 「기술 오류」를
+# 갈라 다르게 처리해야 하고, 응답에서 그 둘이 안 갈리면 설계가 성립하지 않는다.
+#
+# 상표 캐릭터를 쓴다. 실존 인물 초상이나 유해 소재가 아니라 **가장 순한 트리거**이고,
+# 기대 결과가 「거절」이라 유해한 산출물이 나올 여지가 없다. 우회가 아니라 정반대다 —
+# 거절이 응답에서 식별 가능한지 확인하는 것이다.
+POLICY_PROMPT = "a portrait of Mickey Mouse, the Disney character, in his classic red shorts"
 
 # 공개 값이라 마스킹 예외로 둔다. 없으면 모델명이 `<masked:25>` 로 가려져 기록에서
 # 어느 모델을 불렀는지 못 읽는다.
@@ -144,9 +155,78 @@ PROBES: tuple[tuple[str, str, str, str, str, object], ...] = (
         "/api.anthropic.com/v1/models",
         None,
     ),
+    # ── discover 에서 돌지 않는다. 지원이 확인된 뒤 `--stage profile` 로 따로 부른다 ──
+    #
+    # `size` 가 **실제로 먹는지**. 정사각형 요청에 정사각형이 온 것만으로는 파라미터가
+    # 먹은 것인지 기본값이 우연히 맞은 것인지 못 가른다. 세로 비율을 요청해 본다.
+    (
+        "openai:gpt-image-1-portrait",
+        "shape",
+        "openai",
+        "POST",
+        "/api.openai.com/v1/images/generations",
+        lambda: {"model": "gpt-image-1", "prompt": PROMPT, "n": 1, "size": "1024x1536"},
+    ),
+    # Gemini 쪽에는 `size` 가 없다. 비율 지정 수단이 있는지(`imageConfig.aspectRatio`)를
+    # 본다 — 없으면 `ai#97` 은 게이트웨이 밖에서 잘라야 한다.
+    (
+        "gemini:flash-image-ratio",
+        "shape",
+        "gemini",
+        "POST",
+        "/generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
+        lambda: {
+            "contents": [{"role": "user", "parts": [{"text": PROMPT}]}],
+            "generationConfig": {
+                "responseModalities": ["IMAGE"],
+                "imageConfig": {"aspectRatio": "3:4"},
+            },
+        },
+    ),
+    (
+        "openai:gpt-image-1-policy",
+        "policy",
+        "openai",
+        "POST",
+        "/api.openai.com/v1/images/generations",
+        lambda: {"model": "gpt-image-1", "prompt": POLICY_PROMPT, "n": 1, "size": "1024x1024"},
+    ),
+    (
+        "gemini:flash-image-policy",
+        "policy",
+        "gemini",
+        "POST",
+        "/generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
+        lambda: {
+            "contents": [{"role": "user", "parts": [{"text": POLICY_PROMPT}]}],
+            "generationConfig": {"responseModalities": ["IMAGE"]},
+        },
+    ),
 )
 
+# `--stage discover` 가 도는 것. 나머지는 지원이 확인된 뒤에만 의미가 있다.
+_DISCOVER_KINDS = ("control", "generate")
+
 _HEADERS = {"openai": _openai, "gemini": _gemini, "anthropic": _anthropic}
+
+
+def _generated(payload: dict) -> dict:
+    """생성된 이미지의 **치수와 실 바이트**를 꺼낸다. blob 이 접히기 전에 불린다.
+
+    요청한 `size`·비율이 실제로 먹었는지는 이것 말고는 확인할 방법이 없다 — 응답이
+    에코하는 `size` 필드는 OpenAI 쪽에만 있고, Gemini 는 아무것도 에코하지 않는다.
+    """
+    for extract in (
+        lambda p: p["data"][0]["b64_json"],
+        lambda p: p["candidates"][0]["content"]["parts"][0]["inlineData"]["data"],
+    ):
+        try:
+            raw = base64.b64decode(extract(payload))
+        except (KeyError, IndexError, TypeError, ValueError):
+            continue
+        dims = png_dims(raw)
+        return {"out_bytes": len(raw), "out_dims": list(dims) if dims else None}
+    return {}
 
 
 def _run_one(client, rec, budget, root, key, probe, *, rep=1) -> dict:
@@ -161,6 +241,7 @@ def _run_one(client, rec, budget, root, key, probe, *, rep=1) -> dict:
         body=body,
         key=key,
         allow=PUBLIC,
+        inspect=_generated,
     )
     record = {
         "axis": "A",
@@ -204,13 +285,15 @@ def main() -> int:
         with httpx.Client(timeout=timeout) as client:
             if args.stage == "discover":
                 for probe in PROBES:
-                    _run_one(client, rec, budget, root, key, probe)
+                    if probe[1] in _DISCOVER_KINDS:
+                        _run_one(client, rec, budget, root, key, probe)
             else:
-                target = next((p for p in PROBES if p[0] == args.probe), None)
-                if target is None:
-                    raise SystemExit(f"모르는 probe '{args.probe}'")
-                for rep in range(1, args.reps + 1):
-                    _run_one(client, rec, budget, root, key, target, rep=rep)
+                for probe_id in args.probe.split(","):
+                    target = next((p for p in PROBES if p[0] == probe_id), None)
+                    if target is None:
+                        raise SystemExit(f"모르는 probe '{probe_id}'")
+                    for rep in range(1, args.reps + 1):
+                        _run_one(client, rec, budget, root, key, target, rep=rep)
     except BudgetExceeded as exc:
         log(f"  !! {exc}")
     finally:

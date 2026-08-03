@@ -163,11 +163,16 @@ def call(
     body: dict | None,
     key: str,
     allow: tuple[str, ...] = (),
+    inspect=None,
 ) -> dict:
     """한 번 부르고 **기록용 dict** 를 돌려준다. 예외를 밖으로 내지 않는다.
 
     타임아웃·연결 실패도 측정값이다 — 12 MB 업로드가 게이트웨이에서 끊기는 것과 벤더가
     거부하는 것은 다른 답이고, 예외로 죽으면 그 구분이 기록에 안 남는다.
+
+    `inspect(payload)` 는 **blob 을 접기 전** 원본 응답을 한 번 본다. 돌려준 dict 가
+    기록에 합쳐진다 — 생성된 이미지의 치수처럼 base64 안에만 있는 측정값을 꺼내는
+    자리다. 여기서 터져도 호출 결과는 살린다(계측이 측정을 죽이지 않는다).
     """
     started = time.monotonic()
     try:
@@ -178,12 +183,19 @@ def call(
             payload = resp.json()
         except ValueError:
             payload = None
+        extra = {}
+        if inspect is not None and payload is not None:
+            try:
+                extra = inspect(payload) or {}
+            except Exception as exc:  # noqa: BLE001 — 계측이 측정을 죽이지 않는다
+                extra = {"inspect_error": f"{type(exc).__name__}: {exc}"}
         return {
             "status": resp.status_code,
             "elapsed_ms": round(elapsed * 1000),
             "payload": strip_blobs(payload),
             "body_excerpt": mask(raw[:_EXCERPT], key, allow),
             "body_len": len(raw),
+            **extra,
         }
     except Exception as exc:  # noqa: BLE001 — 실패 자체가 측정값이다
         return {

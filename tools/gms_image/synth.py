@@ -87,6 +87,18 @@ def png(width: int, height: int, *, noise: bool, seed: int = 0) -> bytes:
     )
 
 
+def png_dims(raw: bytes) -> tuple[int, int] | None:
+    """PNG 바이트에서 `(width, height)`. PNG 가 아니면 `None`.
+
+    **생성된 이미지의 치수는 측정값이다** — 요청한 `size`·비율이 실제로 먹었는지가 그것
+    하나로 갈린다. 그래서 응답의 base64 를 `<blob:N>` 으로 접기 **전에** 여기를 통과시킨다.
+    IHDR 은 시그니처 바로 뒤 고정 위치라 청크를 순회할 필요가 없다.
+    """
+    if len(raw) < 24 or raw[:8] != _MAGIC:
+        return None
+    return struct.unpack(">II", raw[16:24])
+
+
 @dataclass(frozen=True)
 class Image:
     """측정 조건 한 칸. `id` 가 리포트 표의 행 이름이 된다."""
