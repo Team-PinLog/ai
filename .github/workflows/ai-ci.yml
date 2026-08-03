@@ -74,6 +74,20 @@ jobs:
       - name: Compile check
         run: python -m compileall app tools
 
+      # 2026-07-31 하루에 색인 사고가 다섯 번 났다 -- T 번호 중복 둘, 색인 행 중복,
+      # 파일 표 미갱신, 산출물 소실. 대응이 다섯 번 다 "문서에 문장 추가"였고 네 번째는
+      # 첫 번째의 대응을 그대로 따랐는데도 났다. 번호를 세는 시점과 병합 시점이 어긋나는
+      # 것은 사람이 알 방법이 없기 때문이다. 셀 수 있는 둘만 여기로 옮긴다.
+      #
+      # 새 잡이 아니라 check 안의 스텝이다. 필수 상태 검사는 두 이름뿐이므로
+      # (CONTRIBUTING "PR과 리뷰") 잡을 늘리면 실패해도 병합을 막지 못한다.
+      #
+      # 테스트보다 앞에 둔다. 파일 시스템만 보는 1초짜리 판정이고, 색인이 어긋난 사실은
+      # 테스트 결과와 무관하다. 대신 여기서 끊기면 그 PR 은 테스트 신호를 못 받는다 --
+      # 고치고 다시 돌리는 비용보다 Testcontainers 한 판을 아끼는 쪽을 택했다.
+      - name: Docs index integrity
+        run: python tools/check_docs_index.py
+
       # 통합 테스트는 Testcontainers로 pgvector를 러너 Docker에 띄운다.
       - name: Tests and app branch coverage
         run: >-

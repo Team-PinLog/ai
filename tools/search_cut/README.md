@@ -24,9 +24,86 @@
 | `sweep.py` | 분포와 `τ_abs × r` 격자. **DB 도 GMS 도 부르지 않는다** |
 | `label_sheet.py` | 라벨을 손으로 채우기 위한 시트(본문 포함). 출력물은 커밋하지 않는다 |
 | `verify_live.py` | 오프라인 재구성이 실서버 응답과 같은지. **정확 일치를 요구한다** |
+| `recall_probe.py` | 「본문에 있는 말로 검색해도 안 나온다」의 원인 판별(`S15P11A705-255`). 질의 22건 × Record 전량. **GMS 임베딩 배치 1회** |
+| `word_matrix.py` | **단어형** 질의 54건 × 소유자 3명의 행렬(`S15P11A705-266`). 기대 정답을 손으로 짝짓지 않고 **본문 문자열 포함으로 계산**한다. **GMS 임베딩 배치 1회** |
+| `word_sweep.py` | 단어형·문장형을 **한 표에** 놓고 격자를 훑는다. **DB 도 GMS 도 부르지 않는다** |
 
-`matrix.json` 은 **커밋한다.** 다시 뜨려면 GMS 를 부르고, `tau_grid` 의 것과 달리 Context
-본문을 담지 않는다(장소명까지).
+`matrix.json` · `recall_probe.json` · `word_grid.json` 은 **커밋한다.** 다시 뜨려면 GMS 를
+부르고, `tau_grid` 의 것과 달리 Context 본문을 담지 않는다(장소명까지).
+
+## 단어형 컷 격자 (`S15P11A705-266`)
+
+`recall_probe.py` 와 대상이 다르다 — 저쪽은 **세 이슈의 원인을 가르려고** 질의 표현을
+바꿔 가며 같은 Record 를 추적하고, 이쪽은 **컷 값을 정하려고** 질의를 늘려 대역을 잰다.
+그래서 무관 통제가 저쪽은 1건(`치과`)이고 이쪽은 45행이다 — 컷 값 판단은 「무관 대역이
+어디까지 올라오는가」가 전부이므로 그 대역을 1점으로 재면 안 된다.
+
+```bash
+.venv/Scripts/python.exe tools/search_cut/word_matrix.py    # GMS 배치 1회. DB 를 읽는다
+.venv/Scripts/python.exe tools/search_cut/word_sweep.py     # 파일 둘만 읽는다
+```
+
+`word_sweep.py` 는 `word_grid.json`(단어형)과 `matrix.json`(문장형)을 **함께** 읽는다.
+따로 내면 「한 값이 둘 다를 만족하는가」에 답할 수 없기 때문이다.
+
+`word_matrix.py` 는 재기 전에 둘을 확인하고 **어긋나면 GMS 를 부르지 않고 멈춘다.**
+
+```
+무관 통제가 본문에 있다             그 행은 통제가 아니라 정답 있는 질의다
+단어형 질의가 어느 소유자에게도 없다   정답 누락 분모에서 조용히 빠진다
+```
+
+둘째 가드가 실제로 `초밥` 을 잡았다 — 「진우네 초밥」의 **장소명**에만 있고 본문은
+「일식집」이다. 임베딩이 받는 것은 `context` 하나뿐이라 장소명을 정답 기준에 넣으면
+모델에 주지 않은 정보를 기대하게 된다.
+
+### 값을 다시 정하기 전에 — 재현성부터 본다
+
+`T68`(`-228`)이 임베딩 API 가 **같은 배치 구성으로도** 결정적이지 않음을 실측했다
+(`|Δsim|` 최대 **0.0044**). 그 크기가 격자 간격(0.01)과 같은 자릿수라, **그대로면 인접
+τ 값의 차이가 실제 차이인지 재측정 운인지 갈리지 않는다.**
+
+```bash
+.venv/Scripts/python.exe tools/search_cut/word_matrix.py --out .search/word_grid_run2.json
+.venv/Scripts/python.exe tools/search_cut/word_sweep.py \
+    --repro .search/word_grid.json,.search/word_grid_run2.json
+```
+
+회차 간 흔들림과 **같은 τ 에서 판정이 회차마다 같은지**를 낸다. `-266` 시점 실측은
+상한 `0.000209`(회차 3개)로 격자 간격보다 두 자릿수 작았고 전 구간 판정이 일치했다.
+**갈리기 시작하면 그 구간의 인접 값 비교를 신뢰하지 말고 결론을 보류한다** — `T68` 이
+`base2` 를 상시 조건으로 둔 것과 같은 이유다.
+
+`τ` 격자를 **`0.01` 보다 촘촘하게 두지 않는다**(`T68` 의 조언).
+
+결론은 [구현 리포트](../../docs/implements/2026-08-03-word-query-cut.md)에 있다.
+
+## 재현율 프로브 (`S15P11A705-255`)
+
+`matrix.py` 와 대상이 다르다 — 저쪽은 **격자를 훑기 위해** 검증 질의 12건의 전량 유사도를
+굳히고, 이쪽은 **질의 표현을 바꿔 가며** 같은 Record 가 어떻게 움직이는지 본다.
+
+```bash
+.venv/Scripts/python.exe tools/search_cut/recall_probe.py                          # GMS 배치 1회
+.venv/Scripts/python.exe tools/search_cut/recall_probe.py --replay .search/recall_probe.json
+.venv/Scripts/python.exe tools/search_cut/recall_probe.py --lengths .search/recall_probe.json
+```
+
+`--replay` 는 **판정 규칙만** 다시 낸다(DB·GMS 미호출). 컷도 판정도 유사도에 걸릴 뿐
+임베딩에 걸리지 않으므로, `RECOVER_RANK` 나 컷 값을 바꿔 볼 때 GMS 를 다시 부르지 않는다.
+
+**`--replay` 는 기본적으로 파일을 쓰지 않는다.** 재판정은 화면으로 읽는 것이 목적이고,
+기본 출력 경로를 두면 위 명령을 그대로 돌린 사람이 **커밋된 행렬을 판정 결과로 덮어쓴다** —
+행렬은 GMS 를 불러야 다시 뜨므로 그 손실이 판정보다 무겁다. 남기려면 `--out` 에 **다른**
+경로를 준다(입력과 같으면 쓰지 않고 멈춘다).
+
+이 프로브의 질의는 **단어형**이라 `τ_abs` 가 질의별로 갈린다(`S15P11A705-266`). 단일 하한을
+쓰면 이미 고쳐진 증상(`ai#87` 의 `그네`·`스팟`)을 계속 「① 컷이 잘랐다」로 보고한다 —
+**진단 도구가 닫힌 증상을 미해결로 읽는다.**
+`--lengths` 는 본문 길이와 유사도의 순위 상관을 낸다(DB 만 읽는다 — 행렬이 본문을 담지
+않으므로 길이는 DB 에서 온다).
+
+결론은 [구현 리포트](../../docs/implements/2026-08-03-search-recall-probe.md)에 있다.
 
 ## 실행
 
@@ -56,6 +133,11 @@ CWD 기준이고 `.env` 는 gitignore 라 worktree 에 없다 — `GMS_API_KEY` 
 .venv/Scripts/python.exe -m uvicorn app.main:app --port 8002 > .search/uvicorn.log 2>&1 &
 .venv/Scripts/python.exe tools/search_cut/verify_live.py --ai http://127.0.0.1:8002
 ```
+
+`word_grid.json` 이 있으면 단어형도 함께 던진다 — 다만 **두 하한(단어형·문장형)에서
+결과가 갈리는 행만** 고른다. 갈리지 않는 행은 서버가 분기를 타든 안 타든 통과하므로
+GMS 호출만 늘고 재는 값이 늘지 않는다. 재구성 쪽에도 길이 분기를 **다시 적어** 두었다 —
+구현을 `import` 하면 서버가 옛 단일값 경로를 돌아도 검증이 통과한다.
 
 로그는 파이프가 아니라 리디렉션으로 받는다 — 파이프는 프로세스가 사는 동안 0바이트다(T30).
 질의 수만큼 GMS 임베딩을 부른다(요청당 1회).

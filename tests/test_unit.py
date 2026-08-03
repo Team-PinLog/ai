@@ -692,6 +692,114 @@ def test_cut_defaults_are_the_measured_values(monkeypatch):
     assert s.search_top_ratio == 0.60
 
 
+# ── 질의 길이별 τ_abs (S15P11A705-266) ──────────────────
+def _cut_q(monkeypatch, rows, query, **overrides):
+    """질의를 함께 넘겨 `_cut` 을 부른다. 위 `_cut` 과 달리 길이 분기를 태운다."""
+    from app.service.search_service import SearchService
+
+    settings = _settings_with(monkeypatch, **overrides)
+    service = SearchService(db=None, embedding_client=None, settings=settings)
+    return [r["similarity"] for r in
+            service._cut([{"similarity": s} for s in rows], query)]
+
+
+def test_cut_word_query_uses_lower_floor(monkeypatch):
+    """같은 0.26 이 질의 길이에 따라 살기도 죽기도 한다.
+
+    이것이 `-266` 의 결론 전부다 — 두 대역이 겹치지 않아(문장형 정답 하한 0.3642 ·
+    단어형 0.2438) 한 값으로는 한쪽이 반드시 손해를 본다. 문장형에 맞춘 0.30 이
+    단어형에서 **컷 전 1위인 정답**을 잘라내던 것이 `ai#87` 이다.
+    """
+    assert _cut_q(monkeypatch, [0.26], "비건", SEARCH_TOP_RATIO="0") == [0.26]
+    assert _cut_q(monkeypatch, [0.26], "채식 샌드위치 먹던 단골집", SEARCH_TOP_RATIO="0") == []
+
+
+def test_cut_spaced_query_is_not_a_word_query(monkeypatch):
+    """공백이 있으면 짧아도 문장형이다.
+
+    `-266` 의 행렬에는 「공백 있고 짧은」 질의가 없어 두 정의(글자 수 · 어절 수)를 가르지
+    못했다. 그래서 **둘 다 요구해** 애매한 질의를 문장형(더 세게 자름)으로 기울인다.
+    """
+    assert _cut_q(monkeypatch, [0.26], "신한 부캠", SEARCH_TOP_RATIO="0") == []
+
+
+def test_cut_long_query_without_space_is_not_a_word_query(monkeypatch):
+    """공백이 없어도 길면 문장형이다. 위와 같은 이유로 두 조건은 AND 다."""
+    assert _cut_q(monkeypatch, [0.26], "혼자조용히작업하기좋은카페",
+                  SEARCH_TOP_RATIO="0") == []
+
+
+def test_cut_ratio_is_not_split_by_query_length(monkeypatch):
+    """**`r` 은 가르지 않는다.** 상대 컷이라 대역 차이를 자동으로 흡수한다.
+
+    실측에서도 단어형 정답 손실이 `r=0.75` 까지 0 이었다. 여기서 갈리면 `-266` 이 재지
+    않은 축을 코드가 만든 것이 된다.
+    """
+    word = _cut_q(monkeypatch, [0.80, 0.40], "비건", SEARCH_SIMILARITY_FLOOR="0")
+    sent = _cut_q(monkeypatch, [0.80, 0.40], "채식 샌드위치 먹던 단골집",
+                  SEARCH_SIMILARITY_FLOOR="0")
+    assert word == sent == [0.80]
+
+
+def test_cut_word_query_boundary_is_exactly_max_chars(monkeypatch):
+    """**「5자 이하」를 코드가 지키는지 고정한다.**
+
+    이 값이 없으면 `len(q) <= max_chars` 를 `<` 로 바꿔도 전부 초록이고 커버리지도 100%
+    그대로다. 그러면 명세의 「5자 이하」와 `config.py` 주석의 「2~5자」가 조용히 거짓이 된다
+    — 「경계 5자는 측정이 아니라 판단」이라고 세 곳에 적어 둔 값인데 그 판단을 지키는 장치가
+    없었다.
+    """
+    assert _cut_q(monkeypatch, [0.26], "아이스크림", SEARCH_TOP_RATIO="0") == [0.26]  # 5자
+    assert _cut_q(monkeypatch, [0.26], "아이스크림콘", SEARCH_TOP_RATIO="0") == []  # 6자
+
+
+def test_cut_word_query_treats_all_unicode_whitespace_as_a_separator(monkeypatch):
+    """전각 공백·탭·NBSP 도 공백이다.
+
+    U+0020 만 보면 `_is_word_query` 가 선언한 안전 방향(**애매하면 문장형으로 기운다**)이
+    구분자만 바뀌면 **반대로** 뒤집힌다 — 2어절 질의가 「공백 없음」으로 통과해 오히려
+    느슨한 0.24 를 탄다. 요청 스키마에 정규화가 없어 원문이 그대로 도달하므로(IME 전각
+    모드·타 화면 복사) 실제로 닿는 경로다.
+    """
+    for sep in ("　", "\t", "\xa0", "\n"):
+        assert _cut_q(monkeypatch, [0.26], f"신한{sep}부캠", SEARCH_TOP_RATIO="0") == [], sep
+
+
+def test_cut_kill_switch_also_disables_the_word_floor(monkeypatch):
+    """**비상 스위치는 분기보다 앞이다.**
+
+    `-213` 이 이 가드를 넣었을 때 분기가 없었고 분기는 `-266` 이 만들었다. 가드를 분기
+    뒤에 두면 비상 스위치(`SEARCH_SIMILARITY_FLOOR=0` · `SEARCH_TOP_RATIO=0`)를 넣어도
+    단어형만 0.24 로 계속 잘리고,
+    **장애 중에** 그것을 알아채야 한다. 나중에 생긴 것이 먼저 있던 안전장치를 무력화하면
+    그것이 퇴행이다.
+    """
+    rows = [0.20, 0.05]
+    off = dict(SEARCH_SIMILARITY_FLOOR="0", SEARCH_TOP_RATIO="0")
+    assert _cut_q(monkeypatch, rows, "비건", **off) == rows  # 단어형도 꺼진다
+    assert _cut_q(monkeypatch, rows, "채식 샌드위치 먹던 단골집", **off) == rows
+
+
+def test_cut_word_floor_alone_does_not_disable_the_cut(monkeypatch):
+    """`SEARCH_SIMILARITY_FLOOR_WORD=0` 은 **끄는 스위치가 아니다** — `r` 이 남아 계속 자른다.
+
+    `config.py` 주석이 두 키의 성격을 갈라 적은 것(비상 스위치 / 튜닝 값)을 코드로 고정한다.
+    """
+    got = _cut_q(monkeypatch, [0.80, 0.20], "비건", SEARCH_SIMILARITY_FLOOR_WORD="0")
+    assert got == [0.80]  # r=0.60 × 0.80 = 0.48 에 걸려 0.20 이 잘린다
+
+
+def test_cut_word_defaults_are_the_measured_values(monkeypatch):
+    """0.24 는 「컷 전 1위인 정답을 하나도 잃지 않는 가장 높은 값」이다(0.25 부터 깨진다).
+
+    경계 5 자는 측정이 아니라 판단이다 — `-266` 의 단어형이 전부 2~5자라 두 정의를 가를
+    수 없었고 `-255` 의 길이 상관이 쓴 값을 따랐다.
+    """
+    s = _settings_with(monkeypatch)
+    assert s.search_similarity_floor_word == 0.24
+    assert s.search_word_query_max_chars == 5
+
+
 def test_search_limit_default_matches_public_contract():
     """공용 계약 08 §6.1 의 `size` 기본값 20. back 이 항상 명시해 보내 드러나지 않았다."""
     from app.schema.search import SearchRequest

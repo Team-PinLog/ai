@@ -432,3 +432,52 @@ async def test_healthy_db_still_returns_200(search_api, settings):
         r = await _post_search(client, settings)
     assert r.status_code == 200 and r.json() == {"results": []}
     assert len(seen) == 1
+
+
+# ══ 문구가 층을 가리키는가 (S15P11A705-229, failure-recovery.md §2.5) ══════
+#
+# 상태 코드는 `-221`이 이미 맞혔다. 그런데 두 핸들러의 응답 본문은 그때도
+# `embedding upstream ...` 고정 문구였다 — DB가 죽어도 게이트웨이를 가리키는
+# 문구가 나갔다(`-229`가 잡은 사실과 어긋남). 값을 싣지 않고 층 이름만 가른다.
+
+
+async def test_db_transient_failure_uses_database_wording(search_api, settings):
+    """DB 접속 실패 → `{"detail": "database unavailable"}`. `embedding upstream`이 아니다."""
+    dead = _LazyPoolDatabase(_DEAD_DSN)
+    await dead.connect()
+    try:
+        async with search_api(_ok, database=dead) as (client, _):
+            r = await _post_search(client, settings)
+    finally:
+        await dead.disconnect()
+    assert r.status_code == 503
+    assert r.json() == {"detail": "database unavailable"}
+
+
+async def test_db_permanent_failure_uses_database_wording(search_api, settings):
+    """존재하지 않는 데이터베이스 → `{"detail": "database rejected the request"}`."""
+    dsn = settings.database_url.rsplit("/", 1)[0] + "/no_such_database"
+    wrong = _LazyPoolDatabase(dsn)
+    await wrong.connect()
+    try:
+        async with search_api(_ok, database=wrong) as (client, _):
+            r = await _post_search(client, settings)
+    finally:
+        await wrong.disconnect()
+    assert r.status_code == 502
+    assert r.json() == {"detail": "database rejected the request"}
+
+
+# ── 회귀: GMS 문구는 이 티켓의 대상이 아니다 ─────────────
+async def test_gms_transient_failure_wording_unchanged(search_api, settings):
+    """GMS 일시 오류 문구는 그대로다 — 이 티켓의 주 리스크가 이 회귀다."""
+    async with search_api(_always(502)) as (client, _):
+        r = await _post_search(client, settings)
+    assert r.json() == {"detail": "embedding upstream unavailable"}
+
+
+async def test_gms_permanent_failure_wording_unchanged(search_api, settings):
+    """GMS 영구 오류 문구도 그대로다."""
+    async with search_api(_always(401)) as (client, _):
+        r = await _post_search(client, settings)
+    assert r.json() == {"detail": "embedding upstream rejected the request"}

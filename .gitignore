@@ -47,6 +47,12 @@ env/
 # `.prompt_ab/` 에서 언제든 재구성되므로 남기지 않는다.
 .judge_vote/
 
+# tools/preset_desc 실행 산출물 — 조건별 유사도 행렬과 판정 회차. `matrix-*.json` 이
+# Context 본문을 **전문 그대로** 담으므로 `.tau/` 와 같은 취급이다. 다시 뜨려면 GMS
+# 임베딩을 조건당 1회(프리셋 27건 배치) 부르고, 회차는 다시 부르면 값이 달라진다.
+# 수치와 판단은 docs/implements/ 로 옮긴다.
+.preset_desc/
+
 # tools/keyword_eval (평가 하네스는 test 브랜치 소유)
 tools/keyword_eval/.env
 tools/keyword_eval/.cache/
@@ -57,3 +63,11 @@ tools/keyword_eval/compare_out.txt
 # 스윕 결과는 matrix 에서 언제든 재구성되므로 남기지 않는다.
 .search/*
 !.search/matrix.json
+# `recall_probe.json` 도 같은 이유로 커밋한다(S15P11A705-255) — 다시 뜨려면 GMS 임베딩을
+# 부르고, 담는 것은 `matrix.json` 과 같은 수준(장소명까지)이다. 판정 규칙만 고칠 때는
+# `recall_probe.py --replay` 가 이 파일을 읽어 다시 낸다.
+!.search/recall_probe.json
+# `word_grid.json` 도 같다(S15P11A705-266) — 단어형 질의 × 소유자 3명의 행렬이고
+# 담는 수준은 위 둘과 같다(장소명까지). `word_sweep.py` 가 이 파일과 `matrix.json` 을
+# 함께 읽어 격자를 훑으므로, 유실되면 GMS 를 다시 불러야 한다.
+!.search/word_grid.json

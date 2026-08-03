@@ -132,6 +132,34 @@ class Settings(BaseSettings):
     search_similarity_floor: float = Field(0.30, alias="SEARCH_SIMILARITY_FLOOR")
     search_top_ratio: float = Field(0.60, alias="SEARCH_TOP_RATIO")
 
+    # 단어형 질의의 절대 하한 (S15P11A705-266 실측). **문장형과 대역이 겹치지 않아서**
+    # 값을 가른다 — 문장형 정답 하한은 0.3642 인데 단어형 정답(컷 전 top-3) 하한은
+    # 0.2438 이다. 단일값으로 두면 둘 중 하나가 반드시 손해를 본다.
+    #
+    #   0.30 단일   단어형 컷 전 1위 정답 5건이 0건이 된다(`비건`→플랜트가 1위인데 0건)
+    #   0.24 단일   그 5건이 살아나지만 **문장형** 무관 질의 침묵이 11/15 → 5/15 로 무너진다
+    #   갈랐을 때   단어형 회복 71/71 · 1위 손실 0 이면서 문장형은 완전 불변
+    #
+    # 0.24 는 「컷 전 1위인 정답을 하나도 잃지 않는 가장 높은 값」이다(0.25 부터 깨진다).
+    # 마진이 얇다 — 최저 정답이 `스팟` 0.2438 이라 0.0038 뿐이다.
+    #
+    # **이 값 하나로는 컷이 꺼지지 않는다.** 위 두 키와 성격이 다르다.
+    #
+    #   SEARCH_SIMILARITY_FLOOR · SEARCH_TOP_RATIO   비상 스위치를 겸한다 — 둘 다 0 이면
+    #                                                컷 전체가 꺼진다(단어형 포함)
+    #   SEARCH_SIMILARITY_FLOOR_WORD                 튜닝 값이다. 끄는 용도가 아니다 —
+    #                                                0 으로 둬도 `r` 이 남아 계속 자른다
+    search_similarity_floor_word: float = Field(
+        0.24, alias="SEARCH_SIMILARITY_FLOOR_WORD"
+    )
+    # 단어형의 경계. **이 값은 측정이 정하지 못했다** — 측정한 단어형은 전부 공백 없는
+    # 2~5자이고 문장형은 전부 공백 포함 6자↑라, 「글자 수」와 「어절 수」 두 정의가 같은
+    # 답을 냈다. 둘이 갈리는 질의(`신한 부트캠프` 7자 2어절)가 행렬에 없다.
+    # 두 조건을 **함께** 요구해 안전한 쪽(문장형 취급 = 더 세게 자름)으로 기운다.
+    search_word_query_max_chars: int = Field(
+        5, alias="SEARCH_WORD_QUERY_MAX_CHARS"
+    )
+
     # PROCESSING 재선점 만료 — Spring 재스캔 만료와 동일 값
     processing_expiry_sec: int = Field(600, alias="PROCESSING_EXPIRY_SEC")
 
