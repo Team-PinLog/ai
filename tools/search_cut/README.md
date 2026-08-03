@@ -24,9 +24,28 @@
 | `sweep.py` | 분포와 `τ_abs × r` 격자. **DB 도 GMS 도 부르지 않는다** |
 | `label_sheet.py` | 라벨을 손으로 채우기 위한 시트(본문 포함). 출력물은 커밋하지 않는다 |
 | `verify_live.py` | 오프라인 재구성이 실서버 응답과 같은지. **정확 일치를 요구한다** |
+| `recall_probe.py` | 「본문에 있는 말로 검색해도 안 나온다」의 원인 판별(`S15P11A705-255`). 질의 22건 × Record 전량. **GMS 임베딩 배치 1회** |
 
-`matrix.json` 은 **커밋한다.** 다시 뜨려면 GMS 를 부르고, `tau_grid` 의 것과 달리 Context
-본문을 담지 않는다(장소명까지).
+`matrix.json` 과 `recall_probe.json` 은 **커밋한다.** 다시 뜨려면 GMS 를 부르고,
+`tau_grid` 의 것과 달리 Context 본문을 담지 않는다(장소명까지).
+
+## 재현율 프로브 (`S15P11A705-255`)
+
+`matrix.py` 와 대상이 다르다 — 저쪽은 **격자를 훑기 위해** 검증 질의 12건의 전량 유사도를
+굳히고, 이쪽은 **질의 표현을 바꿔 가며** 같은 Record 가 어떻게 움직이는지 본다.
+
+```bash
+.venv/Scripts/python.exe tools/search_cut/recall_probe.py                          # GMS 배치 1회
+.venv/Scripts/python.exe tools/search_cut/recall_probe.py --replay .search/recall_probe.json
+.venv/Scripts/python.exe tools/search_cut/recall_probe.py --lengths .search/recall_probe.json
+```
+
+`--replay` 는 **판정 규칙만** 다시 낸다(DB·GMS 미호출). 컷도 판정도 유사도에 걸릴 뿐
+임베딩에 걸리지 않으므로, `RECOVER_RANK` 나 컷 값을 바꿔 볼 때 GMS 를 다시 부르지 않는다.
+`--lengths` 는 본문 길이와 유사도의 순위 상관을 낸다(DB 만 읽는다 — 행렬이 본문을 담지
+않으므로 길이는 DB 에서 온다).
+
+결론은 [구현 리포트](../../docs/implements/2026-08-03-search-recall-probe.md)에 있다.
 
 ## 실행
 
