@@ -741,6 +741,53 @@ def test_cut_ratio_is_not_split_by_query_length(monkeypatch):
     assert word == sent == [0.80]
 
 
+def test_cut_word_query_boundary_is_exactly_max_chars(monkeypatch):
+    """**「5자 이하」를 코드가 지키는지 고정한다.**
+
+    이 값이 없으면 `len(q) <= max_chars` 를 `<` 로 바꿔도 전부 초록이고 커버리지도 100%
+    그대로다. 그러면 명세의 「5자 이하」와 `config.py` 주석의 「2~5자」가 조용히 거짓이 된다
+    — 「경계 5자는 측정이 아니라 판단」이라고 세 곳에 적어 둔 값인데 그 판단을 지키는 장치가
+    없었다.
+    """
+    assert _cut_q(monkeypatch, [0.26], "아이스크림", SEARCH_TOP_RATIO="0") == [0.26]  # 5자
+    assert _cut_q(monkeypatch, [0.26], "아이스크림콘", SEARCH_TOP_RATIO="0") == []  # 6자
+
+
+def test_cut_word_query_treats_all_unicode_whitespace_as_a_separator(monkeypatch):
+    """전각 공백·탭·NBSP 도 공백이다.
+
+    U+0020 만 보면 `_is_word_query` 가 선언한 안전 방향(**애매하면 문장형으로 기운다**)이
+    구분자만 바뀌면 **반대로** 뒤집힌다 — 2어절 질의가 「공백 없음」으로 통과해 오히려
+    느슨한 0.24 를 탄다. 요청 스키마에 정규화가 없어 원문이 그대로 도달하므로(IME 전각
+    모드·타 화면 복사) 실제로 닿는 경로다.
+    """
+    for sep in ("　", "\t", "\xa0", "\n"):
+        assert _cut_q(monkeypatch, [0.26], f"신한{sep}부캠", SEARCH_TOP_RATIO="0") == [], sep
+
+
+def test_cut_kill_switch_also_disables_the_word_floor(monkeypatch):
+    """**비상 스위치는 분기보다 앞이다.**
+
+    `-213` 이 이 가드를 넣었을 때 분기가 없었고 분기는 `-266` 이 만들었다. 가드를 분기
+    뒤에 두면 `SEARCH_SIMILARITY_FLOOR=0` 으로 컷을 끄려 해도 단어형만 0.24 로 계속 잘리고,
+    **장애 중에** 그것을 알아채야 한다. 나중에 생긴 것이 먼저 있던 안전장치를 무력화하면
+    그것이 퇴행이다.
+    """
+    rows = [0.20, 0.05]
+    off = dict(SEARCH_SIMILARITY_FLOOR="0", SEARCH_TOP_RATIO="0")
+    assert _cut_q(monkeypatch, rows, "비건", **off) == rows  # 단어형도 꺼진다
+    assert _cut_q(monkeypatch, rows, "채식 샌드위치 먹던 단골집", **off) == rows
+
+
+def test_cut_word_floor_alone_does_not_disable_the_cut(monkeypatch):
+    """`SEARCH_SIMILARITY_FLOOR_WORD=0` 은 **끄는 스위치가 아니다** — `r` 이 남아 계속 자른다.
+
+    `config.py` 주석이 두 키의 성격을 갈라 적은 것(비상 스위치 / 튜닝 값)을 코드로 고정한다.
+    """
+    got = _cut_q(monkeypatch, [0.80, 0.20], "비건", SEARCH_SIMILARITY_FLOOR_WORD="0")
+    assert got == [0.80]  # r=0.60 × 0.80 = 0.48 에 걸려 0.20 이 잘린다
+
+
 def test_cut_word_defaults_are_the_measured_values(monkeypatch):
     """0.24 는 「컷 전 1위인 정답을 하나도 잃지 않는 가장 높은 값」이다(0.25 부터 깨진다).
 

@@ -64,12 +64,22 @@ class SearchService:
         어느 하나만 쓰면 경계 밖 질의가 낮은 하한을 타고 잡음을 통과시킨다. 둘 다 요구하면
         애매한 질의가 문장형(더 세게 자름) 쪽으로 기울어 안전하다.
 
-        `-266` 이 측정한 단어형은 전부 공백 없는 2~5자라 이 데이터로는 두 정의를 가를 수
-        없었다. 그래서 경계값은 측정이 아니라 판단이며, `-255` 가 길이 상관에서 쓴 「≤5자」
-        를 따랐다.
+        **공백은 `str.isspace()` 로 본다 — U+0020 만 보면 위 안전 방향이 뒤집힌다.**
+        전각 공백(U+3000)·탭·NBSP 로 띄운 2어절 질의가 「공백 없음」으로 통과해 오히려
+        **느슨한** 하한을 타기 때문이다. 요청 스키마에 정규화가 없어 원문이 그대로 도달하므로
+        (IME 전각 모드·타 화면 복사) 실제로 닿는 경로다. `strip()` 도 같은 기준이라 앞뒤
+        공백 처리와 내부 판정이 어긋나지 않는다.
+
+        `-266` 이 측정한 단어형은 전부 공백 없는 2~5자라 **이 대역을 재지는 않았다** —
+        구분자를 넓힌 것은 측정이 아니라 안전 방향으로의 판단이다(리포트 §말할 수 없는 것).
+        경계값 「≤5자」도 같은 성격이며 `-255` 가 길이 상관에서 쓴 값을 따랐다.
         """
         q = query.strip()
-        return bool(q) and " " not in q and len(q) <= self._settings.search_word_query_max_chars
+        return (
+            bool(q)
+            and not any(c.isspace() for c in q)
+            and len(q) <= self._settings.search_word_query_max_chars
+        )
 
     def _cut(self, rows: list, query: str = "") -> list:
         """`τ_abs`와 `r`을 건다. Query가 아니라 여기서 거는 이유는 §6.1에 있다.
@@ -90,14 +100,18 @@ class SearchService:
         """
         if not rows:
             return rows
+        ratio = self._settings.search_top_ratio
+        # **비상 스위치는 분기보다 앞이다.** `-213` 이 이 가드를 넣었을 때 분기가 없었고
+        # 분기는 `-266` 이 만들었다 — 나중에 생긴 것이 먼저 있던 안전장치를 무력화하면
+        # 그것이 퇴행이다. 뒤에 두면 `SEARCH_SIMILARITY_FLOOR=0` 으로 컷을 끄려 해도
+        # 단어형만 0.24 로 계속 잘리고, 장애 중에 그것을 알아채야 한다.
+        if self._settings.search_similarity_floor <= 0 and ratio <= 0:
+            return rows
         floor = (
             self._settings.search_similarity_floor_word
             if self._is_word_query(query)
             else self._settings.search_similarity_floor
         )
-        ratio = self._settings.search_top_ratio
-        if floor <= 0 and ratio <= 0:
-            return rows
         # 1위는 컷 전 결과의 1위다. 컷 후 재계산하면 남은 것의 1위로 기준이 옮겨가
         # 아무것도 더 잘리지 않는 자기충족 컷이 된다.
         top = float(rows[0]["similarity"])

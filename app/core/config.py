@@ -141,7 +141,14 @@ class Settings(BaseSettings):
     #   갈랐을 때   단어형 회복 71/71 · 1위 손실 0 이면서 문장형은 완전 불변
     #
     # 0.24 는 「컷 전 1위인 정답을 하나도 잃지 않는 가장 높은 값」이다(0.25 부터 깨진다).
-    # 마진이 얇다 — 최저 정답이 `스팟` 0.2438 이라 0.0038 뿐이다(§리스크).
+    # 마진이 얇다 — 최저 정답이 `스팟` 0.2438 이라 0.0038 뿐이다.
+    #
+    # **이 값 하나로는 컷이 꺼지지 않는다.** 위 두 키와 성격이 다르다.
+    #
+    #   SEARCH_SIMILARITY_FLOOR · SEARCH_TOP_RATIO   비상 스위치를 겸한다 — 둘 다 0 이면
+    #                                                컷 전체가 꺼진다(단어형 포함)
+    #   SEARCH_SIMILARITY_FLOOR_WORD                 튜닝 값이다. 끄는 용도가 아니다 —
+    #                                                0 으로 둬도 `r` 이 남아 계속 자른다
     search_similarity_floor_word: float = Field(
         0.24, alias="SEARCH_SIMILARITY_FLOOR_WORD"
     )

@@ -151,11 +151,44 @@ GROUP BY r.id, p.name, c.member_id
 """
 
 
+def is_word_query(query: str, max_chars: int) -> bool:
+    """`SearchService._is_word_query` 와 같은 규칙. **여기 다시 적는다**(아래와 같은 이유).
+
+    S15P11A705-266. 공백은 `str.isspace()` 로 본다 — U+0020 만 보면 전각 공백·탭으로 띄운
+    2어절 질의가 오히려 느슨한 하한을 탄다.
+    """
+    q = query.strip()
+    return bool(q) and not any(c.isspace() for c in q) and len(q) <= max_chars
+
+
+def floor_for(query: str, settings) -> float:
+    """질의 길이로 갈린 절대 하한 (S15P11A705-266).
+
+    **이 프로브의 질의가 바로 단어형이다.** 단일 하한을 그대로 두면 판정이 운영과 갈려,
+    이미 고쳐진 증상(`ai#87` 의 `그네`·`스팟`)을 앞으로도 「① 컷이 잘랐다」로 보고한다 —
+    진단 도구가 닫힌 증상을 미해결로 읽는다.
+
+    비상 스위치는 분기보다 앞이다(서비스와 같은 순서). 둘 다 0 이면 어느 쪽 하한도 걸지
+    않으므로 여기서 0 을 돌려 `apply_cut` 의 가드가 받게 한다.
+    """
+    if settings.search_similarity_floor <= 0 and settings.search_top_ratio <= 0:
+        return 0.0
+    return (
+        settings.search_similarity_floor_word
+        if is_word_query(query, settings.search_word_query_max_chars)
+        else settings.search_similarity_floor
+    )
+
+
 def apply_cut(results: list[dict], floor: float, ratio: float, limit: int) -> list[dict]:
     """서비스가 하는 것을 그대로 재구성한다 — SQL `LIMIT` 이 먼저, 컷이 뒤다.
 
     `app.service.search_service.SearchService._cut` 을 `import` 하지 않고 다시 적었다.
     `import` 하면 구현이 명세와 달라도 둘이 함께 틀려 재구성이 「일치」한다.
+
+    `floor` 는 **질의별로** 정해져 들어온다(`floor_for`, S15P11A705-266). 비상 스위치
+    (`SEARCH_SIMILARITY_FLOOR`·`SEARCH_TOP_RATIO` 둘 다 0)는 분기보다 앞이므로 여기서는
+    이미 정해진 값만 본다 — 서비스도 같은 순서다.
 
     기준이 되는 top-1 은 **컷 전** 1위다. 컷 후 재계산하면 남은 것의 1위로 기준이
     옮겨가 아무것도 더 잘리지 않는다.
@@ -220,7 +253,6 @@ def cause(row: dict, limit: int) -> str:
 
 
 async def build(db: Database, settings) -> dict:
-    floor = settings.search_similarity_floor
     ratio = settings.search_top_ratio
 
     async with db.acquire() as conn:
@@ -243,7 +275,9 @@ async def build(db: Database, settings) -> dict:
             raise SystemExit(f"기대 Record 「{want}」 가 {OWNER} 에게 없다. 재지 않고 멈춘다.")
 
     log(f"  {OWNER} member_id={user_id} · 보유 Record {owned}건 · 질의 {len(QUERIES)}건")
-    log(f"  컷 τ_abs={floor} · r={ratio} · limit={SERVICE_LIMIT}\n")
+    log(f"  컷 τ_abs={settings.search_similarity_floor}(문장) / "
+        f"{settings.search_similarity_floor_word}(단어, ≤{settings.search_word_query_max_chars}자)"
+        f" · r={ratio} · limit={SERVICE_LIMIT}\n")
 
     client = EmbeddingClient(
         base_url=settings.gms_base_url,
@@ -270,6 +304,7 @@ async def build(db: Database, settings) -> dict:
                 for i, r in enumerate(rows, 1)
             ]
             top1 = results[0] if results else None
+            floor = floor_for(spec["q"], settings)
             kept = apply_cut(results, floor, ratio, SERVICE_LIMIT)
             kept_ids = {r["record_id"] for r in kept}
             hit = next((r for r in results if r["name"] == spec["expect"]), None)
@@ -289,6 +324,8 @@ async def build(db: Database, settings) -> dict:
                 "candidate_count": len(results),
                 # r 컷의 기준선. 「0.30 은 넘는데 잘렸다」를 눈으로 확인하는 값이다.
                 "ratio_floor": round(ratio * top1["sim"], 6) if top1 else None,
+                # 이 행에 실제로 걸린 하한. 질의마다 다르므로 행에 남긴다(S15P11A705-266).
+                "floor": floor,
                 "results": results,
                 "kept_names": [r["name"] for r in kept],
             }
@@ -304,7 +341,13 @@ async def build(db: Database, settings) -> dict:
         "owner": OWNER,
         "user_id": user_id,
         "owned_records": owned,
-        "cut": {"tau_abs": floor, "ratio": ratio, "limit": SERVICE_LIMIT},
+        "cut": {
+            "tau_abs": settings.search_similarity_floor,
+            "tau_abs_word": settings.search_similarity_floor_word,
+            "word_max_chars": settings.search_word_query_max_chars,
+            "ratio": ratio,
+            "limit": SERVICE_LIMIT,
+        },
         "queries": out,
     }
 
@@ -317,20 +360,27 @@ def replay(path: Path, settings) -> dict:
     규칙을 고칠 때마다 GMS 를 다시 부를 이유가 없다.
     """
     data = json.loads(path.read_text(encoding="utf-8"))
-    floor = settings.search_similarity_floor
     ratio = settings.search_top_ratio
     limit = data["cut"]["limit"]
     for row in data["queries"]:
+        floor = floor_for(row["query"], settings)
         kept = apply_cut(row["results"], floor, ratio, limit)
         kept_ids = {r["record_id"] for r in kept}
         hit = next((r for r in row["results"] if r["name"] == row["expect"]), None)
         row["kept"] = bool(hit and hit["record_id"] in kept_ids)
         row["kept_count"] = len(kept)
         row["kept_names"] = [r["name"] for r in kept]
+        row["floor"] = floor
         row["cut_verdict"] = cut_verdict(row, floor, ratio, limit)
         row["cause"] = cause(row, limit)
         log(render(row))
-    data["cut"] = {"tau_abs": floor, "ratio": ratio, "limit": limit}
+    data["cut"] = {
+        "tau_abs": settings.search_similarity_floor,
+        "tau_abs_word": settings.search_similarity_floor_word,
+        "word_max_chars": settings.search_word_query_max_chars,
+        "ratio": ratio,
+        "limit": limit,
+    }
     return data
 
 
@@ -406,7 +456,9 @@ async def lengths(db: Database, path: Path) -> int:
 
 async def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=str(ROOT / ".search" / "recall_probe.json"))
+    # `--replay` 에는 기본값이 적용되지 않는다(아래) — 그러지 않으면 커밋된 행렬이
+    # 재판정 결과로 덮인다.
+    ap.add_argument("--out", default=None)
     ap.add_argument(
         "--lengths",
         metavar="JSON",
@@ -424,10 +476,22 @@ async def main() -> int:
     if args.replay:
         src = Path(args.replay)
         log(f"  replay {src}  (GMS·DB 호출 없음)")
-        log(f"  컷 τ_abs={settings.search_similarity_floor} · "
-            f"r={settings.search_top_ratio}\n")
+        log(f"  컷 τ_abs={settings.search_similarity_floor}(문장) / "
+            f"{settings.search_similarity_floor_word}(단어, "
+            f"≤{settings.search_word_query_max_chars}자) · r={settings.search_top_ratio}\n")
         data = replay(src, settings)
+        if args.out is None:
+            # **기본은 쓰지 않는다.** 재판정은 화면으로 읽는 것이 목적이고, 기본 경로를
+            # 두면 README 의 명령을 그대로 돌린 사람이 **커밋된 행렬을 판정 결과로
+            # 덮어쓴다**. 행렬은 GMS 를 불러야 다시 뜨므로 그 손실이 판정보다 무겁다.
+            log("\n  (파일로 쓰지 않았다. 남기려면 --out 에 **다른** 경로를 준다)")
+            return 0
         out = Path(args.out)
+        if out.resolve() == src.resolve():
+            raise SystemExit(
+                f"--out 이 입력 행렬과 같다: {out}\n"
+                "재판정 결과로 행렬을 덮으면 GMS 를 다시 불러야 복구된다. 쓰지 않고 멈춘다."
+            )
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
         log(f"\n  → {out}  ({out.stat().st_size:,} bytes)")
@@ -450,7 +514,8 @@ async def main() -> int:
     finally:
         await db.disconnect()
 
-    out = Path(args.out)
+    # 새로 뜬 행렬은 기본 경로에 쓴다 — GMS 를 부른 결과라 남겨야 한다.
+    out = Path(args.out) if args.out else ROOT / ".search" / "recall_probe.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     log(f"\n  → {out}  ({out.stat().st_size:,} bytes)")

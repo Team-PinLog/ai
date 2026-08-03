@@ -47,10 +47,11 @@ def is_word_query(query: str, max_chars: int) -> bool:
     """`SearchService._is_word_query` 와 같은 규칙. **여기 다시 적는다**(아래와 같은 이유).
 
     S15P11A705-266. 공백 없음과 길이를 **함께** 요구한다 — 하나만 쓰면 경계 밖 질의가
-    낮은 하한을 탄다.
+    낮은 하한을 탄다. 공백은 `str.isspace()` 로 본다(U+0020 만 보면 전각 공백·탭으로 띄운
+    질의가 오히려 느슨한 하한을 탄다).
     """
     q = query.strip()
-    return bool(q) and " " not in q and len(q) <= max_chars
+    return bool(q) and not any(c.isspace() for c in q) and len(q) <= max_chars
 
 
 def reconstruct(
