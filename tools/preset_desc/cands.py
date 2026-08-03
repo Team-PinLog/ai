@@ -6,7 +6,7 @@
 
 ## base 대 base2 가 이 파일의 기준선이다
 
-둘은 글자 하나까지 같은 조건이고, 갈리는 것은 **임베딩 API 의 비결정성뿐**이다(T61).
+둘은 글자 하나까지 같은 조건이고, 갈리는 것은 **임베딩 API 의 비결정성뿐**이다(T68).
 그 폭보다 작은 변화는 개정의 효과라고 부를 수 없다 — `-219` 가 판정 비결정성을 바닥으로
 깐 것과 같은 자리다.
 
@@ -114,14 +114,39 @@ def main() -> int:
             f"{diff:>20} {added:>6} {removed:>6}"
         )
 
+    drift = None
     if "base2" in mats:
         b2 = next(r for r in rows if r["condition"] == "base2")
+        # 후보 집합이 같아도 **유사도 자체는 흔들린다.** 그 폭을 함께 내지 않으면
+        # 「임베딩이 결정적이다」로 잘못 읽힌다(T42 가 그렇게 적혀 있었다).
+        pa = {
+            (c["context_id"], x["code"]): (x["sim"], x["rank"])
+            for c in mats[args.base]["contexts"] for x in c["candidates"]
+        }
+        pb = {
+            (c["context_id"], x["code"]): (x["sim"], x["rank"])
+            for c in mats["base2"]["contexts"] for x in c["candidates"]
+        }
+        deltas = [abs(pa[k][0] - pb[k][0]) for k in pa]
+        rank_moved = sum(1 for k in pa if pa[k][1] != pb[k][1])
+        drift = {
+            "pairs": len(pa), "max_abs_delta_sim": max(deltas),
+            "median_abs_delta_sim": st.median(deltas), "rank_changed_pairs": rank_moved,
+            "contexts_differing": b2["contexts_differing_from_base"],
+        }
         log()
+        log("  **바닥** — base2 는 base 와 글자 하나까지 같다. 갈리는 것은 임베딩")
+        log("  API 의 비결정성뿐이다(T68). 그 폭이 아래다.")
         log(
-            f"  **바닥** — base2 는 base 와 글자 하나까지 같다. 그런데도 Context "
-            f"{b2['contexts_differing_from_base']}건에서 후보가 다르다"
+            f"    유사도 |Δ|  최대 {max(deltas):.6f} · 중앙 {st.median(deltas):.6f} "
+            f"(쌍 {len(pa)}개) · rank 가 바뀐 쌍 {rank_moved}개"
         )
-        log("  (임베딩 API 가 결정적이지 않다 — T61). 이 폭보다 작은 변화는 개정의 효과가 아니다.")
+        log(
+            f"    그런데 τ={args.tau}·k={args.k} **후보 집합이 다른 Context 는 "
+            f"{b2['contexts_differing_from_base']}건**이다"
+        )
+        if b2["contexts_differing_from_base"] == 0:
+            log("    → 흔들림이 절단선을 넘지 않았다. D·E·DE 의 후보 변화는 전부 개정의 몫이다")
 
     head("고친 5종이 후보로 얼마나 오르는가")
     log("  개정이 노린 것은 **의미 범위를 좁혀 후보로 덜 오르게** 하는 것이다.")
@@ -172,6 +197,7 @@ def main() -> int:
     out.write_text(
         json.dumps(
             {"k": args.k, "tau": args.tau, "base": args.base, "conditions": rows,
+             "embedding_drift": drift,
              "target_candidate_counts": per_code, "other_codes": rest,
              "other_candidate_counts": dict(zip(order, others)), "target_sims": sim_rows},
             ensure_ascii=False, indent=2,
