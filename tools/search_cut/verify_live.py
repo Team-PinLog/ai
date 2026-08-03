@@ -64,7 +64,14 @@ def reconstruct(
     `floor_word` 를 주면 질의 길이로 하한을 가른다(S15P11A705-266). **이 분기까지 다시
     적어야** 「서버가 분기를 실제로 타는가」를 검증할 수 있다 — 서버가 옛 단일값 경로를
     돌면 단어형 질의에서 불일치가 난다.
+
+    **비상 스위치는 분기보다 앞이다** — 서비스와 같은 순서다. 이 순서를 안 지키면
+    `SEARCH_SIMILARITY_FLOOR=0`·`SEARCH_TOP_RATIO=0`(컷을 끈 상태)에서 서버는 전량을
+    반환하는데 재구성만 0.24 로 잘라 **대조가 통째로 FAIL 한다.** 하필 이 티켓이 동작하게
+    만든 그 설정이라 조용히 지나가지 않는다.
     """
+    if floor <= 0 and ratio <= 0:
+        return [r["record_id"] for r in results[:limit]]
     if floor_word is not None and is_word_query(query, max_chars):
         floor = floor_word
     top = results[0]["sim"]

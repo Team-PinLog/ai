@@ -103,8 +103,9 @@ class SearchService:
         ratio = self._settings.search_top_ratio
         # **비상 스위치는 분기보다 앞이다.** `-213` 이 이 가드를 넣었을 때 분기가 없었고
         # 분기는 `-266` 이 만들었다 — 나중에 생긴 것이 먼저 있던 안전장치를 무력화하면
-        # 그것이 퇴행이다. 뒤에 두면 `SEARCH_SIMILARITY_FLOOR=0` 으로 컷을 끄려 해도
-        # 단어형만 0.24 로 계속 잘리고, 장애 중에 그것을 알아채야 한다.
+        # 그것이 퇴행이다. 뒤에 두면 비상 스위치(`SEARCH_SIMILARITY_FLOOR=0` ·
+        # `SEARCH_TOP_RATIO=0`)를 넣어도 단어형만 0.24 로 계속 잘리고, 장애 중에 그것을
+        # 알아채야 한다.
         if self._settings.search_similarity_floor <= 0 and ratio <= 0:
             return rows
         floor = (
