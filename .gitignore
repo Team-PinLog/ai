@@ -71,3 +71,14 @@ tools/keyword_eval/compare_out.txt
 # 담는 수준은 위 둘과 같다(장소명까지). `word_sweep.py` 가 이 파일과 `matrix.json` 을
 # 함께 읽어 격자를 훑으므로, 유실되면 GMS 를 다시 불러야 한다.
 !.search/word_grid.json
+
+# tools/gms_image 실행 산출물 — GMS 이미지 측정 기록(S15P11A705-253).
+# `axis-a.jsonl` · `axis-b.jsonl` 은 **커밋한다.** 다시 뜨려면 공용 게이트웨이 쿼터를
+# 또 쓰고, 담는 것은 합성 이미지의 지문·usage·상태 코드뿐이다(실제 이미지·본문 없음).
+# 응답의 base64 이미지는 기록 시점에 `<blob:N>` 으로 접힌다(gateway.strip_blobs).
+.gms_image/*
+!.gms_image/axis-a.jsonl
+!.gms_image/axis-b.jsonl
+# 생성 응답에서 꺼낸 실제 PNG. 눈으로 확인하는 용도라 남기지 않는다 — 매 호출마다
+# 다른 이미지가 나오므로 보관해도 대조군이 되지 못한다.
+.gms_image/samples/
