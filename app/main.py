@@ -21,6 +21,7 @@ from app.client.embedding_client import EmbeddingClient
 from app.client.llm_client import LLMClient
 from app.core.config import get_settings
 from app.core.db import Database
+from app.core.db_errors import DatabasePermanentError, DatabaseTransientError
 from app.core.errors import PermanentError, ProfileMismatchError, TransientError
 from app.core.logging import configure_logging, get_logger
 from app.core.security import SharedSecretMiddleware
@@ -119,27 +120,36 @@ def create_app() -> FastAPI:
     # 결함"을 뜻하는 신호가 사라지고, 로그만 보고는 AI가 깨졌는지 게이트웨이가 깨졌는지
     # 가릴 수 없다. 두 핸들러를 넣은 뒤 남는 500은 **우리 쪽 결함 하나**를 뜻한다.
     #
-    # 응답 본문은 고정 문구 한 줄이다. 예외 메시지에는 업스트림 응답 본문 200자가
-    # 들어 있고(`embedding_client._embed_batch`) 거기에 endpoint·키 힌트가 섞일 수
-    # 있다 — probe.py가 세운 "credential·endpoint·profile을 어떤 분기에서도 싣지
-    # 않는다"를 이 경로에도 적용한다. 원인 추적은 `app.client.gms` 계측이 남기는
-    # `status=... outcome=...`가 하고(S15P11A705-197), `back`은 이 본문을 읽지 않는다
-    # (`AiSearchClient.translate` — serverProfile을 보는 422 말고는 본문을 버린다).
+    # 응답 본문은 고정 문구 한 줄이다. 값은 싣지 않되(예외 메시지에는 업스트림 응답
+    # 본문 200자가 들어 있고 — `embedding_client._embed_batch` — 거기에 endpoint·키
+    # 힌트가 섞일 수 있다. probe.py가 세운 "credential·endpoint·profile을 어떤
+    # 분기에서도 싣지 않는다"를 이 경로에도 적용한다), **층 이름은 가른다**
+    # (S15P11A705-229) — `DatabaseTransientError`/`DatabasePermanentError`는
+    # `-221`이 둔 하위 타입이라 타입만 보면 DB에서 온 실패와 GMS에서 온 실패가 구분된다.
+    # 원인 추적은 `app.client.gms` 계측이 남기는 `status=... outcome=...`가 하고
+    # (S15P11A705-197), `back`은 이 본문을 읽지 않는다(`AiSearchClient.translate` —
+    # serverProfile을 보는 422 말고는 본문을 버린다).
     @app.exception_handler(TransientError)
     async def _transient(request: Request, exc: TransientError):
         # 타입 이름만 남긴다. 같은 이유로 str(exc)를 찍지 않는다(§2.4 원칙 4).
         log.warning("upstream transient failure: %s", type(exc).__name__)
-        return JSONResponse(
-            status_code=503, content={"detail": "embedding upstream unavailable"}
+        detail = (
+            "database unavailable"
+            if isinstance(exc, DatabaseTransientError)
+            else "embedding upstream unavailable"
         )
+        return JSONResponse(status_code=503, content={"detail": detail})
 
     @app.exception_handler(PermanentError)
     async def _permanent(request: Request, exc: PermanentError):
         # 키·모델명·base URL 설정 문제다. 재시도로 풀리지 않으므로 ERROR다(§2.2).
         log.error("upstream permanent failure: %s", type(exc).__name__)
-        return JSONResponse(
-            status_code=502, content={"detail": "embedding upstream rejected the request"}
+        detail = (
+            "database rejected the request"
+            if isinstance(exc, DatabasePermanentError)
+            else "embedding upstream rejected the request"
         )
+        return JSONResponse(status_code=502, content={"detail": detail})
 
     # liveness·startup 전용. 프로세스가 살아 있다는 사실만 답한다 — DB·캐시 상태를
     # 섞지 않는 것이 배포 계약(ai#32 §2)이다. 준비 판정은 /ready가 한다.
