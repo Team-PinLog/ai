@@ -217,6 +217,25 @@ PLANS: dict[str, tuple[tuple[str, str, str | None, int], ...]] = {
         ("anthropic", "px512-noise", None, 1),
         ("anthropic", "px1024-noise", None, 1),
     ),
+    # 1회차(호출 1~20)가 남긴 구멍을 메운다. 787 KB 이상이 **전부 400** 이었고 400 에는
+    # usage 가 없다 — 바이트를 키운 표본이 토큰을 하나도 못 줬다. 그 상태로는 「토큰이
+    # 바이트에 비례하는가」에 답할 수 없다.
+    #
+    #   치수 사다리   단색이라 바이트는 5 KB·17 KB 인데 치수가 4배·16배다.
+    #                 여기서 토큰이 뛰면 C, 안 뛰면 A. **A 와 C 를 가르는 것은 이 두 줄이다.**
+    #   바이트 사다리 치수를 512×512 로 묶은 채 2 KB → 100 → 198 → 395 KB.
+    #                 여기서 토큰이 안 움직이면 B 가 죽는다. 겸해서 상한 위치를 좁힌다.
+    "ladder": (
+        ("openai", "px1024-solid", None, 1),
+        ("openai", "px2048-solid", None, 1),
+        ("anthropic", "px1024-solid", None, 1),
+        ("gemini", "px1024-solid", None, 1),
+        ("openai", "px512-n64", None, 1),
+        ("openai", "px512-n128", None, 1),
+        ("openai", "px512-n256", None, 1),
+    ),
+    # 12.6 MB. 1회차에서 787 KB 가 이미 거부됐으므로 통과 여부는 이미 답이 나와 있다 —
+    # 남겨 두되 돌리지 않는다. 상한을 좁히는 데 같은 호출을 쓰는 편이 낫다.
     "ceiling": (
         ("openai", "px2048-noise", None, 1),
         ("gemini", "px2048-noise", None, 1),

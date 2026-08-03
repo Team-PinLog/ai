@@ -64,20 +64,23 @@ def _chunk(tag: bytes, data: bytes) -> bytes:
     return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", crc)
 
 
-def png(width: int, height: int, *, noise: bool, seed: int = 0) -> bytes:
-    """8bit RGB PNG 를 만든다. `noise=True` 면 난수 픽셀, 아니면 단색.
+def png(width: int, height: int, *, noise_rows: int, seed: int = 0) -> bytes:
+    """8bit RGB PNG. 위에서 `noise_rows` 줄만 난수이고 나머지는 단색이다.
 
-    노이즈는 zlib 이 못 줄이므로 바이트 수가 `width*height*3` 근처로 간다. 단색은 필터 0
-    스캔라인이 전부 같아 수 KB 로 접힌다. **바이트 축을 벌리는 손잡이가 이것 하나다.**
+    노이즈는 zlib 이 못 줄이므로 난수 줄 하나가 `width*3` 바이트를 그대로 더한다. 단색
+    줄은 거의 0 이다. **줄 수가 곧 바이트 손잡이**이고, 치수는 그대로다 — 512×512 를
+    유지한 채 2 KB 부터 787 KB 까지 훑을 수 있다.
+
+    처음엔 `noise: bool` 이었다. 그것으로는 게이트웨이 본문 상한(2 KB 통과 · 787 KB 거부)
+    사이를 못 훑어서 **가설 B 를 기각할 표본이 상한 위에만 있었다** — 400 은 토큰을
+    안 준다. 줄 수로 바꾸면서 상한 아래에 바이트 사다리가 생겼다.
     """
     rng = random.Random(seed)
-    if noise:
-        # 바이트 단위 난수. 픽셀 루프를 돌면 2048×2048 에서 1,200만 번 호출이라 측정보다
-        # 이미지 생성이 오래 걸린다.
-        rows = [b"\x00" + rng.randbytes(width * 3) for _ in range(height)]
-    else:
-        line = b"\x00" + bytes(_SOLID_RGB) * width
-        rows = [line] * height
+    solid = b"\x00" + bytes(_SOLID_RGB) * width
+    rows = [
+        (b"\x00" + rng.randbytes(width * 3)) if y < noise_rows else solid
+        for y in range(height)
+    ]
     ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
     return (
         _MAGIC
@@ -106,8 +109,12 @@ class Image:
     id: str
     width: int
     height: int
-    noise: bool
+    noise_rows: int
     data: bytes
+
+    @property
+    def noise(self) -> bool:
+        return self.noise_rows > 0
 
     @property
     def nbytes(self) -> int:
@@ -124,26 +131,48 @@ class Image:
             "w": self.width,
             "h": self.height,
             "noise": self.noise,
+            "noise_rows": self.noise_rows,
             "bytes": self.nbytes,
             "sha256": self.sha256,
         }
 
 
-# 측정 조건. 이름이 곧 `치수-채움` 이다.
+# 측정 조건. `(id, w, h, noise_rows)`.
 #
-#   px1-solid      `-227` 이 쓴 1×1. 그 8,524 토큰의 출발점이라 반드시 재현해야 한다
-#   px64-noise     작은 이미지. 치수 축의 아래쪽 점
-#   px512-solid ┐  **대조쌍.** 치수 같음 · 바이트 500배 차이
-#   px512-noise ┘  실사용 크기(수백 KB)를 노이즈 쪽이 겸한다
-#   px1024-noise   큰 이미지(수 MB)
-#   px2048-noise   거부 임계 탐색용. 통과하면 그것도 답이다(`-225` 와 겹친다)
-_SPEC: tuple[tuple[str, int, int, bool], ...] = (
-    ("px1-solid", 1, 1, False),
-    ("px64-noise", 64, 64, True),
-    ("px512-solid", 512, 512, False),
-    ("px512-noise", 512, 512, True),
-    ("px1024-noise", 1024, 1024, True),
-    ("px2048-noise", 2048, 2048, True),
+# **첫 회차(1~20)는 위 여섯 줄만 썼고, 787 KB 이상이 전부 400 이었다.** 게이트웨이가
+# 본문을 못 읽어 "Model not found in request" 를 낸다 — 400 에는 usage 가 없으므로
+# 바이트를 키운 표본이 토큰을 하나도 주지 못했다. 아래 두 묶음이 그 구멍을 메운다.
+#
+#   px1-solid       `-227` 이 쓴 1×1. 그 8,524 토큰의 출발점이라 반드시 재현해야 한다
+#   px64-noise      작은 이미지
+#   px512-solid     512×512 의 바닥(2 KB)
+#   px512-noise     512×512 의 천장(787 KB) — 상한을 넘는다
+#   px1024-noise    수 MB
+#   px2048-noise    12.6 MB
+#
+#   ── 바이트 사다리 (치수 고정 512×512, 상한 아래) ────────────────────────────
+#   px512-n64       ~98 KB    단색 대비 49배인데 치수는 같다
+#   px512-n128      ~197 KB
+#   px512-n256      ~393 KB   상한이 이 위 어딘가에 있다
+#
+#   ── 치수 사다리 (바이트 고정, 단색이라 거의 안 는다) ─────────────────────────
+#   px1024-solid    1024×1024 인데 ~4 KB   OpenAI 타일이 1장에서 4장으로 는다
+#   px2048-solid    2048×2048 인데 ~13 KB
+#
+# **두 사다리가 서로의 대조군이다.** 바이트만 200배 늘렸을 때 토큰이 안 움직이고,
+# 치수만 늘렸을 때 움직이면 B 가 죽고 C 가 산다. 치수를 늘려도 안 움직이면 A 다.
+_SPEC: tuple[tuple[str, int, int, int], ...] = (
+    ("px1-solid", 1, 1, 0),
+    ("px64-noise", 64, 64, 64),
+    ("px512-solid", 512, 512, 0),
+    ("px512-noise", 512, 512, 512),
+    ("px1024-noise", 1024, 1024, 1024),
+    ("px2048-noise", 2048, 2048, 2048),
+    ("px512-n64", 512, 512, 64),
+    ("px512-n128", 512, 512, 128),
+    ("px512-n256", 512, 512, 256),
+    ("px1024-solid", 1024, 1024, 0),
+    ("px2048-solid", 2048, 2048, 0),
 )
 
 _CACHE: dict[str, Image] = {}
@@ -161,9 +190,11 @@ def build(image_id: str) -> Image:
     """
     if image_id in _CACHE:
         return _CACHE[image_id]
-    for name, w, h, noise in _SPEC:
+    for name, w, h, rows in _SPEC:
         if name == image_id:
-            img = Image(id=name, width=w, height=h, noise=noise, data=png(w, h, noise=noise))
+            img = Image(
+                id=name, width=w, height=h, noise_rows=rows, data=png(w, h, noise_rows=rows)
+            )
             _CACHE[name] = img
             return img
     raise KeyError(f"모르는 조건 '{image_id}' — 있는 것: {', '.join(catalog())}")
