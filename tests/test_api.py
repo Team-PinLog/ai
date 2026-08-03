@@ -4,6 +4,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 import httpx
+import numpy as np
 import pytest_asyncio
 
 from app.cache.preset_cache import PresetCache
@@ -140,6 +141,64 @@ async def test_search_returns_context_id(api, conn, settings):
     assert r.status_code == 200
     item = r.json()["results"][0]
     assert item["recordId"] == 50 and item["contextId"] == 5 and "similarity" in item
+
+
+# ── 질의 길이별 τ_abs 배선 (S15P11A705-266) ──────────────
+def _vector_at_cosine(query_text: str, target: float) -> list[float]:
+    """`query_text` 의 질의 벡터와 코사인이 정확히 `target` 인 벡터.
+
+    두 텍스트를 아무거나 골라서는 이 대역을 못 만든다 — `deterministic_vector` 는 1536차원
+    정규분포라 서로 다른 텍스트끼리는 코사인이 0 근처에 몰린다. 질의 벡터 방향 `u` 와 그에
+    직교하는 `w` 를 만들어 `target·u + √(1-target²)·w` 로 각도를 지정한다.
+    """
+    q = np.asarray(deterministic_vector(query_text), dtype=np.float64)
+    u = q / np.linalg.norm(q)
+    w = np.asarray(deterministic_vector(f"{query_text}#orthogonal"), dtype=np.float64)
+    w -= w.dot(u) * u
+    w /= np.linalg.norm(w)
+    return (target * u + (1.0 - target**2) ** 0.5 * w).tolist()
+
+
+async def test_search_word_query_takes_the_word_floor(api, conn, settings):
+    """**`search()` → `_cut(rows, query)` 배선을 고정한다.**
+
+    `_cut` 의 `query` 에 기본값이 있어 호출부에서 `, query` 가 사라져도 `_cut` 은 계속
+    불리고, 그러면 라인·분기 커버리지가 100% 인 채로 모든 단어형 질의가 0.30 하한으로
+    돌아간다(`ai#87` 증상 재발). **커버리지가 배선을 보증하지 못하는 자리다.**
+
+    유사도를 **두 하한 사이**(`[0.24, 0.30)`)에 둔 것이 요점이다 — 기존 검색 테스트는
+    질의와 저장 텍스트가 같아 유사도가 1.0 이라 어느 하한에서도 통과한다.
+    """
+    profile = settings.embedding_profile
+    await make_state(conn, context_id=61, embedding_status="COMPLETED", keyword_status="COMPLETED")
+    await make_embedding(conn, context_id=61, user_id=61, record_id=610,
+                         embedding_profile=profile, embedding=_vector_at_cosine("비건", 0.27))
+    r = await api.post(
+        "/internal/v1/search",
+        headers=HDR,
+        json={"userId": 61, "query": "비건", "limit": 10, "embeddingProfile": profile},
+    )
+    assert r.status_code == 200
+    results = r.json()["results"]
+    assert [x["recordId"] for x in results] == [610]
+    # 대역을 벗어나면 이 테스트가 배선을 못 잡는다. 대역 자체를 함께 고정한다.
+    assert 0.24 <= results[0]["similarity"] < 0.30
+
+
+async def test_search_sentence_query_keeps_the_sentence_floor(api, conn, settings):
+    """같은 유사도가 문장형에서는 잘린다. 위 테스트가 「컷이 없어서」 통과한 것이 아님을 고정."""
+    profile = settings.embedding_profile
+    query = "채식 샌드위치 먹던 단골집"
+    await make_state(conn, context_id=62, embedding_status="COMPLETED", keyword_status="COMPLETED")
+    await make_embedding(conn, context_id=62, user_id=62, record_id=620,
+                         embedding_profile=profile, embedding=_vector_at_cosine(query, 0.27))
+    r = await api.post(
+        "/internal/v1/search",
+        headers=HDR,
+        json={"userId": 62, "query": query, "limit": 10, "embeddingProfile": profile},
+    )
+    assert r.status_code == 200
+    assert r.json()["results"] == []
 
 
 async def test_search_profile_mismatch_422(api):
