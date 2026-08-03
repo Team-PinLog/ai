@@ -52,8 +52,7 @@ $PY tools/preset_desc/variants.py                       # 규칙 검사 + 전후
 $PY tools/preset_desc/matrix.py                         # 임베딩 5회(조건당 1배치)
 $PY tools/preset_desc/cands.py                          # 호출 없음
 
-for c in base D DE; do $PY tools/preset_desc/run.py --cond $c --reps 10; done
-$PY tools/preset_desc/run.py --cond E --reps 5           # 판정 합 1,470회
+for c in base D E DE; do $PY tools/preset_desc/run.py --cond $c --reps 10; done   # 판정 합 1,680회
 
 $PY tools/prompt_ab/score_ab.py --runs .preset_desc/runs --base base --cond DE \
     --matrix .preset_desc/matrix-DE.json --out .preset_desc/score-DE.json
@@ -95,10 +94,17 @@ DE      둘 다
 값을 채택했을 것"*(Δ -2.60 이 10회에서 -1.60 으로 줄었다).
 
 ```
-base·D·DE   10회씩   채택 판단이 걸린 비교라 -219 와 같은 표본 크기를 쓴다
-E            5회     원인 규명용이다. 후보 층에서 이미 방향이 갈렸고(§cands)
-                     채택 후보가 아니다. 유망하면 그때 10회로 늘린다
+네 조건 전부 10회씩   채택 판단이 걸린 비교라 -219 와 같은 표본 크기를 쓴다
 ```
+
+**`E` 는 처음에 5회로 잡았다가 10회로 늘렸다.** 「후보 층에서 방향이 갈렸으니 원인
+규명용이고 채택 후보가 아니다」로 두었는데, 5회 실측이 나오자 **`E` 가 세 조건 중
+가장 좋았다** — 교환비 0.19 · 정상 판정 손실 없음 · 순이득 부호가 양쪽 극단에서 다 양수.
+채택 판단이 걸린 조건이 됐으므로 표본 크기를 맞춰야 했다.
+
+바로 위의 `-219` 경고가 이 결정의 근거다. **5회에서 좋아 보이는 값이 10회에서 줄어드는
+것을 그 티켓이 이미 겪었다**(Δ -2.60 → -1.60). 유망해 보인다는 것은 회차를 늘릴 이유이지
+멈출 이유가 아니다.
 
 ## 라벨을 넓힐 때
 
