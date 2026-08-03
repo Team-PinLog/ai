@@ -127,6 +127,23 @@ EXAMPLES: dict[str, list[str]] = {
     ],
 }
 
+# ── 개정 **전** examples — 시드에 `E` 를 반영한 뒤 `base`·`D` 를 재현하기 위한 것 ──
+#
+# 이 티켓이 `E` 를 채택해 `data/keyword_preset.yaml` 에 반영했다. 그러면 시드를 그대로
+# 읽는 `base` 가 더 이상 대조군이 아니게 되고 **이 리포트의 수치를 다시 못 낸다.**
+# `-223` 이 앞선 티켓의 산출물을 못 찾아 GMS 1,092호출을 다시 뜬 것과 같은 종류의 손실이다.
+#
+# 그래서 개정 전 원본을 여기 고정한다. `base`·`D` 는 이 값을 쓴다.
+EXAMPLES_PRE: dict[str, list[str]] = {
+    "DRINK": ["가볍게 맥주 한잔", "안주가 좋아서 술이 술술", "밤늦게까지 마시기 좋았음"],
+    "WALK": ["밥 먹고 근처 한 바퀴", "천천히 걷기 좋은 길", "바람 쐬러 나왔다가 들름"],
+    "WITH_FAMILY": [
+        "부모님 모시고 저녁 먹었다", "온 가족이 다 같이", "어른들이랑 오기 편한 분위기",
+    ],
+    "VIEW_GOOD": ["창밖 경치가 끝내줬다", "야경 보면서 한잔", "탁 트인 게 속이 시원함"],
+    "TRENDY": ["어디를 찍어도 그림이 나옴", "인테리어가 요즘 스타일", "감성 터지는 곳"],
+}
+
 TARGETS = tuple(sorted(DESCRIPTION))
 
 # `base2` 는 base 와 **글자 하나까지 같다.** 조건이 아니라 바닥이다 — 임베딩 API 가
@@ -174,10 +191,12 @@ def build(condition: str) -> list[dict]:
         q.setdefault("visibility", "PUBLIC")
         q["examples"] = list(p.get("examples", []))
         code = q["code"]
+        # 시드가 이미 `E` 를 반영했으므로 examples 는 **항상 명시적으로 정한다.**
+        # 시드를 그대로 쓰면 `base`·`D` 가 조용히 `E`·`DE` 와 같아진다.
+        if code in EXAMPLES:
+            q["examples"] = list(EXAMPLES[code] if use_ex else EXAMPLES_PRE[code])
         if use_desc and code in DESCRIPTION:
             q["description"] = DESCRIPTION[code]
-        if use_ex and code in EXAMPLES:
-            q["examples"] = list(EXAMPLES[code])
         _check_examples_rule(code, q["display_name"], q["examples"])
         out.append(q)
 
