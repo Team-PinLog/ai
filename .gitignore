@@ -67,3 +67,7 @@ tools/keyword_eval/compare_out.txt
 # 부르고, 담는 것은 `matrix.json` 과 같은 수준(장소명까지)이다. 판정 규칙만 고칠 때는
 # `recall_probe.py --replay` 가 이 파일을 읽어 다시 낸다.
 !.search/recall_probe.json
+# `word_grid.json` 도 같다(S15P11A705-266) — 단어형 질의 × 소유자 3명의 행렬이고
+# 담는 수준은 위 둘과 같다(장소명까지). `word_sweep.py` 가 이 파일과 `matrix.json` 을
+# 함께 읽어 격자를 훑으므로, 유실되면 GMS 를 다시 불러야 한다.
+!.search/word_grid.json
