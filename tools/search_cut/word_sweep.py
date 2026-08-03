@@ -201,6 +201,86 @@ def table(title: str, rows: list[dict]) -> None:
         )
 
 
+def repro_table(paths: list[Path], taus: list[float], ratio: float) -> None:
+    """**인접 τ 값을 구분할 수 있는가.** 회차를 여러 번 떠서 흔들림과 격자 판정을 대조한다.
+
+    `T68`(`-228`)이 임베딩 API 가 **같은 배치 구성으로도** 결정적이지 않음을 실측했고
+    (`|Δsim|` 최대 **0.0044**), 그 값은 이 티켓의 격자 간격(0.01)과 같은 자릿수다.
+    그대로면 「0.24 와 0.25 의 차이」가 실제 차이인지 재측정 운인지 갈리지 않는다.
+
+    **이 티켓의 격자 자체는 그 잡음에 노출되지 않는다** — 임베딩을 한 번 떠서 굳히고
+    오프라인으로 훑으므로 조합 사이에 임베딩 차이가 끼지 않는다. 노출되는 것은 **채택값이
+    붙어 있는 절대값**이다(`스팟` 0.2438 과 τ=0.24 의 마진 0.0038).
+
+    그래서 재는 것은 둘이다.
+
+        흔들림의 크기   회차 간 |Δsim| 과 셀별 스프레드
+        판정의 안정성   같은 τ 에서 「1위 손실 · 회복 · 누락」이 회차마다 같은가
+
+    `T68` 의 처방(`base2` 를 상시 조건으로 두고 매 측정에서 다시 잰다)을 그대로 따른다 —
+    **값을 다시 정할 사람이 흔들림을 함께 보게 하는 것**이 요점이고, 한 번 재고 문서에만
+    적으면 다음 사람은 그 조건이 아직 유효한지 알 방법이 없다.
+
+        python tools/search_cut/word_matrix.py --out .search/word_grid_run2.json
+        python tools/search_cut/word_sweep.py \
+            --repro .search/word_grid.json,.search/word_grid_run2.json
+    """
+    runs = [(p.name, json.loads(p.read_text(encoding="utf-8"))) for p in paths]
+    head(f"재현성 — 회차 {len(runs)}개로 인접 τ 값을 구분할 수 있는가")
+
+    def flat(d: dict) -> dict:
+        return {
+            (q["query"], q["as"], r["record_id"]): r["sim"]
+            for sec in ("queries", "cross", "offtopic")
+            for q in d[sec]
+            for r in q["results"]
+        }
+
+    flats = [flat(d) for _, d in runs]
+    keys = set(flats[0])
+    for f in flats[1:]:
+        keys &= set(f)
+    log(f"  공통 셀 {len(keys)}개")
+
+    spreads = sorted(
+        ((max(f[k] for f in flats) - min(f[k] for f in flats), k) for k in keys),
+        reverse=True,
+    )
+    top = spreads[0][0]
+    log(f"  셀별 스프레드 최대 {top:.6f}  ({spreads[0][1][0]}/{spreads[0][1][1]})")
+    for thr, label in ((0.0044, "T68 실측 최댓값"), (0.001, "10⁻³"), (0.0001, "10⁻⁴")):
+        n = sum(1 for s, _ in spreads if s > thr)
+        log(f"    스프레드 > {thr:<7} ({label:<14}) {n:>4}개 / {len(keys)}")
+
+    log()
+    log(f"  {'τ_abs':>6} │ " + " │ ".join(f"{n[:18]:>18}" for n, _ in runs) + " │ 판정")
+    log(f"  {'-' * (10 + 21 * len(runs) + 8)}")
+    unstable = []
+    for t in taus:
+        cells = []
+        for _, d in runs:
+            w = eval_answered(d["queries"], t, ratio)
+            cells.append((w["lost_top1"], w["recovered"], w["miss_all"]))
+        same = len(set(cells)) == 1
+        if not same:
+            unstable.append(t)
+        log(f"  {t:>6.3f} │ " + " │ ".join(
+            f"{'1위손실 %d·회복 %d·누락 %d' % c:>18}" for c in cells)
+            + f" │ {'일치' if same else '★불일치★'}")
+
+    log()
+    if unstable:
+        log(f"  **{len(unstable)}개 τ 에서 회차가 갈린다** — 그 구간의 인접 값 비교는")
+        log(f"    신뢰할 수 없다: {unstable}")
+    else:
+        log("  **모든 τ 에서 회차 판정이 같다.** 이 격자에서 인접 값의 차이는")
+        log(f"    재측정 운이 아니다 — 흔들림 상한 {top:.6f} 이 격자 간격보다")
+        log("    두 자릿수 작다.")
+    log()
+    log("  다만 회차 수가 적다. 「이 조건에서 관측되지 않았다」이지 「일어나지 않는다」가")
+    log("  아니다 — 값을 다시 정할 때 이 표를 먼저 돌려라.")
+
+
 def split_table(word: dict, sent: dict, taus: list[float]) -> None:
     """**질의 길이로 τ_abs 를 가르면** 무엇이 달라지는가. 계약이 요구한 셋째 답이다.
 
@@ -285,8 +365,26 @@ def main() -> int:
     ap.add_argument("--matrix", default=str(ROOT / ".search" / "matrix.json"))
     ap.add_argument("--tau", default="", help="비우면 0.00 및 0.14~0.36")
     ap.add_argument("--ratio", default="", help="비우면 0.00 및 0.30~0.80")
+    ap.add_argument(
+        "--repro",
+        metavar="A.json,B.json",
+        help="회차 행렬들을 쉼표로 받아 흔들림과 격자 판정 안정성만 낸다(T68 대응). "
+             "회차는 `word_matrix.py --out` 으로 뜬다",
+    )
     ap.add_argument("--out", default=str(ROOT / ".search" / "word_sweep.json"))
     args = ap.parse_args()
+
+    if args.repro:
+        paths = [Path(x.strip()) for x in args.repro.split(",") if x.strip()]
+        missing = [p for p in paths if not p.exists()]
+        if missing:
+            raise SystemExit(f"회차 파일이 없다: {missing}. word_matrix.py --out 으로 떠라.")
+        if len(paths) < 2:
+            raise SystemExit("회차가 둘 이상이어야 대조가 된다.")
+        taus = ([float(x) for x in args.tau.split(",") if x.strip()]
+                or [round(0.20 + 0.01 * i, 3) for i in range(11)])
+        repro_table(paths, taus, 0.60)
+        return 0
 
     for p in (Path(args.word), Path(args.matrix)):
         if not p.exists():
