@@ -25,9 +25,39 @@
 | `label_sheet.py` | 라벨을 손으로 채우기 위한 시트(본문 포함). 출력물은 커밋하지 않는다 |
 | `verify_live.py` | 오프라인 재구성이 실서버 응답과 같은지. **정확 일치를 요구한다** |
 | `recall_probe.py` | 「본문에 있는 말로 검색해도 안 나온다」의 원인 판별(`S15P11A705-255`). 질의 22건 × Record 전량. **GMS 임베딩 배치 1회** |
+| `word_matrix.py` | **단어형** 질의 54건 × 소유자 3명의 행렬(`S15P11A705-266`). 기대 정답을 손으로 짝짓지 않고 **본문 문자열 포함으로 계산**한다. **GMS 임베딩 배치 1회** |
+| `word_sweep.py` | 단어형·문장형을 **한 표에** 놓고 격자를 훑는다. **DB 도 GMS 도 부르지 않는다** |
 
-`matrix.json` 과 `recall_probe.json` 은 **커밋한다.** 다시 뜨려면 GMS 를 부르고,
-`tau_grid` 의 것과 달리 Context 본문을 담지 않는다(장소명까지).
+`matrix.json` · `recall_probe.json` · `word_grid.json` 은 **커밋한다.** 다시 뜨려면 GMS 를
+부르고, `tau_grid` 의 것과 달리 Context 본문을 담지 않는다(장소명까지).
+
+## 단어형 컷 격자 (`S15P11A705-266`)
+
+`recall_probe.py` 와 대상이 다르다 — 저쪽은 **세 이슈의 원인을 가르려고** 질의 표현을
+바꿔 가며 같은 Record 를 추적하고, 이쪽은 **컷 값을 정하려고** 질의를 늘려 대역을 잰다.
+그래서 무관 통제가 저쪽은 1건(`치과`)이고 이쪽은 45행이다 — 컷 값 판단은 「무관 대역이
+어디까지 올라오는가」가 전부이므로 그 대역을 1점으로 재면 안 된다.
+
+```bash
+.venv/Scripts/python.exe tools/search_cut/word_matrix.py    # GMS 배치 1회. DB 를 읽는다
+.venv/Scripts/python.exe tools/search_cut/word_sweep.py     # 파일 둘만 읽는다
+```
+
+`word_sweep.py` 는 `word_grid.json`(단어형)과 `matrix.json`(문장형)을 **함께** 읽는다.
+따로 내면 「한 값이 둘 다를 만족하는가」에 답할 수 없기 때문이다.
+
+`word_matrix.py` 는 재기 전에 둘을 확인하고 **어긋나면 GMS 를 부르지 않고 멈춘다.**
+
+```
+무관 통제가 본문에 있다             그 행은 통제가 아니라 정답 있는 질의다
+단어형 질의가 어느 소유자에게도 없다   정답 누락 분모에서 조용히 빠진다
+```
+
+둘째 가드가 실제로 `초밥` 을 잡았다 — 「진우네 초밥」의 **장소명**에만 있고 본문은
+「일식집」이다. 임베딩이 받는 것은 `context` 하나뿐이라 장소명을 정답 기준에 넣으면
+모델에 주지 않은 정보를 기대하게 된다.
+
+결론은 [구현 리포트](../../docs/implements/2026-08-03-word-query-cut.md)에 있다.
 
 ## 재현율 프로브 (`S15P11A705-255`)
 
@@ -75,6 +105,11 @@ CWD 기준이고 `.env` 는 gitignore 라 worktree 에 없다 — `GMS_API_KEY` 
 .venv/Scripts/python.exe -m uvicorn app.main:app --port 8002 > .search/uvicorn.log 2>&1 &
 .venv/Scripts/python.exe tools/search_cut/verify_live.py --ai http://127.0.0.1:8002
 ```
+
+`word_grid.json` 이 있으면 단어형도 함께 던진다 — 다만 **두 하한(단어형·문장형)에서
+결과가 갈리는 행만** 고른다. 갈리지 않는 행은 서버가 분기를 타든 안 타든 통과하므로
+GMS 호출만 늘고 재는 값이 늘지 않는다. 재구성 쪽에도 길이 분기를 **다시 적어** 두었다 —
+구현을 `import` 하면 서버가 옛 단일값 경로를 돌아도 검증이 통과한다.
 
 로그는 파이프가 아니라 리디렉션으로 받는다 — 파이프는 프로세스가 사는 동안 0바이트다(T30).
 질의 수만큼 GMS 임베딩을 부른다(요청당 1회).
