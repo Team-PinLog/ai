@@ -128,7 +128,13 @@ EXAMPLES: dict[str, list[str]] = {
 }
 
 TARGETS = tuple(sorted(DESCRIPTION))
-CONDITIONS = ("base", "D", "E", "DE")
+
+# `base2` 는 base 와 **글자 하나까지 같다.** 조건이 아니라 바닥이다 — 임베딩 API 가
+# 결정적이지 않아서(T61) 같은 텍스트를 다시 떠도 벡터가 미세하게 갈리고, 그 흔들림이
+# 후보 집합을 바꾸는지 재지 않으면 D·E·DE 의 후보 변화를 전부 개정의 몫으로 읽게 된다.
+# `-219` 가 판정 비결정성을 대조군으로 잰 것과 같은 자리다.
+CONDITIONS = ("base", "base2", "D", "E", "DE")
+_ALIAS = {"base2": "base"}
 
 
 def _load_seed() -> list[dict]:
@@ -157,6 +163,7 @@ def build(condition: str) -> list[dict]:
     """조건 하나에 해당하는 프리셋 목록. 시드의 순서·id·code 는 그대로다."""
     if condition not in CONDITIONS:
         raise SystemExit(f"알 수 없는 조건: {condition} (있는 것: {CONDITIONS})")
+    condition = _ALIAS.get(condition, condition)
 
     use_desc = condition in ("D", "DE")
     use_ex = condition in ("E", "DE")

@@ -64,9 +64,18 @@ def log(msg: str = "") -> None:
 # T33 — `.env` 기본값 `:5433` 에는 데이터가 없다. 그대로 재면 「0건」이 결론이 된다.
 EXPECT_PORT = "15432"
 
-# base 벡터가 DB 적재분과 이만큼은 같아야 한다. 임베딩 API 는 완전 결정적이지 않아
-# 부동소수 하위 자리가 흔들릴 수 있으므로 1.0 을 요구하지 않는다.
-_BASE_COSINE_MIN = 0.9999
+# base 벡터가 DB 적재분과 이만큼은 같아야 한다.
+#
+# **1.0 을 요구할 수 없다 — 임베딩 API 가 결정적이지 않다**(T61). 같은 텍스트를 같은
+# 배치 구성으로 두 번 떠서 대조한 실측이 근거다.
+#
+#     같은 배치 2회끼리   VIEW_GOOD 0.999393 · WITH_KIDS 0.999981 · 나머지 1.000000
+#     1회분 대 DB 적재분  QUICK_STOP 0.999279 · VIEW_GOOD 0.999393 · 나머지 1.000000
+#
+# 두 값의 크기가 같다. DB 적재분이 다른 것이 아니라 **매번 다르다.** 그래서 문턱은
+# 「경로가 어긋났는가」를 잡을 만큼만 낮게 둔다 — 텍스트가 실제로 다르면 코사인이
+# 0.9 대로 떨어지므로 0.999 로도 충분히 갈린다.
+_BASE_COSINE_MIN = 0.999
 
 _CONTEXTS = """
 SELECT ce.context_id, ce.embedding, c.body, c.member_id
@@ -227,7 +236,8 @@ async def main() -> int:
         texts = [preset_embed_text(p) for p in presets]
         log(f"\n  [{cond}] 프리셋 {len(texts)}건 임베딩 …")
         vectors = await client.embed(texts)
-        if cond == "base":
+        if cond in ("base", "base2"):
+            # base2 도 시드 그대로이므로 같은 검증을 받는다.
             _verify_base(presets_db, vectors, presets)
 
         data = _build_matrix(
