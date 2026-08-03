@@ -23,6 +23,7 @@
 | [P26](P26-keyword-preset-judgment.md) | Keyword 프리셋 구성·후보 하한·판정 프롬프트 | Accepted | AI |
 | [P43](P43-s1-judgment-recovery.md) | S1 구현 판단 변경·기각 대안 복원 | Accepted | AI |
 | [P44](P44-ai-repository-governance.md) | AI 레포 협업 운영 기준 | Accepted | AI |
+| [P47](P47-keyword-preset-label-axis.md) | Keyword 프리셋 표시 라벨·축 정의·스키마 개정안 | Proposed | AI |
 
 ## 제안 — 전수 (Accepted)
 
