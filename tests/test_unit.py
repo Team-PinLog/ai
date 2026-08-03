@@ -692,6 +692,66 @@ def test_cut_defaults_are_the_measured_values(monkeypatch):
     assert s.search_top_ratio == 0.60
 
 
+# ── 질의 길이별 τ_abs (S15P11A705-266) ──────────────────
+def _cut_q(monkeypatch, rows, query, **overrides):
+    """질의를 함께 넘겨 `_cut` 을 부른다. 위 `_cut` 과 달리 길이 분기를 태운다."""
+    from app.service.search_service import SearchService
+
+    settings = _settings_with(monkeypatch, **overrides)
+    service = SearchService(db=None, embedding_client=None, settings=settings)
+    return [r["similarity"] for r in
+            service._cut([{"similarity": s} for s in rows], query)]
+
+
+def test_cut_word_query_uses_lower_floor(monkeypatch):
+    """같은 0.26 이 질의 길이에 따라 살기도 죽기도 한다.
+
+    이것이 `-266` 의 결론 전부다 — 두 대역이 겹치지 않아(문장형 정답 하한 0.3642 ·
+    단어형 0.2438) 한 값으로는 한쪽이 반드시 손해를 본다. 문장형에 맞춘 0.30 이
+    단어형에서 **컷 전 1위인 정답**을 잘라내던 것이 `ai#87` 이다.
+    """
+    assert _cut_q(monkeypatch, [0.26], "비건", SEARCH_TOP_RATIO="0") == [0.26]
+    assert _cut_q(monkeypatch, [0.26], "채식 샌드위치 먹던 단골집", SEARCH_TOP_RATIO="0") == []
+
+
+def test_cut_spaced_query_is_not_a_word_query(monkeypatch):
+    """공백이 있으면 짧아도 문장형이다.
+
+    `-266` 의 행렬에는 「공백 있고 짧은」 질의가 없어 두 정의(글자 수 · 어절 수)를 가르지
+    못했다. 그래서 **둘 다 요구해** 애매한 질의를 문장형(더 세게 자름)으로 기울인다.
+    """
+    assert _cut_q(monkeypatch, [0.26], "신한 부캠", SEARCH_TOP_RATIO="0") == []
+
+
+def test_cut_long_query_without_space_is_not_a_word_query(monkeypatch):
+    """공백이 없어도 길면 문장형이다. 위와 같은 이유로 두 조건은 AND 다."""
+    assert _cut_q(monkeypatch, [0.26], "혼자조용히작업하기좋은카페",
+                  SEARCH_TOP_RATIO="0") == []
+
+
+def test_cut_ratio_is_not_split_by_query_length(monkeypatch):
+    """**`r` 은 가르지 않는다.** 상대 컷이라 대역 차이를 자동으로 흡수한다.
+
+    실측에서도 단어형 정답 손실이 `r=0.75` 까지 0 이었다. 여기서 갈리면 `-266` 이 재지
+    않은 축을 코드가 만든 것이 된다.
+    """
+    word = _cut_q(monkeypatch, [0.80, 0.40], "비건", SEARCH_SIMILARITY_FLOOR="0")
+    sent = _cut_q(monkeypatch, [0.80, 0.40], "채식 샌드위치 먹던 단골집",
+                  SEARCH_SIMILARITY_FLOOR="0")
+    assert word == sent == [0.80]
+
+
+def test_cut_word_defaults_are_the_measured_values(monkeypatch):
+    """0.24 는 「컷 전 1위인 정답을 하나도 잃지 않는 가장 높은 값」이다(0.25 부터 깨진다).
+
+    경계 5 자는 측정이 아니라 판단이다 — `-266` 의 단어형이 전부 2~5자라 두 정의를 가를
+    수 없었고 `-255` 의 길이 상관이 쓴 값을 따랐다.
+    """
+    s = _settings_with(monkeypatch)
+    assert s.search_similarity_floor_word == 0.24
+    assert s.search_word_query_max_chars == 5
+
+
 def test_search_limit_default_matches_public_contract():
     """공용 계약 08 §6.1 의 `size` 기본값 20. back 이 항상 명시해 보내 드러나지 않았다."""
     from app.schema.search import SearchRequest

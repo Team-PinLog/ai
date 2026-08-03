@@ -8,6 +8,11 @@
 급이 다른 꼬리를 자른다. **하나가 다른 하나를 대체하지 않는다** — `r`은 1위를 언제나
 남기므로 무관 질의를 침묵시킬 수 없고, `τ_abs`는 질의마다 다른 유사도 대역을 따라가지
 못한다.
+
+**`τ_abs` 는 질의 길이로 갈린다**(S15P11A705-266 실측). 「`τ_abs` 가 질의마다 다른 대역을
+따라가지 못한다」는 위 한계가 단어형 질의에서 실제 손실로 나타났다 — 문장형에 맞춘 0.30
+이 단어형에서 컷 전 **1위**인 정답 5건을 0건으로 만든다(`ai#87`). 두 대역이 겹치지 않아
+(문장형 정답 하한 0.3642 · 단어형 0.2438) 한 값으로는 한쪽이 반드시 손해를 본다.
 """
 from __future__ import annotations
 
@@ -50,21 +55,46 @@ class SearchService:
                 "contextId": r["context_id"],
                 "similarity": round(float(r["similarity"]), 4),
             }
-            for r in self._cut(rows)
+            for r in self._cut(rows, query)
         ]
 
-    def _cut(self, rows: list) -> list:
+    def _is_word_query(self, query: str) -> bool:
+        """단어형인가. **공백이 없고 짧을 때만** 그렇다 — 두 조건을 함께 요구한다.
+
+        어느 하나만 쓰면 경계 밖 질의가 낮은 하한을 타고 잡음을 통과시킨다. 둘 다 요구하면
+        애매한 질의가 문장형(더 세게 자름) 쪽으로 기울어 안전하다.
+
+        `-266` 이 측정한 단어형은 전부 공백 없는 2~5자라 이 데이터로는 두 정의를 가를 수
+        없었다. 그래서 경계값은 측정이 아니라 판단이며, `-255` 가 길이 상관에서 쓴 「≤5자」
+        를 따랐다.
+        """
+        q = query.strip()
+        return bool(q) and " " not in q and len(q) <= self._settings.search_word_query_max_chars
+
+    def _cut(self, rows: list, query: str = "") -> list:
         """`τ_abs`와 `r`을 건다. Query가 아니라 여기서 거는 이유는 §6.1에 있다.
 
         두 컷 모두 유사도 하위만 자르므로 `LIMIT` 뒤에 걸어도 `WHERE`에 넣은 것과 결과가
         같다 — 상위 N개를 고른 뒤 그중 하위를 버리는 것과, 하위를 버린 뒤 상위 N개를
         고르는 것이 같다(유사도 단조). 그래서 §4의 Query를 건드리지 않는다.
 
+        **`τ_abs` 는 질의 길이로 갈린다**(S15P11A705-266). 단어형과 문장형의 정답 유사도
+        대역이 겹치지 않아 단일값으로는 한쪽이 반드시 손해를 본다 — 문장형에 맞춘 0.30 은
+        단어형에서 **컷 전 1위인 정답**을 잘라내고(`비건` → 플랜트가 1위인데 0건),
+        단어형에 맞춘 0.24 는 문장형 무관 질의 침묵을 11/15 에서 5/15 로 무너뜨린다.
+
+        `r` 은 가르지 않는다. 상대 컷이라 대역 차이를 자동으로 흡수하고, 실측에서도 단어형
+        손실이 `r=0.75` 까지 0 이었다.
+
         `rows`는 유사도 내림차순이다(Query의 바깥 `ORDER BY similarity DESC`).
         """
         if not rows:
             return rows
-        floor = self._settings.search_similarity_floor
+        floor = (
+            self._settings.search_similarity_floor_word
+            if self._is_word_query(query)
+            else self._settings.search_similarity_floor
+        )
         ratio = self._settings.search_top_ratio
         if floor <= 0 and ratio <= 0:
             return rows
