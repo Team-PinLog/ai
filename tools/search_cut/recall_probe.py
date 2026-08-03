@@ -72,6 +72,8 @@ OWNER = "jeongheon"
 KATSUYO = "카츠요"          # "6개월 동안 신한 부트캠프 친구들과 자주 먹었던 돈카츠 집"
 DONGGYO = "동교어린이공원"     # "그네팟 스팟. 밥먹고 산책하면서 여기 머물다가 …"
 SARUKAME = "사루카메"        # "미슐랭 가이드 선정된 일본인 쉐프의 라멘집 …"
+CHICKEN = "치킨버거 이스트사이드"  # "치킨버거 맛있더라. 이거 사들고 그네 공원 갔음"
+HICKS = "힉스커피"           # "우주 컨셉의 카페. 좀 언덕에 있어서 올라가기 힘듦 …"
 
 # 질의 설계. `group` 이 무엇을 가르려는 축인지이고 `expect` 는 **사용자가 기대한** Record 다.
 #
@@ -97,9 +99,19 @@ QUERIES: tuple[dict, ...] = (
     {"q": "돈카츠", "expect": KATSUYO, "group": "length", "note": "3자 · 본문 B 에 단독"},
     {"q": "친구들", "expect": KATSUYO, "group": "length", "note": "3자 · 본문 B 에 단독"},
     {"q": "아이스크림", "expect": DONGGYO, "group": "length", "note": "5자 · 본문 A 에 단독"},
+    # ── 통제. **본문 어디에도 없는 짧은 질의**. 「짧으면 낮다」와 「무관해서 낮다」를
+    #    가르는 기준선이다 — 이것이 있어야 2자 질의의 유사도 대역을 해석할 수 있다.
+    {"q": "치과", "expect": None, "group": "control", "note": "2자 · 어느 본문에도 없다"},
+    {"q": "우주", "expect": HICKS, "group": "control", "note": "2자 · 힉스커피 본문에 단독"},
+    {"q": "공원", "expect": CHICKEN, "group": "control", "note": "2자 · 치킨버거 본문에 단독"},
+    {"q": "그네 공원", "expect": CHICKEN, "group": "control", "note": "본문 그대로(치킨버거)"},
     # ── 약어. `부캠` 의 대조군 ──────────────────────────────────────────────
     {"q": "부트캠프", "expect": KATSUYO, "group": "abbrev", "note": "본문 B 에 그대로"},
     {"q": "신한 부트캠프", "expect": KATSUYO, "group": "abbrev", "note": "본문 B 에 연속으로 그대로"},
+    # `신한` 이 카츠요에서만 낮은 것을 가른다. 상위를 차지한 셋은 전부 「신한 **부캠**」
+    # 이고 카츠요만 「신한 **부트캠프**」다. 표현이 갈랐는지 보려면 둘을 나란히 던져야 한다.
+    {"q": "신한 부캠", "expect": KATSUYO, "group": "abbrev", "note": "본문 B 에 없는 표현 · 다른 4건에 그대로"},
+    {"q": "6개월", "expect": KATSUYO, "group": "abbrev", "note": "3자 · 본문 B 문두에 단독"},
     # ── 구절. 본문 조각을 그대로 던진다. 상한 기준점 ────────────────────────
     {"q": "그네팟 스팟", "expect": DONGGYO, "group": "phrase", "note": "본문 A 첫 구절 그대로"},
     {
@@ -115,8 +127,10 @@ QUERIES: tuple[dict, ...] = (
 
 def render(row: dict) -> str:
     mark = f"{row['rank']:>2}위 {row['sim']:.4f}" if row["rank"] else "   미검색"
+    if row["expect"] is None:
+        mark = "        —"
     return (
-        f"    {row['query'][:22]:<24} → {row['expect'][:10]:<12} {mark} "
+        f"    {row['query'][:22]:<24} → {(row['expect'] or '(없음)')[:10]:<12} {mark} "
         f"| top1 {row['top1_sim']:.4f} {row['top1_name'][:12]:<14} "
         f"| 컷후 {row['kept_count']:>2}건 {'포함' if row['kept'] else '빠짐'} "
         f"| {row['cause']}"
@@ -191,6 +205,9 @@ def cause(row: dict, limit: int) -> str:
         ②  limit 이 잘랐다                              → limit · r 문제
         ③  컷을 풀어도 상위 밖                            → 구조적. 컷으로 못 푼다
     """
+    if row["expect"] is None:
+        # 기대 Record 가 없는 통제 질의다. 판정 대상이 아니고 top-1 대역만 읽는다.
+        return "— 통제"
     if row["rank"] is None:
         return "③ 미검색"
     if row["rank"] > limit:
@@ -221,7 +238,7 @@ async def build(db: Database, settings) -> dict:
 
     # 대상 장소명이 실제로 있는지 먼저 본다. 없으면 재봐야 「안 나온다」만 나온다.
     have = {r["name"] for r in rec_rows if r["member_id"] == user_id}
-    for want in {q["expect"] for q in QUERIES}:
+    for want in {q["expect"] for q in QUERIES if q["expect"]}:
         if want not in have:
             raise SystemExit(f"기대 Record 「{want}」 가 {OWNER} 에게 없다. 재지 않고 멈춘다.")
 
@@ -317,9 +334,84 @@ def replay(path: Path, settings) -> dict:
     return data
 
 
+def _rank(xs: list[float]) -> list[float]:
+    """동순위를 평균 순위로 접는 순위 매김. Spearman 의 전처리다."""
+    order = sorted(range(len(xs)), key=lambda i: xs[i])
+    out = [0.0] * len(xs)
+    i = 0
+    while i < len(order):
+        j = i
+        while j + 1 < len(order) and xs[order[j + 1]] == xs[order[i]]:
+            j += 1
+        avg = (i + j) / 2 + 1
+        for k in range(i, j + 1):
+            out[order[k]] = avg
+        i = j + 1
+    return out
+
+
+def spearman(xs: list[float], ys: list[float]) -> float:
+    """순위 상관. `scipy` 를 끌어오지 않으려고 직접 적었다(17점짜리 계산이다)."""
+    rx, ry = _rank(xs), _rank(ys)
+    n = len(rx)
+    mx, my = sum(rx) / n, sum(ry) / n
+    num = sum((a - mx) * (b - my) for a, b in zip(rx, ry))
+    dx = sum((a - mx) ** 2 for a in rx) ** 0.5
+    dy = sum((b - my) ** 2 for b in ry) ** 0.5
+    return num / (dx * dy) if dx and dy else 0.0
+
+
+async def lengths(db: Database, path: Path) -> int:
+    """질의별로 **본문 길이와 유사도의 순위 상관**을 낸다. GMS 를 부르지 않는다.
+
+    「짧은 질의가 짧은 본문 쪽으로 쏠린다」가 눈으로 보였을 때, 그것이 몇 건의 인상인지
+    전체 경향인지를 가르기 위한 것이다. 상관이 음수면 **본문이 길수록 유사도가 낮다**는
+    뜻이고, 그것이 짧은 질의에서만 강하면 원인은 어휘가 아니라 질의 길이다.
+
+    본문 길이는 행렬에 담지 않는다(본문을 담지 않는다는 원칙 그대로) — DB 에서 읽는다.
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
+    async with db.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT record_id, length(body) AS n FROM core.context WHERE deleted_at IS NULL"
+        )
+    body_len = {r["record_id"]: r["n"] for r in rows}
+
+    log(f"  {'질의':<24} {'자':>2} {'ρ(본문길이,유사도)':>18}  {'top1 본문':>9}  top1")
+    log(f"  {'-' * 74}")
+    out = []
+    for q in data["queries"]:
+        pairs = [
+            (body_len[r["record_id"]], r["sim"])
+            for r in q["results"]
+            if r["record_id"] in body_len
+        ]
+        rho = spearman([p[0] for p in pairs], [p[1] for p in pairs])
+        top1_len = body_len.get(q["results"][0]["record_id"]) if q["results"] else None
+        out.append({"query": q["query"], "group": q["group"], "rho": round(rho, 4),
+                    "chars": len(q["query"]), "top1_body_len": top1_len})
+        log(f"  {q['query'][:22]:<24} {len(q['query']):>2} {rho:>18.4f}  "
+            f"{top1_len!s:>9}자  {q['top1_name'][:16]}")
+
+    log()
+    for label, keep in (
+        ("단어형 질의(≤5자)", lambda r: r["chars"] <= 5),
+        ("구절·문장형(6자↑)", lambda r: r["chars"] > 5),
+    ):
+        sel = [r["rho"] for r in out if keep(r)]
+        log(f"  {label:<18} n={len(sel):>2}  ρ 평균 {sum(sel) / len(sel):+.4f}  "
+            f"(min {min(sel):+.4f} · max {max(sel):+.4f})")
+    return 0
+
+
 async def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(ROOT / ".search" / "recall_probe.json"))
+    ap.add_argument(
+        "--lengths",
+        metavar="JSON",
+        help="굳힌 행렬로 본문 길이 × 유사도 상관을 낸다. DB 만 읽고 GMS 는 부르지 않는다",
+    )
     ap.add_argument(
         "--replay",
         metavar="JSON",
@@ -352,6 +444,8 @@ async def main() -> int:
     db = Database(settings.database_url)
     await db.connect()
     try:
+        if args.lengths:
+            return await lengths(db, Path(args.lengths))
         data = await build(db, settings)
     finally:
         await db.disconnect()
