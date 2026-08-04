@@ -87,6 +87,24 @@ class Settings(BaseSettings):
     gms_api_key: str = Field(alias="GMS_API_KEY")
     gms_base_url: str = Field(alias="GMS_BASE_URL")
 
+    # 이미지 장소 제안. 카카오 키만 비밀이며 나머지는 측정·운영용 공개 기본값이다.
+    kakao_rest_api_key: str = Field(alias="KAKAO_REST_API_KEY")
+    image_model: str = Field("gemini-3.5-flash", alias="PINLOG_IMAGE_MODEL")
+    image_model_timeout_sec: float = Field(20.0, alias="IMAGE_MODEL_TIMEOUT_SEC")
+    kakao_timeout_sec: float = Field(5.0, alias="KAKAO_TIMEOUT_SEC")
+    place_suggestion_timeout_sec: float = Field(
+        30.0, alias="PLACE_SUGGESTION_TIMEOUT_SEC"
+    )
+    vision_max_concurrency: int = Field(1, alias="VISION_MAX_CONCURRENCY")
+    place_suggestion_log_results: bool = Field(
+        False, alias="PLACE_SUGGESTION_LOG_RESULTS"
+    )
+    image_max_bytes: int = Field(5 * 1024 * 1024, alias="IMAGE_MAX_BYTES")
+    gms_image_max_bytes: int = Field(50_000, alias="GMS_IMAGE_MAX_BYTES")
+    gms_vision_request_max_bytes: int = Field(
+        90_000, alias="GMS_VISION_REQUEST_MAX_BYTES"
+    )
+
     # Embedding Profile — 공개 값이며 이 네 줄이 정본이다(P45, model-profile.md §2.1).
     #
     # 값을 배포 설정에만 두면 교체가 git 이력·리뷰를 남기지 않는다. Profile 변경은 기존
@@ -235,6 +253,27 @@ class Settings(BaseSettings):
                 f"GMS_BASE_URL 형식 오류 — '{GMS_PATH_SEGMENT}' 세그먼트가 없습니다. "
                 "판정 클라이언트가 이 세그먼트로 Gemini root를 파생하므로, 없으면 "
                 "임베딩만 동작하고 judge가 조용히 실패합니다. 기동 중단."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _place_suggestion_shape(self) -> "Settings":
+        values = (
+            self.image_model_timeout_sec,
+            self.kakao_timeout_sec,
+            self.place_suggestion_timeout_sec,
+            self.vision_max_concurrency,
+            self.image_max_bytes,
+            self.gms_image_max_bytes,
+            self.gms_vision_request_max_bytes,
+        )
+        if any(value <= 0 for value in values):
+            raise SettingsError(
+                "이미지 장소 제안 설정값은 모두 0보다 커야 합니다. 기동 중단."
+            )
+        if self.gms_image_max_bytes >= self.gms_vision_request_max_bytes:
+            raise SettingsError(
+                "GMS 이미지 제한은 전체 비전 요청 본문 제한보다 작아야 합니다. 기동 중단."
             )
         return self
 

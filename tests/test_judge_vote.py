@@ -138,6 +138,7 @@ def _settings(**over) -> Settings:
         DATABASE_URL="postgresql://x/y",
         GMS_API_KEY="k",
         GMS_BASE_URL="https://gms.example/gmsapi/api.openai.com/v1",
+        KAKAO_REST_API_KEY="kakao-k",
         INTERNAL_SHARED_SECRET="s",
     )
     return Settings(**{**base, **over})
