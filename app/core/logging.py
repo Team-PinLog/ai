@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 
 # httpx 는 요청마다 INFO 로 한 줄을 남기는데, 그 줄에 **요청 URL 전체**가 들어간다.
 #
@@ -20,6 +21,11 @@ _QUIET_LOGGERS = ("httpx",)
 
 
 def configure_logging(level: int = logging.INFO) -> None:
+    # Windows에서 표준 스트림을 파일로 보낼 때도 한국어 로그를 UTF-8로 유지한다.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            reconfigure(encoding="utf-8", errors="backslashreplace")
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",

@@ -24,6 +24,7 @@ from tests.fakes import deterministic_vector
 _ENV = {
     "DATABASE_URL": "postgresql://x:y@localhost:5432/db",
     "GMS_API_KEY": "k",
+    "KAKAO_REST_API_KEY": "kakao-k",
     "GMS_BASE_URL": "https://gms.example/gmsapi/api.openai.com/v1",
     "PINLOG_EMBEDDING_MODEL": "text-embedding-3-small",
     "PINLOG_EMBEDDING_DIMENSION": "1536",
