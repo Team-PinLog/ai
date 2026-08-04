@@ -1,7 +1,25 @@
 name: ai-ci
 
 on:
+  # 아래 Validate PR title 은 제목을 이벤트 페이로드에서 읽는다. GitHub 기본 types 는
+  # opened·synchronize·reopened 뿐이라 제목만 고치면 새 페이로드가 오지 않고 낡은
+  # 실패 판정이 그대로 남는다. 세 번 겪었다 -- 릴리스 PR 의 release(...) 타입,
+  # ai#91 의 명사구 규약, 2026-08-04 ai#108. 앞의 둘은 사람이 빈 커밋·문서 커밋을
+  # 얹어 synchronize 로 우회했다. ai#108(타 파트 PR)은 제목을 고친 뒤 재실행을 두 번
+  # 돌렸는데 둘 다 같은 스텝에서 다시 실패했고 -- 재실행은 저장된 페이로드를 재생하니
+  # 옛 제목이 다시 들어온다 -- PR 을 닫았다 여는 것으로 겨우 새 실행을 얻었다.
+  # 우회를 아는 사람만 빠져나가는 함정이다.
+  #
+  # 제목 검사만 별도 워크플로로 빼는 안(러너 비용이 작다)은 택하지 않았다. 필수 상태
+  # 검사 이름은 CONTRIBUTING 「PR과 리뷰」의 두 개뿐이고, 그 이름을 바꾸는 순간 열려
+  # 있는 PR 이 전부 「필수 검사 없음」이 된다. 본문 편집마다 전체 CI 가 도는 비용은
+  # 아래 concurrency 가 이전 실행을 취소해 러너 하나로 수렴한다 -- 제목 검사는 최신
+  # 제목으로 도는 것이 맞으므로 여기서는 취소가 의도한 동작이다.
+  #
+  # types 를 명시하는 순간 기본값 셋이 사라지므로 넷을 다 적는다.
+  # test_ci_image_publish_contract.py 가 이 목록을 계약으로 고정한다.
   pull_request:
+    types: [opened, synchronize, reopened, edited]
     branches: [main, dev]
   push:
     branches: [main, dev]
