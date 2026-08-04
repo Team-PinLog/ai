@@ -45,6 +45,15 @@ def test_untrusted_pr_title_is_passed_via_environment_not_interpolated_in_shell(
     assert 'printf \'%s\\n\' "$PR_TITLE"' in title_step["run"]
 
 
+# 위 스텝은 제목을 이벤트 페이로드에서 읽는다. 트리거에 edited 가 없으면 제목만
+# 고쳤을 때 새 페이로드가 오지 않아 낡은 판정이 그대로 남는다. types 를 적는 순간
+# GitHub 기본값 셋이 사라지므로 넷을 다 검사한다.
+def test_pull_request_trigger_covers_title_edits_without_dropping_defaults():
+    workflow, _ = load_workflow()
+    types = workflow["on"]["pull_request"]["types"]
+    assert set(types) == {"opened", "synchronize", "reopened", "edited"}
+
+
 def test_publish_is_main_push_only_after_successful_ci_with_job_scoped_write():
     workflow, _ = load_workflow()
     assert workflow["permissions"] == {"contents": "read"}
