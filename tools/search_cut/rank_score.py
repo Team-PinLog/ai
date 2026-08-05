@@ -68,6 +68,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SEARCH = ROOT / ".search"
 
+# cp949 콘솔에서 `—` 한 글자에 죽지 않게 한다(T28·T77). 호출자가 PYTHONIOENCODING 을
+# 기억해야 하는 상태를 남기지 않는다 — `keyword_matrix.py` 와 같은 방어다.
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 # 정본은 `app/core/config.py` 다. 하네스가 앱을 import 하지 않는 것은 기존 sweep 과 같다
 # (앱 import 는 설정·환경변수를 요구해 오프라인 성질을 깬다). 값이 갈리면 --tau 계열로
 # 덮어쓰고, 출력에 실제 사용값을 적어 어긋남이 드러나게 한다.

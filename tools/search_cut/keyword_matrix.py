@@ -138,9 +138,15 @@ def collect_queries() -> tuple[list[str], dict]:
 
 
 def _parse_vector(raw) -> list[float]:
-    """pgvector 는 드라이버에 따라 문자열로 온다(`'[0.1,0.2,...]'`)."""
+    """pgvector 의 반환형은 코덱 등록 여부에 따라 다르다 — 세 형태를 모두 받는다.
+
+    `app.core.db.Database` 는 커넥션에 pgvector 코덱을 등록하므로 `Vector` 객체로 오고
+    (iterable 이 아니라 `to_list()` 로 꺼낸다 — T17·T76), raw asyncpg 는 문자열로 온다.
+    """
     if isinstance(raw, str):
         return [float(x) for x in raw.strip("[]").split(",")]
+    if hasattr(raw, "to_list"):
+        return [float(x) for x in raw.to_list()]
     return [float(x) for x in raw]
 
 

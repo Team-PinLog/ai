@@ -46,6 +46,13 @@ from rank_score import (  # noqa: E402
 ROOT = Path(__file__).resolve().parents[2]
 SEARCH = ROOT / ".search"
 
+# cp949 콘솔에서 `—` 한 글자에 죽지 않게 한다(T28·T77). `keyword_matrix.py` 와 같은 방어다.
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 CASES = ("신한", "부캠", "그네", "스팟")
 
 
