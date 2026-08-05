@@ -18,11 +18,13 @@ on:
   #
   # types 를 명시하는 순간 기본값 셋이 사라지므로 넷을 다 적는다.
   # test_ci_image_publish_contract.py 가 이 목록을 계약으로 고정한다.
+  # search-upgrade 는 검색 고도화 통합 브랜치다(P49 §6) — 작업 PR 의 base 가 dev 가 아니라
+  # 이 브랜치라서, 여기 없으면 그 PR 들이 CI 없이 병합된다(T36 계열).
   pull_request:
     types: [opened, synchronize, reopened, edited]
-    branches: [main, dev]
+    branches: [main, dev, search-upgrade]
   push:
-    branches: [main, dev]
+    branches: [main, dev, search-upgrade]
 
 permissions:
   contents: read
