@@ -254,6 +254,26 @@ def main() -> int:
         f"| {s0['cross_pass']}/{s0['cross_total']} |")
     log()
 
+    # ── ②' 대역별 — 손실이 어느 대역에 있는가 ───────────────────────────────
+    log("## 대역별 손실 — 현행 규칙\n")
+    log("규칙 전체 지표는 손실이 **어느 대역에서** 나는지 감춘다. B·C 가 이 티켓이"
+        " 만든 대역이므로 그 둘이 따로 보여야 한다.\n")
+    log("| 대역 | 행 | 정답 누락 | 1위 손실 | 빈 결과 | 회복 |")
+    log("|---|---|---|---|---|---|")
+    for key in ("A", "B", "C", "D"):
+        s = score(bands[key], [], [], RULES["current"], tau_word, tau_sent, ratio)
+        log(f"| {key} | {len(bands[key])} | {s['miss']}/{s['word_total']} "
+            f"| {s['lost_top']} | {s['empty']} | {s['recovered']}/{s['recoverable']} |")
+    log()
+    log("같은 대역을 **어절 수 정의**로 다시 보면 — B·C 의 하한만 바뀐다.\n")
+    log("| 대역 | 행 | 정답 누락 | 1위 손실 | 빈 결과 | 회복 |")
+    log("|---|---|---|---|---|---|")
+    for key in ("A", "B", "C", "D"):
+        s = score(bands[key], [], [], RULES["words_only"], tau_word, tau_sent, ratio)
+        log(f"| {key} | {len(bands[key])} | {s['miss']}/{s['word_total']} "
+            f"| {s['lost_top']} | {s['empty']} | {s['recovered']}/{s['recoverable']} |")
+    log()
+
     # ── ③ 짝 대조 ──────────────────────────────────────────────────────────
     log("## 짝 대조 — 공백 하나가 무엇을 바꾸는가\n")
     by_key: dict[tuple, dict] = {}

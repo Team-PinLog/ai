@@ -438,7 +438,11 @@ async def main() -> int:
         return 0
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 행이 1,128 개라 들여쓰기만으로 2.7MB 가 된다. 기계가 읽는 파일이므로 압축해
+    # 저장한다 — `word_grid.json` 과 담는 수준은 같고 형식만 다르다.
+    out.write_text(
+        json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
+    )
     log(f"\n  → {out}  ({out.stat().st_size:,} bytes)")
     return 0
 
