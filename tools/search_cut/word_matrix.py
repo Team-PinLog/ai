@@ -233,6 +233,9 @@ async def build(db: Database, settings) -> dict:
                     {
                         "rank": i,
                         "record_id": r["record_id"],
+                        # `context_keyword` 는 context_id 조인이다(P48 §4.1). Record 대표
+                        # Context 의 id 를 남기지 않으면 keyword 신호를 붙일 수 없다.
+                        "context_id": r["context_id"],
                         "name": name_by_record.get(r["record_id"], f"record={r['record_id']}"),
                         "sim": round(float(r["similarity"]), 6),
                         "is_expected": r["record_id"] in want,
@@ -270,6 +273,7 @@ async def build(db: Database, settings) -> dict:
                         {
                             "rank": i,
                             "record_id": r["record_id"],
+                            "context_id": r["context_id"],
                             "name": name_by_record.get(r["record_id"], f"record={r['record_id']}"),
                             "sim": round(float(r["similarity"]), 6),
                             "is_expected": False,
