@@ -27,6 +27,9 @@
 | `recall_probe.py` | 「본문에 있는 말로 검색해도 안 나온다」의 원인 판별(`S15P11A705-255`). 질의 22건 × Record 전량. **GMS 임베딩 배치 1회** |
 | `word_matrix.py` | **단어형** 질의 54건 × 소유자 3명의 행렬(`S15P11A705-266`). 기대 정답을 손으로 짝짓지 않고 **본문 문자열 포함으로 계산**한다. **GMS 임베딩 배치 1회** |
 | `word_sweep.py` | 단어형·문장형을 **한 표에** 놓고 격자를 훑는다. **DB 도 GMS 도 부르지 않는다** |
+| `boundary_matrix.py` | 단어형 **경계 정의** 두 가지를 가르는 행렬(`S15P11A705-273`). 본문 인접 어절쌍을 `spaced`/`joined` 짝으로 낸다. **GMS 임베딩 배치 3회** |
+| `boundary_sweep.py` | `_is_word_query` 정의 6종을 같은 행렬에 걸어 비교한다. **DB 도 GMS 도 부르지 않는다** |
+| `layer_probe.py` | 질의가 **어느 층에서** 몇 건을 잃는지. 후보·LIMIT·τ·r·**실서버**를 한 줄에 놓는다 |
 
 `matrix.json` · `recall_probe.json` · `word_grid.json` 은 **커밋한다.** 다시 뜨려면 GMS 를
 부르고, `tau_grid` 의 것과 달리 Context 본문을 담지 않는다(장소명까지).
@@ -77,6 +80,41 @@
 `τ` 격자를 **`0.01` 보다 촘촘하게 두지 않는다**(`T68` 의 조언).
 
 결론은 [구현 리포트](../../docs/implements/2026-08-03-word-query-cut.md)에 있다.
+
+## 단어형 경계 정의 (`S15P11A705-273`)
+
+`word_matrix.py` 와 대상이 다르다 — 저쪽은 **컷 값**을 정하려고 1어절 질의의 대역을
+재고, 이쪽은 **경계 정의**(글자 수인가 어절 수인가)를 가르려고 **공백만 다른 짝**을
+만든다. `-266` 이 잰 질의가 전부 1어절 2~5자라 두 정의가 같은 답을 냈고, 그 한계를
+스스로 후속으로 남겼다.
+
+```bash
+.venv/Scripts/python.exe tools/search_cut/boundary_matrix.py --dry   # 대역 분포만. GMS 미호출
+.venv/Scripts/python.exe tools/search_cut/boundary_matrix.py         # GMS 배치 3회. DB 를 읽는다
+.venv/Scripts/python.exe tools/search_cut/boundary_sweep.py --focus  # 파일 둘만 읽는다
+```
+
+`boundary_sweep.py` 는 `boundary_grid.json`(짝)과 `word_grid.json`(1어절)을 **함께**
+읽는다 — 「1어절 대역에서 옳은 규칙이 2어절 대역에서도 옳은가」가 이 티켓의 질문이다.
+
+`--focus` 는 내용어 쌍 16종의 지표를 전량 옆에 낸다. **전량에는 기능어 쌍이 섞이고**
+(`당시 자주`·`거의 없고`) 그것이 정답 누락 수를 부풀린다. 재량을 없애는 대신 **재량의
+영향을 눈에 보이게 두는** 설계다 — `-266` 이 「어떤 말을 뽑을지는 재량이었다」로 남긴
+것에 대한 답이다.
+
+### 층별 탈락
+
+「어느 층이 얼마를 걸러냈는가」는 컷 값 격자로 답할 수 없다. 서버를 띄우고 던진다.
+
+```bash
+.venv/Scripts/python.exe -m uvicorn app.main:app --port 8003 > .search/uvicorn.log 2>&1 &
+.venv/Scripts/python.exe tools/search_cut/layer_probe.py --ai http://127.0.0.1:8003
+```
+
+`--no-live` 면 서버 없이 ①~④ 만 낸다. **재구성이 서버와 건수까지 같은지**가 이 도구의
+검증이고, 다르면 「우리가 이해한 코드」와 실물이 갈린 것이다.
+
+결론은 [구현 리포트](../../docs/implements/2026-08-05-short-query-boundary.md)에 있다.
 
 ## 재현율 프로브 (`S15P11A705-255`)
 
