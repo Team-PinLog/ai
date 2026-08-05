@@ -72,6 +72,14 @@ tools/keyword_eval/compare_out.txt
 # 담는 수준은 위 둘과 같다(장소명까지). `word_sweep.py` 가 이 파일과 `matrix.json` 을
 # 함께 읽어 격자를 훑으므로, 유실되면 GMS 를 다시 불러야 한다.
 !.search/word_grid.json
+# `boundary_grid.json` 도 같다(S15P11A705-273) — 본문 인접 어절쌍 전량 × 두 형태 ×
+# 소유자 3명의 행렬이고 담는 수준은 위 셋과 같다(장소명까지). 행이 1,128 개라 들여쓰기
+# 없이 저장한다. `boundary_sweep.py` 가 이 파일과 `word_grid.json` 을 함께 읽는다.
+!.search/boundary_grid.json
+# `layer_probe.json` 은 층별 잔존 건수와 실서버 대조 결과다(S15P11A705-273). 유사도가
+# 아니라 **판정**이라 값이 작고, 다음 사람이 「그때 서버가 무엇을 뱉었나」를 대조할 수
+# 있어야 한다.
+!.search/layer_probe.json
 
 # tools/gms_image 실행 산출물 — GMS 이미지 측정 기록(S15P11A705-253).
 # `axis-a.jsonl` · `axis-b.jsonl` 은 **커밋한다.** 다시 뜨려면 공용 게이트웨이 쿼터를
