@@ -483,9 +483,20 @@ joined 가 더 높은 짝  26/198          ← 172짝에서 내려간다
   `#108`(이미지 기반 장소 제안)이 추가한 의존성이고 `requirements.lock` 에는 있다.
   서버 기동이 `ModuleNotFoundError` 로 죽어 lock 값(`pillow==12.3.0` ·
   `python-multipart==0.0.32`)으로 설치했다. **`.venv` 를 공유하는 다른 세션에 영향이 간다**
-- **`KAKAO_REST_API_KEY` 가 필수 설정인데 `.env`·`.env.example` 에 없다.**
+- **`KAKAO_REST_API_KEY` 가 필수 설정인데 개발자 로컬 `.env` 에 없다.**
   `get_settings()` 가 `ValidationError` 로 죽는다. 이 측정은 카카오를 쓰지 않으므로
   더미 값을 환경변수로 주고 돌렸다
+
+  > **정정.** 이 문단은 처음에 「`.env`·`.env.example` 에 없다」로 적었고 **`.env.example`
+  > 쪽이 틀렸다** — `23행: KAKAO_REST_API_KEY=CHANGME` 로 있다. 중앙이 잡았고 실물로
+  > 재확인했다. `.env`(개발자 로컬, gitignore)에 없는 것은 맞다.
+  >
+  > **실제로 이 키가 빠져 있는 곳은 배포 Secret 목록이다** —
+  > `infra policy/sealedsecrets/ai-dev.yaml:18-25` 의 `ownerSecretKeys` 7개
+  > (`GMS_API_KEY` · `GMS_BASE_URL` · `INTERNAL_SHARED_SECRET` ·
+  > `PINLOG_EMBEDDING_{MODEL,DIMENSION,DISTANCE,PROFILE}`)에 들어 있지 않다.
+  > **이 측정의 범위 밖이고 확인만 했다** — 필수 설정이 배포 Secret 에 없을 때
+  > 기동에서 무엇이 되는지는 재지 않았다(`-154` 의 Secret handoff 계약이 다루는 영역이다).
 
 ## 산출물
 
