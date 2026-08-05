@@ -5,10 +5,10 @@
 - **주도(Driver)**: AI 파트
 - **관련 PR/커밋**: 없음(구현 전)
 - **관련 티켓**: 미발급
-- **근거 리포트**: [implements/2026-08-05-search-rank-baseline.md](../implements/2026-08-05-search-rank-baseline.md)(I51 · 0단계 산출) · [implements/2026-07-31-search-cut.md](../implements/2026-07-31-search-cut.md)(`S15P11A705-213`) · [implements/2026-08-03-search-recall-probe.md](../implements/2026-08-03-search-recall-probe.md)(`S15P11A705-255`) · [implements/2026-08-03-word-query-cut.md](../implements/2026-08-03-word-query-cut.md)(`S15P11A705-266`)
+- **근거 리포트**: [implements/2026-08-05-search-rank-baseline.md](../implements/2026-08-05-search-rank-baseline.md)(I52 · 0단계 산출) · [implements/2026-07-31-search-cut.md](../implements/2026-07-31-search-cut.md)(`S15P11A705-213`) · [implements/2026-08-03-search-recall-probe.md](../implements/2026-08-03-search-recall-probe.md)(`S15P11A705-255`) · [implements/2026-08-03-word-query-cut.md](../implements/2026-08-03-word-query-cut.md)(`S15P11A705-266`)
 
 > **0단계는 반영이 끝났고 나머지는 여전히 제안이다.** `tools/search_cut/rank_score.py` 와
-> baseline 이 있으므로 §3 0단계는 제안이 아니라 기록이다(I51). **앱 런타임은 아직 어느
+> baseline 이 있으므로 §3 0단계는 제안이 아니라 기록이다(I52). **앱 런타임은 아직 어느
 > 절도 건드리지 않았고 티켓도 발급되지 않았다.**
 >
 > 0단계는 다른 절의 **선결 조건**이었다 — 그것 없이 1단계 이후를 실행하면 순위 개선이
@@ -166,7 +166,7 @@ keyword 신호가 있는데 코사인이 없는 Record 가 나오면 그것은 *
 
 > **2026-08-05 반영됨.** `tools/search_cut/rank_score.py` 와 baseline
 > `.search/rank_baseline.json` 이 있다. 결과와 판정은
-> [implements/2026-08-05-search-rank-baseline.md](../implements/2026-08-05-search-rank-baseline.md)(I51).
+> [implements/2026-08-05-search-rank-baseline.md](../implements/2026-08-05-search-rank-baseline.md)(I52).
 > 이 절은 제안이 아니라 기록이다.
 >
 > **판정 하나가 바뀌었다** — `-255` 의 ①(`그네` 는 컷이 잘랐다)은 `-266` 의 단어형 분기로
@@ -441,7 +441,7 @@ rank·fusion sweep   GMS 0회 · DB 0회                 필수
 
 **런타임 구현 단계에서는 RED/GREEN/Regression 절차를 적용한다.** 그 단계는 동작 변경이다.
 
-> ①과 ④는 0단계에서 확인됐다(I51 §6·§7 — 두 번 실행 바이트 일치, `profile` 가드 `exit 1`).
+> ①과 ④는 0단계에서 확인됐다(I52 §6·§7 — 두 번 실행 바이트 일치, `profile` 가드 `exit 1`).
 
 ## 7. 위험
 
@@ -458,7 +458,7 @@ rank·fusion sweep   GMS 0회 · DB 0회                 필수
 
 **선결 조건**
 
-1. ~~0단계 완료와 baseline 보존~~ — **완료**(I51).
+1. ~~0단계 완료와 baseline 보존~~ — **완료**(I52).
 2. artifact 확장. 데모 DB와 GMS 키 환경이 필요하다.
 3. **티켓 발급.** 단계별로 분리하며, 3단계는 back 티켓과 연결한다.
    **Jira 키 없이 런타임 구현을 시작하지 않는다**(`CONTRIBUTING.md`).
