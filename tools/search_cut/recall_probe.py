@@ -298,6 +298,8 @@ async def build(db: Database, settings) -> dict:
                 {
                     "rank": i,
                     "record_id": r["record_id"],
+                    # `context_keyword` 는 context_id 조인이다(P48 §4.1).
+                    "context_id": r["context_id"],
                     "name": name_by_record.get(r["record_id"], f"record={r['record_id']}"),
                     "sim": round(float(r["similarity"]), 6),
                 }
