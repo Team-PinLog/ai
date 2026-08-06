@@ -1,0 +1,1073 @@
+{
+ "stage": "P49-lexical",
+ "profile": "openai-text-embedding-3-small-1536-cosine-v1",
+ "generated_at": "2026-08-06T00:01:05.146975+00:00",
+ "db_port": "25432",
+ "source": {
+  "matrices": {
+   "matrix.json": {
+    "profile": "openai-text-embedding-3-small-1536-cosine-v1",
+    "record_count": 42
+   },
+   "word_grid.json": {
+    "profile": "openai-text-embedding-3-small-1536-cosine-v1",
+    "record_count": 42
+   },
+   "recall_probe.json": {
+    "profile": "openai-text-embedding-3-small-1536-cosine-v1",
+    "record_count": null
+   }
+  }
+ },
+ "record_pairs": 42,
+ "queries": [
+  {
+   "query": "비 오는 날 가려고 저장한 곳",
+   "matches": {}
+  },
+  {
+   "query": "혼자 조용히 작업하기 좋은 카페",
+   "matches": {}
+  },
+  {
+   "query": "친구들이랑 시끌벅적하게 놀 만한 곳",
+   "matches": {}
+  },
+  {
+   "query": "기념일에 야경 보면서 식사할 곳",
+   "matches": {}
+  },
+  {
+   "query": "돈카츠 먹으러 자주 갔던 곳",
+   "matches": {}
+  },
+  {
+   "query": "미슐랭에 오른 라멘집",
+   "matches": {}
+  },
+  {
+   "query": "친구들이랑 피자에 맥주 마신 곳",
+   "matches": {}
+  },
+  {
+   "query": "밥 먹고 산책하면서 쉬어가는 공원",
+   "matches": {}
+  },
+  {
+   "query": "채식 샌드위치 먹던 단골집",
+   "matches": {}
+  },
+  {
+   "query": "책 사면 꽃을 주는 서점",
+   "matches": {}
+  },
+  {
+   "query": "화덕에 구운 피자집",
+   "matches": {}
+  },
+  {
+   "query": "양갱 파는 분위기 좋은 카페",
+   "matches": {}
+  },
+  {
+   "query": "자동차 엔진오일 교환 정비소",
+   "matches": {}
+  },
+  {
+   "query": "치과 임플란트 상담 받을 곳",
+   "matches": {}
+  },
+  {
+   "query": "겨울 스키장 리프트권 파는 데",
+   "matches": {}
+  },
+  {
+   "query": "노트북 액정 수리 서비스센터",
+   "matches": {}
+  },
+  {
+   "query": "강아지 예방접종 동물병원",
+   "matches": {}
+  },
+  {
+   "query": "그네",
+   "matches": {
+    "81": [
+     {
+      "record_id": 282,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 287,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "신한",
+   "matches": {
+    "81": [
+     {
+      "record_id": 277,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 278,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 280,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 281,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 283,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 284,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "부캠",
+   "matches": {
+    "81": [
+     {
+      "record_id": 278,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 281,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 283,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 284,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "스팟",
+   "matches": {
+    "81": [
+     {
+      "record_id": 287,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "산책",
+   "matches": {
+    "81": [
+     {
+      "record_id": 287,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "라멘",
+   "matches": {
+    "81": [
+     {
+      "record_id": 279,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 283,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "피맥",
+   "matches": {
+    "81": [
+     {
+      "record_id": 280,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "비건",
+   "matches": {
+    "81": [
+     {
+      "record_id": 281,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "서점",
+   "matches": {
+    "80": [
+     {
+      "record_id": 269,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 291,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "양갱",
+   "matches": {
+    "80": [
+     {
+      "record_id": 270,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 292,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "우주",
+   "matches": {
+    "80": [
+     {
+      "record_id": 275,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 290,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "소파",
+   "matches": {
+    "80": [
+     {
+      "record_id": 271,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "보쌈",
+   "matches": {
+    "80": [
+     {
+      "record_id": 273,
+      "substring": true,
+      "boundary": false
+     }
+    ]
+   }
+  },
+  {
+   "query": "난반",
+   "matches": {
+    "80": [
+     {
+      "record_id": 268,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 293,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "연어",
+   "matches": {
+    "80": [
+     {
+      "record_id": 268,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 284,
+      "substring": true,
+      "boundary": false
+     },
+     {
+      "record_id": 293,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "야경",
+   "matches": {
+    "75": [
+     {
+      "record_id": 255,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "우산",
+   "matches": {
+    "75": [
+     {
+      "record_id": 252,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "수다",
+   "matches": {
+    "75": [
+     {
+      "record_id": 254,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "국밥",
+   "matches": {
+    "81": [
+     {
+      "record_id": 285,
+      "substring": true,
+      "boundary": false
+     }
+    ]
+   }
+  },
+  {
+   "query": "공원",
+   "matches": {
+    "81": [
+     {
+      "record_id": 282,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "맛집",
+   "matches": {
+    "81": [
+     {
+      "record_id": 278,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "두부",
+   "matches": {
+    "81": [
+     {
+      "record_id": 278,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "언덕",
+   "matches": {
+    "80": [
+     {
+      "record_id": 275,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 290,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "카페",
+   "matches": {
+    "80": [
+     {
+      "record_id": 266,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 270,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 271,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 275,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 290,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 292,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "만두",
+   "matches": {
+    "80": [
+     {
+      "record_id": 267,
+      "substring": true,
+      "boundary": false
+     }
+    ]
+   }
+  },
+  {
+   "query": "피자",
+   "matches": {
+    "80": [
+     {
+      "record_id": 272,
+      "substring": true,
+      "boundary": false
+     }
+    ]
+   }
+  },
+  {
+   "query": "그네팟",
+   "matches": {
+    "81": [
+     {
+      "record_id": 287,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "돈카츠",
+   "matches": {
+    "81": [
+     {
+      "record_id": 277,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "미슐랭",
+   "matches": {
+    "81": [
+     {
+      "record_id": 279,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "차슈밥",
+   "matches": {
+    "81": [
+     {
+      "record_id": 279,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "칼국수",
+   "matches": {
+    "80": [
+     {
+      "record_id": 273,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 288,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "아부라",
+   "matches": {
+    "81": [
+     {
+      "record_id": 288,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "브런치",
+   "matches": {
+    "80": [
+     {
+      "record_id": 266,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "디저트",
+   "matches": {
+    "77": [
+     {
+      "record_id": 261,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "80": [
+     {
+      "record_id": 275,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 290,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "노트북",
+   "matches": {
+    "75": [
+     {
+      "record_id": 253,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "콘센트",
+   "matches": {
+    "75": [
+     {
+      "record_id": 253,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "기념일",
+   "matches": {
+    "75": [
+     {
+      "record_id": 255,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "부모님",
+   "matches": {
+    "75": [
+     {
+      "record_id": 256,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "빗소리",
+   "matches": {
+    "75": [
+     {
+      "record_id": 252,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "6개월",
+   "matches": {
+    "81": [
+     {
+      "record_id": 277,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "감자전",
+   "matches": {
+    "80": [
+     {
+      "record_id": 276,
+      "substring": true,
+      "boundary": false
+     }
+    ]
+   }
+  },
+  {
+   "query": "일식집",
+   "matches": {
+    "81": [
+     {
+      "record_id": 284,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "부트캠프",
+   "matches": {
+    "81": [
+     {
+      "record_id": 277,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "두부찌개",
+   "matches": {
+    "81": [
+     {
+      "record_id": 278,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "무한도전",
+   "matches": {
+    "81": [
+     {
+      "record_id": 278,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "치킨버거",
+   "matches": {
+    "81": [
+     {
+      "record_id": 282,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "샌드위치",
+   "matches": {
+    "80": [
+     {
+      "record_id": 266,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 281,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "화덕피자",
+   "matches": {
+    "80": [
+     {
+      "record_id": 272,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "낙지전골",
+   "matches": {
+    "80": [
+     {
+      "record_id": 273,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "가지튀김",
+   "matches": {
+    "80": [
+     {
+      "record_id": 274,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 289,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "라따뚜이",
+   "matches": {
+    "80": [
+     {
+      "record_id": 266,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "돼지국밥",
+   "matches": {
+    "81": [
+     {
+      "record_id": 285,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "인테리어",
+   "matches": {
+    "77": [
+     {
+      "record_id": 261,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "80": [
+     {
+      "record_id": 275,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 290,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "아이스크림",
+   "matches": {
+    "81": [
+     {
+      "record_id": 287,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "치과",
+   "matches": {}
+  },
+  {
+   "query": "액정",
+   "matches": {}
+  },
+  {
+   "query": "약국",
+   "matches": {}
+  },
+  {
+   "query": "보험",
+   "matches": {}
+  },
+  {
+   "query": "세탁",
+   "matches": {}
+  },
+  {
+   "query": "스키장",
+   "matches": {}
+  },
+  {
+   "query": "정비소",
+   "matches": {}
+  },
+  {
+   "query": "리프트",
+   "matches": {}
+  },
+  {
+   "query": "헬스장",
+   "matches": {}
+  },
+  {
+   "query": "주유소",
+   "matches": {}
+  },
+  {
+   "query": "안경점",
+   "matches": {}
+  },
+  {
+   "query": "엔진오일",
+   "matches": {}
+  },
+  {
+   "query": "임플란트",
+   "matches": {}
+  },
+  {
+   "query": "예방접종",
+   "matches": {}
+  },
+  {
+   "query": "동물병원",
+   "matches": {}
+  },
+  {
+   "query": "친구들",
+   "matches": {
+    "75": [
+     {
+      "record_id": 254,
+      "substring": true,
+      "boundary": true
+     }
+    ],
+    "81": [
+     {
+      "record_id": 277,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 280,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "그네 공원",
+   "matches": {
+    "81": [
+     {
+      "record_id": 282,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "신한 부트캠프",
+   "matches": {
+    "81": [
+     {
+      "record_id": 277,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "신한 부캠",
+   "matches": {
+    "81": [
+     {
+      "record_id": 278,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 281,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 283,
+      "substring": true,
+      "boundary": true
+     },
+     {
+      "record_id": 284,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "그네팟 스팟",
+   "matches": {
+    "81": [
+     {
+      "record_id": 287,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  },
+  {
+   "query": "신한 부트캠프 친구들과 자주 먹었던 돈카츠 집",
+   "matches": {
+    "81": [
+     {
+      "record_id": 277,
+      "substring": true,
+      "boundary": true
+     }
+    ]
+   }
+  }
+ ]
+}

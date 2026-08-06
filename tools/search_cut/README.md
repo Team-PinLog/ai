@@ -34,6 +34,8 @@
 | `fusion.py` | keyword 신호 fusion **순수 로직**(P48 1단계). DB·GMS·파일을 읽지 않고 인자만 받는다 — `tests/test_search_fusion.py` 가 픽스처로 검증한다 |
 | `keyword_matrix.py` | keyword 신호 artifact 생성 — 질의별 전체 활성 Preset 코사인 + Context 별 keyword·confidence·상태. **GMS 임베딩 배치 1회 + DB 읽기** |
 | `fusion_sweep.py` | fusion 방식(binary·confidence·idf·RRF)×가중치×floor×RRF cutoff 격자. `keyword_matrix.json` 과 행렬 셋만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
+| `lexical_matrix.py` | 문자열 매치 artifact — 본문에 질의가 그대로 있는지를 (질의×소유자×Record)로 굳힌다. 본문은 저장하지 않는다. **스냅샷 DB(:25432) 읽기 · GMS 0회** |
+| `lexical_sweep.py` | 문자열 병합 규칙 격자 — 게이트 3단×병합 3종. `lexical_matrix.json` 과 행렬 셋만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
 
 `matrix.json` · `recall_probe.json` · `word_grid.json` · `keyword_matrix.json` 은 **커밋한다.**
 다시 뜨려면 GMS 를 부르고, `tau_grid` 의 것과 달리 Context 본문을 담지 않는다(장소명까지).
@@ -182,6 +184,19 @@ CWD 기준이고 `.env` 는 gitignore 라 worktree 에 없다 — `GMS_API_KEY` 
 `recall_probe.py` 는 행에 `context_id` 를 포함해야 keyword 조인이 성립한다 — 낡은
 행렬이면 `fusion_sweep.py` 의 가드가 재지 않고 멈춘다. 결과 판정 기준은 P48 §6.1,
 실측 기록은 [구현 리포트 I53](../../docs/implements/2026-08-05-fusion-measurement.md).
+
+### 문자열 병합 규칙 (P49 작업 3)
+
+```bash
+export DATABASE_URL="postgresql://pinlog:pinlog-local@localhost:25432/pinlog"   # 스냅샷 DB
+.venv/Scripts/python.exe tools/search_cut/lexical_matrix.py   # DB 읽기. GMS 0회
+.venv/Scripts/python.exe tools/search_cut/lexical_sweep.py    # 파일만 읽는다
+```
+
+검색 고도화 트랙의 측정은 시연 DB(:15432)가 아니라 **스냅샷 DB(:25432)** 에서 한다 —
+브랜치는 코드만 격리하고 DB 는 격리하지 않는다(P49 §6). `lexical_matrix.py` 가 포트를
+검사해 다르면 멈춘다. 결과 판정과 규칙 확정안은
+[구현 리포트 I54](../../docs/implements/2026-08-06-lexical-merge-rule.md).
 
 ### 실서버 대조
 
