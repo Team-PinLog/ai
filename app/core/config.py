@@ -190,6 +190,14 @@ class Settings(BaseSettings):
     # 질의 단위 재작성 캐시 상한. 같은 질의가 회차마다 다른 재작성을 받으면 검색이
     # 비결정적이 된다 — 캐시가 그 성질을 막는다(P48 2단계 요구).
     search_rewrite_cache_size: int = Field(256, alias="SEARCH_REWRITE_CACHE_SIZE")
+    # 재작성 적용 게이트 — 앞뒤 공백을 정리한 질의가 이 글자 수 이하일 때만 재작성한다.
+    # 실측(I55)에서 재작성의 이득은 전부 짧은 약어 질의(5자 이하)에서 났고, 손해는 긴
+    # 문장형 질의에서만 났다(`파는 데`→`파는 곳` 표현 정규화가 무관 질의 무노출을
+    # 11/15→9/15 로 무너뜨렸다). 성과 기반 게이트(결과 0건·top-1 유사도)는 두 집단의
+    # 값 대역이 겹쳐 분리하지 못했고, 회복 대상(`부캠` — 원문도 오답 3건을 반환)까지
+    # 놓친다. 6 은 이득이 실측된 상한(5자)에 여유 1자를 더한 보수 값이며, 코퍼스상
+    # 5~13자 어디든 지표가 같아 경계 재조정은 운영 질의 관측 후의 일이다.
+    search_rewrite_max_chars: int = Field(6, alias="SEARCH_REWRITE_MAX_CHARS")
 
     # PROCESSING 재선점 만료 — Spring 재스캔 만료와 동일 값
     processing_expiry_sec: int = Field(600, alias="PROCESSING_EXPIRY_SEC")
