@@ -26,6 +26,8 @@
 | [P47](P47-keyword-preset-label-axis.md) | Keyword 프리셋 표시 라벨·축 정의·스키마 개정안 | Proposed | AI |
 | [P48](P48-search-signal-expansion.md) | 개인 검색의 신호 확장 — 단일 코사인에서 다신호로 | Proposed | AI |
 | [P49](P49-multi-signal-search.md) | 다신호 검색 개선 — 질의 재작성·키워드 점수·문자열 검색 추가와 검증 기준 | Proposed | AI |
+| [P50](P50-three-layer-place-metadata.md) | 3계층 분리와 Place metadata 결합 — 장소 사실·Context 의미·파생 결합의 실체화 (번호 잠정) | Proposed | AI(+back 협의) |
+| [P51](P51-keyword-preset-governance.md) | Keyword 프리셋 거버넌스 — 열린 발견, 닫힌 사용 (번호 잠정) | Proposed | AI |
 
 ## 제안 — 전수 (Accepted)
 
