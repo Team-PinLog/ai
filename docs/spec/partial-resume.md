@@ -93,12 +93,13 @@ flowchart TD
   다만 그 값이 없으면 `context_embedding`에서 **DB로 재조회**합니다(`keyword_service._resolve_vector`).
 
   > **판단 변경(2-worker 경합 방어).** 원래 계약은 *"후보 검색을 위해 Embedding을 다시 조회하지
-  > 않는다"*였다 — 한 요청이 재사용 판정에서 벡터를 항상 손에 쥔다는 단일 워커 전제였다. 실제
-  > 구현은 **다른 워커가 임베딩을 완료해** 이 요청의 재사용 판정에는 `carried`가 `None`으로 오는
-  > 경합 경로를 방어하려 fallback 재조회를 넣었다(`_resolve_vector`가 `carried is None`일 때
-  > `context_embedding_repo.load_vector` 호출). 즉 **코드가 맞고 이 문장이 낡았다** — 재조회는
-  > 정상 경합 대응이지 "벡터 재사용" 원칙의 위반이 아니다. (출처: `기록복원` — 종료 S1 세션;
-  > `직접확인` — `keyword_service._resolve_vector:108-115`)
+  > 않는다"*였다. 이 문장은 한 요청이 재사용 판정에서 벡터를 항상 손에 쥔다는 단일 워커
+  > 전제 위에 있었다. 실제 구현은 **다른 워커가 임베딩을 완료해** 이 요청의 재사용 판정에는
+  > `carried`가 `None`으로 오는 경합 경로를 방어하려 fallback 재조회를 넣었다
+  > (`_resolve_vector`가 `carried is None`일 때 `context_embedding_repo.load_vector` 호출).
+  > 즉 **코드가 맞고 이 문장이 낡았다.** 재조회는 정상 경합 대응이지 "벡터 재사용" 원칙의
+  > 위반이 아니다. (출처: 종료된 이전 작업 세션(S1)의 기록 복원으로 경위를 확인했고,
+  > `keyword_service._resolve_vector:108-115` 코드에서 직접 확인했다)
 
 ## 4. 재개할 수 없는 조합
 
@@ -107,7 +108,7 @@ flowchart TD
 | COMPLETED | PENDING | **재개.** 벡터 재사용, Keyword만 수행 |
 | PENDING | PENDING | 전체 수행 |
 | COMPLETED | FAILED | 아무것도 하지 않음. FAILED는 재스캔 대상이 아니며 PROCESSING으로 직접 전이 불가 |
-| FAILED | PENDING | Keyword만 시도. 다만 재사용 2조건을 만족하는 Embedding이 없으므로 벡터가 없어 판정 불가 → Keyword 단계도 시작하지 않음 |
+| FAILED | PENDING | Keyword만 시도. 다만 재사용 2조건을 만족하는 Embedding이 없어 판정에 쓸 벡터가 없으므로, Keyword 단계도 시작하지 않음 |
 | COMPLETED | COMPLETED | 할 일 없음 |
 | COMPLETED | PROCESSING (만료) | **재개.** 벡터 재사용, stale Keyword 작업 재선점 |
 | CANCELLED | CANCELLED | 처리·저장 대상 아님. 삭제되었거나 수정으로 대체된 구 Context |

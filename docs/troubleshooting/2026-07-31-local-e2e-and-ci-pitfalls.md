@@ -4,7 +4,7 @@
 `dev` → `main` 릴리스와 CI 검사를 넣으면서 만난 것들이다.
 
 **여덟 개 중 넷은 「기대한 출력이 없다」가 증상이었고 원인은 제각각이었다.** 그것이
-이 문서를 한 편으로 묶은 이유다 — 하나를 겪으면 다음 것을 오진하게 된다.
+이 문서를 한 편으로 묶은 이유다. 하나를 겪으면 다음 것을 오진하게 된다.
 
 관련 구현 기록: [seed-guard](../implements/2026-07-31-seed-guard.md) ·
 [gms-call-observability](../implements/2026-07-31-gms-call-observability.md) ·
@@ -47,9 +47,9 @@ uvicorn app.main:app --port 8000 > .demo/uvicorn.log 2>&1
 기록을 3건 만들고 로그를 봤더니 `gms call` 도 `gms window` 도 없었다. 계측이 실동작하지
 않는다고 판정했는데 **틀렸다.**
 
-설계가 그렇다 — 성공 호출은 DEBUG 고, 분모는 60초 창 집계 한 줄만 INFO 이며,
-**창을 닫는 것은 타이머가 아니라 다음 호출**이다. 3건이 3초 안에 들어가면 같은 창에
-담기고 그 창은 아직 열려 있다.
+로그 설계가 원래 그렇게 되어 있다. 성공 호출은 DEBUG 레벨이고, 분모는 60초 창 집계 한 줄만
+INFO 로 나가며, **창을 닫는 것은 타이머가 아니라 다음 호출**이다. 3건이 3초 안에 들어가면
+같은 창에 담기고 그 창은 아직 열려 있으므로 집계 줄이 나오지 않는다.
 
 60초를 기다린 뒤 1건을 더 넣자 그 자리에서 나왔다.
 
@@ -58,7 +58,7 @@ INFO app.client.gms gms window window=324s calls=7 fail=0 fail_pct=0
      avg_ms=1940 max_ms=2219 ok=7 [embedding ok=4] [judge:openai ok=3]
 ```
 
-**`[judge:openai]` 가 이 한 줄의 값이다** — 폴백 체인 1순위가 실제로 선택된 것을 보여준다.
+**이 한 줄에서 눈여겨볼 것은 `[judge:openai]` 다.** 폴백 체인 1순위가 실제로 선택된 것을 보여준다.
 
 > 검증이 실패했는지 검증 방법이 틀렸는지를 먼저 갈라야 한다. 이 날 훅·CI 셋이
 > **자기 테스트를 통과하고 실전에서 무력했기 때문에** 같은 증상을 결함으로 읽는
@@ -66,7 +66,7 @@ INFO app.client.gms gms window window=324s calls=7 fail=0 fail_pct=0
 
 ## T32. `back` jar 이 낡으면 Flyway 가 기동을 거부한다
 
-`back` 을 당긴 뒤 옛 jar 로 띄우면 이렇게 죽는다.
+`back` 을 당긴 뒤 옛 jar 로 띄우면 기동이 이렇게 실패한다.
 
 ```
 Detected applied migration not resolved locally: 6
@@ -87,10 +87,10 @@ cd back && ./gradlew bootJar
 로컬 pgvector 가 둘이고 `.env` 는 **07-27 잔재인 `:5433`** 을 가리킨다. 시연 정본은
 `:15432`(`pinlog-demo-postgres-1`)다.
 
-`real-data-e2e §7` 절차가 매 명령에 `DATABASE_URL` 을 덮어써서 지금까지 안 터졌다.
-**한 번 빠뜨리면 조용히 다른 DB 에 붙는다.**
+`real-data-e2e §7` 절차가 매 명령에 `DATABASE_URL` 을 덮어써서 지금까지 문제가 드러나지
+않았다. **덮어쓰기를 한 번 빠뜨리면 아무 경고 없이 다른 DB 에 붙는다.**
 
-`seed.py` 의 preflight 가 접속 대상을 찍고 `:5433` 이면 BLOCK 하므로 이제 조용히
+`seed.py` 의 preflight 가 접속 대상을 출력하고 `:5433` 이면 BLOCK 하므로 이제 모르고
 지나가지는 않는다([seed-guard](../implements/2026-07-31-seed-guard.md)). 기본값 자체는
 그대로다.
 
@@ -99,8 +99,8 @@ cd back && ./gradlew bootJar
 소셜 OAuth 는 콜백 URL 이 운영 기준이라 로컬에서 돌지 않는다. 데모 JWT 키로 토큰을
 만들어 쿠키에 심으면 우회된다.
 
-**`access_token` 만 심으면 안 된다.** 프론트는 그것을 읽지 못하고(HttpOnly 전제)
-별도 표시 쿠키로 판정한다.
+**`access_token` 만 심으면 안 된다.** 프론트는 그 쿠키를 읽지 못하고(HttpOnly 전제)
+별도 표시 쿠키로 로그인 여부를 판정한다.
 
 ```
 access_token=<mint_access_token(member_id, pem)>   back 인증용
@@ -109,8 +109,8 @@ XSRF-TOKEN=<임의>                                   CSRF 인터셉터용
 ```
 
 **값이 정확히 `1` 이어야 한다.** `front` 의 `getIsLoggedIn.ts` 가
-`document.cookie.split('; ').includes('logged_in=1')` 로 문자열 일치를 본다 —
-`logged_in=true` 는 안 걸린다.
+`document.cookie.split('; ').includes('logged_in=1')` 로 문자열 일치를 본다.
+`logged_in=true` 는 걸리지 않는다.
 
 `vite.config.ts` 의 proxy target 도 기본이 `https://pin-log.com` 이라 로컬 back 을
 쓰려면 `http://localhost:8080` 으로 바꿔야 한다(프론트 파트 소유 파일이므로 커밋하지 않는다).
@@ -139,6 +139,6 @@ from core.social_account sa order by 3 desc;
 
 `hotfix/*` 로 `main` 에 직접 올려 해소했다(그 브랜치명이 검사가 허용하는 첫 사례이기도 하다).
 
-같은 파일에서 하나 더 — `ai-ci.yml` 전체 텍스트에 `:main` 이 있으면
+같은 파일에서 하나를 더 겪었다. `ai-ci.yml` 전체 텍스트에 `:main` 이 있으면
 `test_ci_image_publish_contract` 가 실패한다(이미지 태그 오염 방지). 오류 메시지에 쓴
 `::error::main ...` 이 그 패턴에 걸렸다. **검사가 옳고 문구가 틀렸다.**
