@@ -1,12 +1,14 @@
-"""검색 질의 LLM 재작성 — 강등·캐시·플래그 off 계약 (S15P11A705-337).
+"""검색 질의 LLM 재작성 — 강등·캐시·플래그 off·길이 게이트 계약 (S15P11A705-337).
 
-고정하는 계약은 넷이다.
+고정하는 계약은 다섯이다.
 
     ① 플래그 off(기본값)면 재작성 클라이언트가 호출되지 않고 원문이 임베딩된다
        — 현행 검색과 동작이 같다
     ② 재작성 성공이면 재작성문이 임베딩되고 컷 판정도 재작성문 기준이다
     ③ 재작성 실패(일시·영구)는 오류가 아니라 강등이다 — 원문으로 검색이 계속된다
     ④ 같은 질의는 캐시로 같은 재작성을 받는다 — LLM 을 한 번만 부른다
+    ⑤ 길이 게이트(I55) — 앞뒤 공백 정리 후 6자 이하 질의만 재작성한다. 긴 질의는
+       플래그가 켜져 있어도 LLM 호출 없이 원문으로 검색한다
 
 DB 는 가짜 커넥션으로 대체한다 — 여기서 재는 것은 재작성 경로이지 SQL 이 아니다.
 """
@@ -123,6 +125,61 @@ async def test_flag_on_without_client_uses_original(monkeypatch, no_rows):
     service = SearchService(_FakeDb(), emb, settings, rewrite_client=None)
     await _search(service)
     assert emb.calls == ["부캠"]
+
+
+@pytest.mark.anyio
+async def test_long_query_skips_rewrite_even_when_enabled(monkeypatch, no_rows):
+    """⑤ 게이트 — 긴 질의는 플래그가 켜져 있어도 재작성하지 않는다.
+
+    실측(I55)에서 손해는 전부 긴 문장형 질의에서 났다(`파는 데`→`파는 곳` 표현
+    정규화가 무관 질의 무노출 11/15 를 9/15 로 무너뜨렸다). LLM 호출 자체가 없어야
+    하고(비용·지연 포함), 원문이 그대로 임베딩되어야 한다.
+    """
+    settings = _settings(monkeypatch, SEARCH_LLM_ENABLED="true")
+    emb, rw = _FakeEmbedding(), _FakeRewrite(result="다른 문장")
+    service = SearchService(_FakeDb(), emb, settings, rewrite_client=rw)
+    await service.search(1, "겨울 스키장 리프트권 파는 데", 20, PROFILE)
+    assert rw.calls == 0
+    assert emb.calls == ["겨울 스키장 리프트권 파는 데"]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("query", "rewritten"),
+    [
+        ("부캠", "부트캠프"),          # 1어절 약어 — 회복 실측 사례
+        ("신한 부캠", "신한 부트캠프"),  # 공백 포함 5자 — 단어형 판정 재사용이면 잃는 사례
+        ("여섯글자질의", "여섯 글자 질의"),  # 경계값 6자 — 게이트 포함 방향 확인
+    ],
+)
+async def test_short_query_passes_the_gate(monkeypatch, no_rows, query, rewritten):
+    """⑤ 게이트 — 6자 이하 질의는 재작성 경로를 그대로 탄다."""
+    settings = _settings(monkeypatch, SEARCH_LLM_ENABLED="true")
+    emb, rw = _FakeEmbedding(), _FakeRewrite(result=rewritten)
+    service = SearchService(_FakeDb(), emb, settings, rewrite_client=rw)
+    await service.search(1, query, 20, PROFILE)
+    assert rw.calls == 1
+    assert emb.calls == [rewritten]
+
+
+@pytest.mark.anyio
+async def test_gate_measures_the_stripped_length(monkeypatch, no_rows):
+    """⑤ 게이트의 길이는 앞뒤 공백을 정리한 값이다 — 공백 패딩이 판정을 바꾸면
+    같은 질의가 입력 모양에 따라 다른 경로를 탄다."""
+    settings = _settings(monkeypatch, SEARCH_LLM_ENABLED="true")
+    emb, rw = _FakeEmbedding(), _FakeRewrite(result="부트캠프")
+    service = SearchService(_FakeDb(), emb, settings, rewrite_client=rw)
+    await service.search(1, "   부캠   ", 20, PROFILE)
+    assert rw.calls == 1
+
+
+def test_gate_threshold_is_configurable(monkeypatch):
+    """⑤ 경계값은 설정(`SEARCH_REWRITE_MAX_CHARS`)이다 — 운영 질의 관측 후 재배포
+    없이 조정한다(I55 의 5~13자 동일 구간 근거)."""
+    settings = _settings(monkeypatch, SEARCH_REWRITE_MAX_CHARS="4")
+    service = SearchService(None, None, settings)
+    assert service._should_rewrite("부캠") is True
+    assert service._should_rewrite("신한 부캠") is False  # 5자 — 낮춘 경계 밖
 
 
 def test_cut_follows_rewritten_query_band(monkeypatch):

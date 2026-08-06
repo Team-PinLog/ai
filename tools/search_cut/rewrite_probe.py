@@ -84,6 +84,16 @@ def is_word_query(q: str, max_chars: int) -> bool:
     return bool(q) and not any(c.isspace() for c in q) and len(q) <= max_chars
 
 
+def should_rewrite(q: str, max_chars: int) -> bool:
+    """서비스의 재작성 길이 게이트(`SearchService._should_rewrite`)를 다시 적는다.
+
+    게이트에 걸린 질의는 재작성·재임베딩 없이 원문 값이 곧 결과다 — 서비스도 LLM 을
+    부르지 않으므로 측정에서 GMS 를 부르면 그것이 재구성 불일치다.
+    """
+    q = q.strip()
+    return bool(q) and len(q) <= max_chars
+
+
 def apply_cut(results: list[dict], *, query: str, settings) -> list[dict]:
     """서비스의 컷(`SearchService._cut`)을 재구성한다. SQL LIMIT 이 먼저, 컷이 뒤다.
 
@@ -148,11 +158,16 @@ async def rewrite_all(queries: list[str], settings) -> dict[str, dict]:
     )
     out: dict[str, dict] = {}
     for q in queries:
+        if not should_rewrite(q, settings.search_rewrite_max_chars):
+            out[q] = {"rewritten": q, "degraded": False, "gated_out": True}
+            log(f"  게이트  {q!r}  (길이 초과 — 재작성 없이 원문)")
+            continue
         try:
             rewritten = await client.rewrite(q)
-            out[q] = {"rewritten": rewritten, "degraded": False}
+            out[q] = {"rewritten": rewritten, "degraded": False, "gated_out": False}
         except (TransientError, PermanentError) as e:
-            out[q] = {"rewritten": q, "degraded": True, "error": type(e).__name__}
+            out[q] = {"rewritten": q, "degraded": True, "gated_out": False,
+                      "error": type(e).__name__}
         log(f"  재작성  {q!r} → {out[q]['rewritten']!r}"
             + ("  (강등: 원문 유지)" if out[q]["degraded"] else ""))
     return out
@@ -160,14 +175,17 @@ async def rewrite_all(queries: list[str], settings) -> dict[str, dict]:
 
 async def measure(db: Database, settings, rewrites: dict[str, dict],
                   offtopic: list[dict], cases: list[dict]) -> dict:
-    texts = [rewrites[q]["rewritten"] for q in rewrites]
+    # 게이트를 통과한 질의만 임베딩한다 — 게이트에 걸린 질의는 서비스도 원문 그대로
+    # 검색하므로 원문 기준 값(굳힌 행렬의 재구성)이 곧 재작성 후 값이다.
+    live = [q for q, rw in rewrites.items() if not rw["gated_out"]]
     client = EmbeddingClient(
         base_url=settings.gms_base_url,
         api_key=settings.gms_api_key,
         model=settings.embedding_model,
         dimension=settings.embedding_dimension,
     )
-    vectors = dict(zip(rewrites.keys(), await client.embed(texts)))
+    vectors = dict(zip(live, await client.embed(
+        [rewrites[q]["rewritten"] for q in live]))) if live else {}
 
     async def search_rows(user_id: int, vec) -> list[dict]:
         async with db.acquire() as conn:
@@ -187,19 +205,24 @@ async def measure(db: Database, settings, rewrites: dict[str, dict],
         q = item["query"]
         before_kept = apply_cut(item["results"], query=q, settings=settings)
         rw = rewrites[q]
-        after_all = await search_rows(item["user_id"], vectors[q])
-        after_kept = apply_cut(after_all, query=rw["rewritten"], settings=settings)
+        if rw["gated_out"]:
+            after_kept, after_all = before_kept, item["results"]
+        else:
+            after_all = await search_rows(item["user_id"], vectors[q])
+            after_kept = apply_cut(after_all, query=rw["rewritten"], settings=settings)
         silent_before += not before_kept
         silent_after += not after_kept
         off_rows.append({
             "query": q,
             "rewritten": rw["rewritten"],
             "degraded": rw["degraded"],
+            "gated_out": rw["gated_out"],
             "before_returned": len(before_kept),
             "after_returned": len(after_kept),
             "after_top1_sim": after_all[0]["sim"] if after_all else None,
         })
-        log(f"  무관    {q!r}: 전 {len(before_kept)}건 → 후 {len(after_kept)}건")
+        log(f"  무관    {q!r}: 전 {len(before_kept)}건 → 후 {len(after_kept)}건"
+            + ("  (게이트 — 원문 유지)" if rw["gated_out"] else ""))
 
     # ── ② 사례 5건 ─────────────────────────────────────────────────────
     case_rows = []
@@ -213,17 +236,22 @@ async def measure(db: Database, settings, rewrites: dict[str, dict],
         before_rank = next(
             (r["rank"] for r in item["results"] if r["record_id"] in expect_ids), None)
         before_in = any(r["record_id"] in expect_ids for r in before_kept)
-        # 후(재작성문): 임베딩을 다시 떠 스냅샷 DB 를 잰다.
-        after_all = await search_rows(item["user_id"], vectors[q])
-        after_kept = apply_cut(after_all, query=rw["rewritten"], settings=settings)
-        after_rank = next(
-            (i + 1 for i, r in enumerate(after_all) if r["record_id"] in expect_ids),
-            None)
-        after_in = any(r["record_id"] in expect_ids for r in after_kept)
+        # 후(재작성문): 임베딩을 다시 떠 스냅샷 DB 를 잰다. 게이트에 걸리면 원문 값이다.
+        if rw["gated_out"]:
+            after_rank, after_in = before_rank, before_in
+        else:
+            after_all = await search_rows(item["user_id"], vectors[q])
+            after_kept = apply_cut(after_all, query=rw["rewritten"], settings=settings)
+            after_rank = next(
+                (i + 1 for i, r in enumerate(after_all)
+                 if r["record_id"] in expect_ids),
+                None)
+            after_in = any(r["record_id"] in expect_ids for r in after_kept)
         case_rows.append({
             "query": q,
             "rewritten": rw["rewritten"],
             "degraded": rw["degraded"],
+            "gated_out": rw["gated_out"],
             "expect": item["expect"],
             "before": {"pre_cut_rank": before_rank, "returned": before_in,
                        "returned_count": len(before_kept)},
@@ -244,6 +272,7 @@ async def measure(db: Database, settings, rewrites: dict[str, dict],
         "profile": settings.embedding_profile,
         "model": settings.embedding_model,
         "rewrite_chain": [f"{v}:{m}" for v, m in settings.judge_vendors],
+        "gate": {"max_chars": settings.search_rewrite_max_chars},
         "cut": {
             "tau_abs": settings.search_similarity_floor,
             "tau_abs_word": settings.search_similarity_floor_word,

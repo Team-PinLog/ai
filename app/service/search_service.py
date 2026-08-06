@@ -51,7 +51,11 @@ class SearchService:
         # 임베딩된 텍스트의 유사도 대역을 따라가는 장치이므로, 임베딩 입력과 판정 입력이
         # 갈리면 안 된다.
         query_text = query
-        if self._settings.search_llm_enabled and self._rewrite is not None:
+        if (
+            self._settings.search_llm_enabled
+            and self._rewrite is not None
+            and self._should_rewrite(query)
+        ):
             try:
                 query_text = await self._rewrite.rewrite(query)
             except (TransientError, PermanentError):
@@ -72,6 +76,24 @@ class SearchService:
             }
             for r in self._cut(rows, query_text)
         ]
+
+    def _should_rewrite(self, query: str) -> bool:
+        """재작성 게이트 — 앞뒤 공백을 정리한 질의가 짧을 때만 재작성한다(I55).
+
+        실측에서 재작성의 이득(약어 회복: `부캠` 컷 전 8위→1위·`신한 부캠` 4위→3위)은
+        전부 5자 이하 질의에서 났고, 손해는 긴 문장형 질의에서만 났다 — 의미가 같은
+        표현 정규화(`파는 데`→`파는 곳`)가 유사도를 컷 위로 올려 관련 없는 질의의
+        무노출을 11/15 에서 9/15 로 무너뜨렸다.
+
+        결과 부족·top-1 유사도 같은 성과 기반 게이트는 쓰지 않는다 — 회복 대상 질의도
+        원문 검색이 오답을 반환하고 있어(0건이 아니다) 그 신호로는 두 집단이 갈리지
+        않는 것이 실측됐다. 단어형 판정(`_is_word_query`)을 재사용하지도 않는다 —
+        공백 불허 조건이 `신한 부캠`(공백 포함 5자)을 배제해 회복 1건을 잃는다.
+
+        길이는 `len()`(코드 포인트)으로 센다. 빈 질의는 재작성할 것이 없다.
+        """
+        q = query.strip()
+        return bool(q) and len(q) <= self._settings.search_rewrite_max_chars
 
     def _is_word_query(self, query: str) -> bool:
         """단어형인가. **공백이 없고 짧을 때만** 그렇다 — 두 조건을 함께 요구한다.
