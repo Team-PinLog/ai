@@ -321,6 +321,78 @@ def test_keyword_matrix_population_matches_search_query():
         "keyword_status 는 신호 판단용으로 컬럼에 실려 있어야 한다"
 
 
+# ── 9. 재정렬 전용 병합 (P49 §4, S15P11A705-339) ─────────────────────────────
+#
+# `fuse()` 와 병합 의미가 다르다 — 컷 통과 집합을 고정하고 **순서만** 바꾼다.
+# 여기서 고정하는 계약이 런타임 계약 테스트(test_search_rerank.py)의 오프라인 판이다.
+
+KEPT = [
+    {"record_id": 100, "sim": 0.50, "is_expected": False},
+    {"record_id": 200, "sim": 0.48, "is_expected": True},
+    {"record_id": 300, "sim": 0.40, "is_expected": False},
+]
+
+
+def test_rerank_never_changes_candidate_set():
+    """후보 추가·제거 없음 — 신호가 무엇이든 Record id 집합이 입력과 같다."""
+    for sig in ({}, {200: 1.0}, {100: 1.0, 200: 1.0, 300: 1.0}, {999: 1.0}):
+        out = F.rerank(KEPT, sig, method=F.BINARY, weight=0.5)
+        assert {r["record_id"] for r in out} == {100, 200, 300}, sig
+        assert len(out) == len(KEPT), "재정렬 후 2차 절단이 있어서는 안 된다"
+
+
+def test_rerank_binary_moves_signal_row_up_only_when_weight_covers_gap():
+    """정렬 점수 = 코사인 + weight × 신호. 간격(0.02)을 못 넘는 weight 는 순서를 못 바꾼다."""
+    up = F.rerank(KEPT, {200: 1.0}, method=F.BINARY, weight=0.05)
+    assert [r["record_id"] for r in up] == [200, 100, 300]
+    stay = F.rerank(KEPT, {200: 1.0}, method=F.BINARY, weight=0.01)
+    assert [r["record_id"] for r in stay] == [100, 200, 300]
+
+
+def test_rerank_keeps_sim_untouched():
+    """행의 `sim` 은 원래 코사인 그대로다 — 응답 similarity 계약(P48 §2.3)과 같은 이유."""
+    out = F.rerank(KEPT, {200: 1.0}, method=F.BINARY, weight=0.05)
+    assert {r["record_id"]: r["sim"] for r in out} == {100: 0.50, 200: 0.48, 300: 0.40}
+
+
+def test_rerank_without_signal_is_identity():
+    """신호가 전부 0 이면 벡터 순서 그대로다 — 런타임 강등 경로의 성질과 같다."""
+    out = F.rerank(KEPT, {}, method=F.BINARY, weight=0.5)
+    assert [r["record_id"] for r in out] == [100, 200, 300]
+    out = F.rerank(KEPT, {}, method=F.RRF)
+    assert [r["record_id"] for r in out] == [100, 200, 300]
+
+
+def test_rerank_rrf_combines_vector_and_keyword_ranks():
+    """RRF 는 순위 역수 합이다. 신호 있는 행이 keyword 순위를 받아 위로 온다."""
+    out = F.rerank(KEPT, {300: 1.0}, method=F.RRF, rrf_k=60.0)
+    # 300: 1/(60+3)+1/(60+1) > 100: 1/(60+1) → 300 이 1위로 온다
+    assert [r["record_id"] for r in out] == [300, 100, 200]
+
+
+def test_rerank_ties_break_by_vector_order():
+    """같은 점수면 벡터 순서를 유지한다 — 결과가 결정적이어야 한다."""
+    tied = [
+        {"record_id": 1, "sim": 0.50},
+        {"record_id": 2, "sim": 0.50},
+    ]
+    out = F.rerank(tied, {1: 1.0, 2: 1.0}, method=F.BINARY, weight=0.05)
+    assert [r["record_id"] for r in out] == [1, 2]
+
+
+def test_rerank_empty_input_returns_empty():
+    """무관 질의에서 컷 통과가 0건이면 재정렬 대상도 0건이다 — P49 §5 의 구조적 근거."""
+    assert F.rerank([], {999: 1.0}, method=F.BINARY, weight=0.5) == []
+
+
+def test_rerank_unknown_method_raises():
+    try:
+        F.rerank(KEPT, {}, method="nope")
+        raise AssertionError("알 수 없는 방식이 통과했다")
+    except F.FusionError:
+        pass
+
+
 def test_unknown_method_and_policy_raise():
     cand = F.preset_candidates(QUERY_COS, PRESETS, top_k=10, floor=0.0)
     try:
