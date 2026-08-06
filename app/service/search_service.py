@@ -16,12 +16,18 @@
 """
 from __future__ import annotations
 
+import numpy as np
+
+from app.cache.preset_cache import PresetCache
 from app.client.embedding_client import EmbeddingClient
 from app.client.rewrite_client import RewriteClient
 from app.core.config import Settings
 from app.core.db import Database
 from app.core.errors import PermanentError, ProfileMismatchError, TransientError
-from app.repository import context_embedding_repo
+from app.core.logging import get_logger
+from app.repository import context_embedding_repo, context_keyword_repo
+
+log = get_logger("app.service.search")
 
 
 class SearchService:
@@ -31,11 +37,13 @@ class SearchService:
         embedding_client: EmbeddingClient,
         settings: Settings,
         rewrite_client: RewriteClient | None = None,
+        preset_cache: PresetCache | None = None,
     ) -> None:
         self._db = db
         self._embedding = embedding_client
         self._settings = settings
         self._rewrite = rewrite_client
+        self._preset_cache = preset_cache
 
     async def search(
         self, user_id: int, query: str, limit: int, embedding_profile: str
@@ -67,6 +75,13 @@ class SearchService:
             rows = await context_embedding_repo.search(
                 conn, user_id, embedding_profile, query_embedding, limit
             )
+            # 컷이 후보를 확정한 **뒤에** keyword 재정렬이 순서만 조정한다(P49 §4).
+            # 재정렬은 같은 커넥션으로 context_keyword 를 읽어야 해서 컷을 acquire
+            # 안으로 옮겼다 — 컷은 순수 계산이라 위치가 결과를 바꾸지 않는다.
+            kept = self._cut(rows, query_text)
+            kept = await self._rerank_by_keyword(
+                conn, user_id, kept, query_embedding
+            )
 
         return [
             {
@@ -74,7 +89,7 @@ class SearchService:
                 "contextId": r["context_id"],
                 "similarity": round(float(r["similarity"]), 4),
             }
-            for r in self._cut(rows, query_text)
+            for r in kept
         ]
 
     def _should_rewrite(self, query: str) -> bool:
@@ -158,3 +173,86 @@ class SearchService:
             for r in rows
             if float(r["similarity"]) >= floor and float(r["similarity"]) >= ratio * top
         ]
+
+    def _preset_candidates(self, query_embedding: list[float]) -> set[int]:
+        """질의-Preset 코사인이 floor 이상인 상위 top_k Preset id (P48 1단계 규칙).
+
+        추가 모델 호출이 없다 — 검색용으로 이미 만든 질의 임베딩을 재사용하고,
+        Preset 임베딩은 기동 시 적재된 메모리 캐시에서 읽는다. `BLOCKED` Preset 은
+        캐시 적재 시점에 이미 빠져 있고(`preset_cache.load`), `PUBLIC`·`PRIVATE_ONLY`
+        는 신호로 쓴다(P48 §1-c).
+
+        floor 를 top_k 보다 먼저 걸고 동점은 preset_id 오름차순으로 깬다 — 측정
+        하네스(`tools/search_cut/fusion.preset_candidates`)와 같은 규칙이다. 잰
+        규칙과 돌리는 규칙이 다르면 채택값의 근거가 사라진다.
+        """
+        vector = np.asarray(query_embedding, dtype=np.float32)
+        norm = float(np.linalg.norm(vector))
+        if norm == 0.0:
+            return set()
+        query = vector / norm
+
+        floor = self._settings.search_keyword_rerank_floor
+        scored = []
+        for preset in self._preset_cache.snapshot().presets:
+            preset_norm = float(np.linalg.norm(preset.embedding))
+            if preset_norm == 0.0:
+                continue
+            cos = float(preset.embedding @ query) / preset_norm
+            if cos >= floor:
+                scored.append((-cos, preset.id))
+        scored.sort()
+        return {pid for _, pid in scored[: self._settings.search_keyword_rerank_top_k]}
+
+    async def _rerank_by_keyword(
+        self, conn, user_id: int, kept: list, query_embedding: list[float]
+    ) -> list:
+        """컷 통과 후보의 **순서만** keyword 신호로 조정한다 (S15P11A705-339, P49 §4).
+
+        후보를 추가·제거하지 않는다 — 관련 없는 질의에서 컷 통과가 0건이면 재정렬
+        대상도 0건이므로, 이 신호만으로 관련 없는 결과가 새로 노출될 수 없다(P49 §5).
+        재정렬 뒤 두 번째 절단도 없다. 이 성질은 on/off 후보 집합 불변 계약 테스트가
+        고정한다(`test_search_rerank.py`).
+
+        정렬 점수 = 원래 코사인 + weight × 신호(후보 Preset 과 match 면 1, 아니면 0).
+        binary 방식·floor 0.35·weight 0.05 는 오프라인 실측이 정했다(-339 리포트).
+        점수는 정렬에만 쓰고 응답의 `similarity` 는 원래 코사인 그대로다.
+
+        어떤 단계가 실패해도 응답은 실패하지 않는다 — 그 단계만 생략하고 벡터
+        순서를 그대로 반환한다(P49 §5 의 실패 시 복귀 규칙).
+        """
+        if (
+            not self._settings.search_keyword_rerank_enabled
+            or self._preset_cache is None  # 조립 실수의 방어선 — rewrite 와 같은 규칙
+            or len(kept) < 2  # 0·1건은 바꿀 순서가 없다
+        ):
+            return kept
+        try:
+            candidates = self._preset_candidates(query_embedding)
+            if not candidates:
+                return kept
+            signal_rows = await context_keyword_repo.keywords_for_records(
+                conn, user_id, [r["record_id"] for r in kept]
+            )
+            matched = {
+                row["record_id"]
+                for row in signal_rows
+                if row["keyword_id"] in candidates
+            }
+            if not matched:
+                return kept
+            weight = self._settings.search_keyword_rerank_weight
+            # sorted 는 안정 정렬이다 — 점수가 같은 행(신호 없는 행끼리 등)은
+            # 벡터 순서가 그대로 유지된다.
+            return sorted(
+                kept,
+                key=lambda r: -(
+                    float(r["similarity"])
+                    + (weight if r["record_id"] in matched else 0.0)
+                ),
+            )
+        except Exception:
+            log.warning(
+                "keyword rerank failed; falling back to vector order", exc_info=True
+            )
+            return kept

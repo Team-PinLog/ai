@@ -286,6 +286,82 @@ def fuse(
     return out[:limit]
 
 
+# ── 4-b. 재정렬 전용 병합 (P49 §4) ───────────────────────────────────────────
+
+
+def rerank(
+    kept_rows: list[dict],
+    keyword_signal: dict[int, float],
+    *,
+    method: str,
+    weight: float = 0.0,
+    rrf_k: float = 60.0,
+) -> list[dict]:
+    """벡터 컷 통과 집합의 **순서만** 바꾼다 — 후보 추가·제거 없음 (P49 §4).
+
+    `fuse()` 와 다른 병합 의미다. `fuse()` 는 P48 구조(후보 합집합을 만든 뒤 병합
+    점수에 컷)를 구현하고, 이 함수는 P49 가 확정한 구조(코사인 컷이 후보를 먼저
+    확정하고 keyword 신호는 그 안의 순서만 조정)를 구현한다. 이 구조에서는 관련
+    없는 질의의 벡터 후보가 0건이면 재정렬 대상도 0건이므로, keyword 신호만으로
+    관련 없는 결과가 새로 노출될 수 없다(P49 §5).
+
+    `kept_rows` 는 컷을 통과한 행을 유사도 내림차순으로 받는다. 재정렬 뒤 두 번째
+    후보 절단을 하지 않는다 — 대상이 이미 `limit` 이하라 절단할 것이 없고, 절단을
+    더하면 후보 집합 불변 계약이 깨진다.
+
+    정렬 규칙은 방식별로 다음과 같다.
+
+        binary·confidence·idf   정렬 점수 = 원래 코사인 + weight × 신호.
+                                점수는 정렬에만 쓰고 행의 `sim` 은 그대로 둔다
+        rrf                     정렬 점수 = 1/(k+벡터순위) + 1/(k+keyword순위).
+                                keyword 순위는 신호가 있는 행끼리 신호 내림차순
+
+    동점은 원래 벡터 순위로 깨어 결정적으로 만든다 — 신호가 없는 행끼리는 벡터
+    순서가 그대로 유지된다.
+
+    반환 행의 record_id 집합이 입력과 다르면 구현 오류이므로 `FusionError` 로
+    멈춘다. 조용히 다른 집합을 돌려주는 것보다 실패가 낫다(가드 선례).
+    """
+    if method not in METHODS:
+        raise FusionError(f"알 수 없는 fusion 방식: {method}")
+    if not kept_rows:
+        return []
+
+    vec_rank = {r["record_id"]: i for i, r in enumerate(kept_rows, 1)}
+
+    if method == RRF:
+        with_signal = sorted(
+            (rid for rid in vec_rank if keyword_signal.get(rid, 0.0) > 0),
+            key=lambda rid: (-keyword_signal[rid], rid),
+        )
+        kw_rank = {rid: i for i, rid in enumerate(with_signal, 1)}
+
+        def score(row: dict) -> float:
+            rid = row["record_id"]
+            s = _rrf(vec_rank[rid], rrf_k)
+            if rid in kw_rank:
+                s += _rrf(kw_rank[rid], rrf_k)
+            return s
+    else:
+
+        def score(row: dict) -> float:
+            return float(row["sim"]) + weight * keyword_signal.get(row["record_id"], 0.0)
+
+    out = []
+    for row in kept_rows:
+        annotated = dict(row)
+        annotated["fusion"] = score(row)
+        annotated["keyword_signal"] = keyword_signal.get(row["record_id"], 0.0)
+        out.append(annotated)
+    out.sort(key=lambda r: (-r["fusion"], vec_rank[r["record_id"]]))
+
+    if {r["record_id"] for r in out} != set(vec_rank):
+        raise FusionError(
+            "재정렬이 후보 집합을 바꿨다 — 순서만 바꿔야 한다(P49 §4). 구현 오류."
+        )
+    return out
+
+
 # ── 5. 컷 — 방식마다 다르다 (P48 §2.2) ───────────────────────────────────────
 
 def apply_cut(
