@@ -9,13 +9,17 @@ LEGACY_WORKFLOW = ROOT / ".github" / "workflows" / "seal-ai-secrets.yml"
 AI_CI = ROOT / ".github" / "workflows" / "ai-ci.yml"
 ACTION = (
     "Team-PinLog/infra/.github/actions/sealedsecret-infra-pr@"
-    "16bfae0da4e1091df597fb89f6acf914391e11b9"
+    "4b0c200928f59784e2330115c20c0186ed563bc5"
 )
 SECRET_KEYS = {
     "GMS_API_KEY",
     "GMS_BASE_URL",
     "INTERNAL_SHARED_SECRET",
     "KAKAO_REST_API_KEY",
+    "PINLOG_EMBEDDING_MODEL",
+    "PINLOG_EMBEDDING_DIMENSION",
+    "PINLOG_EMBEDDING_DISTANCE",
+    "PINLOG_EMBEDDING_PROFILE",
     "PINLOG_INFRA_SECRET_PR_TOKEN",
 }
 
