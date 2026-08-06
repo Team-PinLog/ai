@@ -33,7 +33,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from rank_score import (  # noqa: E402
-    GuardError, SERVICE_LIMIT, aggregate, cut, is_word_query, metrics_for, zero_rate,
+    SERVICE_LIMIT,
+    GuardError,
+    aggregate,
+    cut,
+    is_word_query,
+    metrics_for,
+    zero_rate,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -202,7 +208,8 @@ def main() -> int:
             for rule in RULES:
                 m, diag = evaluate(entries, lex=lex, gate=gate, rule=rule,
                                    limit=args.limit, default_uid=default_uid)
-                extra = f"{diag['lex_hits']}/{diag['lex_only_added']}/{diag['gate_dropped_expected']}"
+                d = diag
+                extra = f"{d['lex_hits']}/{d['lex_only_added']}/{d['gate_dropped_expected']}"
                 log(row_str(f"{gate}·{rule}", m, extra))
                 result["grid"][seg_name][f"{gate}.{rule}"] = {"metrics": m, "diag": diag}
 
