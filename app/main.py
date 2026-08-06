@@ -118,8 +118,11 @@ async def lifespan(app: FastAPI):
             app.state.embedding_client = embedding_client
             app.state.llm_client = llm_client
             app.state.preset_cache = preset_cache
+            # preset_cache 는 keyword 재정렬(S15P11A705-339)의 질의-Preset 후보용이다.
+            # SEARCH_KEYWORD_RERANK_ENABLED=false(기본)면 검색은 현행과 동일하다.
             app.state.search_service = SearchService(
-                db, embedding_client, settings, rewrite_client=rewrite_client
+                db, embedding_client, settings,
+                rewrite_client=rewrite_client, preset_cache=preset_cache,
             )
             app.state.context_processing_service = ContextProcessingService(
                 db, embedding_service, keyword_service

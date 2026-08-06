@@ -191,6 +191,32 @@ class Settings(BaseSettings):
     # 비결정적이 된다 — 캐시가 그 성질을 막는다(P48 2단계 요구).
     search_rewrite_cache_size: int = Field(256, alias="SEARCH_REWRITE_CACHE_SIZE")
 
+    # Preset 키워드 재정렬 (S15P11A705-339, P49 §4). **기본 off** — 검증 게이트(P49 §7)
+    # 통과 전에는 어떤 환경에서도 켜지 않는다. off 면 검색은 현행과 동일하게 동작한다.
+    # 켜면 컷 통과 후보의 **순서만** 바뀐다 — 후보 추가·제거 없음과 similarity 원값
+    # 유지는 계약 테스트(test_search_rerank.py)가 고정한다. 조회·계산이 실패해도
+    # 응답은 실패하지 않고 벡터 순서로 되돌아간다.
+    search_keyword_rerank_enabled: bool = Field(
+        False, alias="SEARCH_KEYWORD_RERANK_ENABLED"
+    )
+    # 아래 세 값은 재정렬 전용 구조의 오프라인 실측이 정했다(-339 리포트,
+    # tools/search_cut/fusion_rerank_sweep.py). P48 구조 실측(I53)의 같은 값과 숫자가
+    # 같지만 **다른 측정의 결과다** — 구조가 달라 재측정했고 같은 값이 다시 통과했다.
+    #
+    #   floor 0.35    질의-Preset 코사인 하한. 0.35~0.36 구간에서 격자 지표가 동일해
+    #                 임베딩 API 흔들림(10⁻⁴ 규모, T68)이 경계를 넘지 못하는 값이다
+    #   weight 0.05   재정렬 정렬 점수 = 원래 코사인 + weight × 신호(match=1).
+    #                 0.10 부터 단어형 hit@3 개선이 사라지고 0.20 은 문장형 hit@1 이
+    #                 퇴행한다. 응답의 similarity 에는 더하지 않는다 — 정렬 전용이다
+    #   top_k 3       질의당 Preset 후보 수. P48 1단계 실측과 같은 값
+    search_keyword_rerank_floor: float = Field(
+        0.35, alias="SEARCH_KEYWORD_RERANK_FLOOR"
+    )
+    search_keyword_rerank_weight: float = Field(
+        0.05, alias="SEARCH_KEYWORD_RERANK_WEIGHT"
+    )
+    search_keyword_rerank_top_k: int = Field(3, alias="SEARCH_KEYWORD_RERANK_TOP_K")
+
     # PROCESSING 재선점 만료 — Spring 재스캔 만료와 동일 값
     processing_expiry_sec: int = Field(600, alias="PROCESSING_EXPIRY_SEC")
 
