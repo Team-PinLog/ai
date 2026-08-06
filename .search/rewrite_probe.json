@@ -1,0 +1,227 @@
+{
+  "ticket": "S15P11A705-337",
+  "profile": "openai-text-embedding-3-small-1536-cosine-v1",
+  "model": "text-embedding-3-small",
+  "rewrite_chain": [
+    "openai:gpt-4o-mini",
+    "gemini:gemini-2.5-flash",
+    "anthropic:claude-haiku-4-5-20251001"
+  ],
+  "cut": {
+    "tau_abs": 0.3,
+    "tau_abs_word": 0.24,
+    "word_max_chars": 5,
+    "ratio": 0.6,
+    "limit": 20
+  },
+  "offtopic": [
+    {
+      "query": "자동차 엔진오일 교환 정비소",
+      "rewritten": "자동차 엔진 오일 교환 정비소",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 0,
+      "after_top1_sim": 0.135381
+    },
+    {
+      "query": "자동차 엔진오일 교환 정비소",
+      "rewritten": "자동차 엔진 오일 교환 정비소",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 0,
+      "after_top1_sim": 0.183419
+    },
+    {
+      "query": "자동차 엔진오일 교환 정비소",
+      "rewritten": "자동차 엔진 오일 교환 정비소",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 0,
+      "after_top1_sim": 0.199427
+    },
+    {
+      "query": "치과 임플란트 상담 받을 곳",
+      "rewritten": "치과 임플란트 상담 받을 곳",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 0,
+      "after_top1_sim": 0.268693
+    },
+    {
+      "query": "치과 임플란트 상담 받을 곳",
+      "rewritten": "치과 임플란트 상담 받을 곳",
+      "degraded": false,
+      "before_returned": 2,
+      "after_returned": 2,
+      "after_top1_sim": 0.381751
+    },
+    {
+      "query": "치과 임플란트 상담 받을 곳",
+      "rewritten": "치과 임플란트 상담 받을 곳",
+      "degraded": false,
+      "before_returned": 1,
+      "after_returned": 1,
+      "after_top1_sim": 0.30068
+    },
+    {
+      "query": "겨울 스키장 리프트권 파는 데",
+      "rewritten": "겨울 스키장 리프트권 파는 곳",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 0,
+      "after_top1_sim": 0.236606
+    },
+    {
+      "query": "겨울 스키장 리프트권 파는 데",
+      "rewritten": "겨울 스키장 리프트권 파는 곳",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 2,
+      "after_top1_sim": 0.319109
+    },
+    {
+      "query": "겨울 스키장 리프트권 파는 데",
+      "rewritten": "겨울 스키장 리프트권 파는 곳",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 3,
+      "after_top1_sim": 0.338516
+    },
+    {
+      "query": "노트북 액정 수리 서비스센터",
+      "rewritten": "노트북 액정 수리 서비스 센터",
+      "degraded": false,
+      "before_returned": 1,
+      "after_returned": 1,
+      "after_top1_sim": 0.336829
+    },
+    {
+      "query": "노트북 액정 수리 서비스센터",
+      "rewritten": "노트북 액정 수리 서비스 센터",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 0,
+      "after_top1_sim": 0.268582
+    },
+    {
+      "query": "노트북 액정 수리 서비스센터",
+      "rewritten": "노트북 액정 수리 서비스 센터",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 0,
+      "after_top1_sim": 0.252289
+    },
+    {
+      "query": "강아지 예방접종 동물병원",
+      "rewritten": "강아지 예방 접종 동물 병원",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 0,
+      "after_top1_sim": 0.235863
+    },
+    {
+      "query": "강아지 예방접종 동물병원",
+      "rewritten": "강아지 예방 접종 동물 병원",
+      "degraded": false,
+      "before_returned": 0,
+      "after_returned": 0,
+      "after_top1_sim": 0.254679
+    },
+    {
+      "query": "강아지 예방접종 동물병원",
+      "rewritten": "강아지 예방 접종 동물 병원",
+      "degraded": false,
+      "before_returned": 1,
+      "after_returned": 1,
+      "after_top1_sim": 0.335193
+    }
+  ],
+  "cases": [
+    {
+      "query": "부캠",
+      "rewritten": "부트캠프",
+      "degraded": false,
+      "expect": "카츠요",
+      "before": {
+        "pre_cut_rank": 8,
+        "returned": false,
+        "returned_count": 3
+      },
+      "after": {
+        "pre_cut_rank": 1,
+        "returned": true,
+        "returned_count": 6
+      }
+    },
+    {
+      "query": "신한 부캠",
+      "rewritten": "신한 부트캠프",
+      "degraded": false,
+      "expect": "카츠요",
+      "before": {
+        "pre_cut_rank": 4,
+        "returned": false,
+        "returned_count": 3
+      },
+      "after": {
+        "pre_cut_rank": 3,
+        "returned": true,
+        "returned_count": 3
+      }
+    },
+    {
+      "query": "신한",
+      "rewritten": "신한",
+      "degraded": false,
+      "expect": "카츠요",
+      "before": {
+        "pre_cut_rank": 6,
+        "returned": false,
+        "returned_count": 4
+      },
+      "after": {
+        "pre_cut_rank": 6,
+        "returned": false,
+        "returned_count": 4
+      }
+    },
+    {
+      "query": "그네",
+      "rewritten": "그네",
+      "degraded": false,
+      "expect": "동교어린이공원",
+      "before": {
+        "pre_cut_rank": 3,
+        "returned": true,
+        "returned_count": 6
+      },
+      "after": {
+        "pre_cut_rank": 3,
+        "returned": true,
+        "returned_count": 6
+      }
+    },
+    {
+      "query": "스팟",
+      "rewritten": "스팟",
+      "degraded": false,
+      "expect": "동교어린이공원",
+      "before": {
+        "pre_cut_rank": 1,
+        "returned": true,
+        "returned_count": 2
+      },
+      "after": {
+        "pre_cut_rank": 1,
+        "returned": true,
+        "returned_count": 2
+      }
+    }
+  ],
+  "verdict": {
+    "silent_before": 11,
+    "silent_after": 9,
+    "baseline": 11,
+    "adopted": false
+  }
+}
