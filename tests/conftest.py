@@ -40,6 +40,7 @@ _AI_TABLES = [
 # 테스트 설정값. Profile은 여기 한 곳에서만 정의하고 각 테스트는 settings fixture로 받는다.
 _TEST_ENV = {
     "GMS_API_KEY": "test-key",
+    "KAKAO_REST_API_KEY": "test-kakao-key",
     "GMS_BASE_URL": "https://gms.example/gmsapi/api.openai.com/v1",
     "PINLOG_EMBEDDING_MODEL": "text-embedding-3-small",
     "PINLOG_EMBEDDING_DIMENSION": "1536",

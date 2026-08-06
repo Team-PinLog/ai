@@ -10,25 +10,30 @@ lifespan startup에서 DB 풀·임베딩 클라이언트·Preset 캐시를 조�
 """
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.cache.preset_cache import PresetCache
 from app.client._calls import meter as call_meter
 from app.client.embedding_client import EmbeddingClient
+from app.client.kakao_local_client import HttpKakaoLocalClient
 from app.client.llm_client import LLMClient
+from app.client.vision_client import GmsGeminiVisionClient
 from app.core.config import get_settings
 from app.core.db import Database
 from app.core.db_errors import DatabasePermanentError, DatabaseTransientError
 from app.core.errors import PermanentError, ProfileMismatchError, TransientError
 from app.core.logging import configure_logging, get_logger
+from app.core.place_suggestion import VisionPermanentError, VisionTransientError
 from app.core.security import SharedSecretMiddleware
 from app.repository import keyword_preset_repo
 from app.service.context_processing import ContextProcessingService
 from app.service.embedding_service import EmbeddingService
 from app.service.keyword_service import KeywordService
+from app.service.place_suggestion_service import PlaceSuggestionService
 from app.service.search_service import SearchService
 
 log = get_logger("app.main")
@@ -38,54 +43,86 @@ log = get_logger("app.main")
 async def lifespan(app: FastAPI):
     configure_logging()
     settings = get_settings()
-
-    db = Database(settings.database_url)
-    await db.connect()
-
-    embedding_client = EmbeddingClient(
-        base_url=settings.gms_base_url,
-        api_key=settings.gms_api_key,
-        model=settings.embedding_model,
-        dimension=settings.embedding_dimension,
-    )
-    llm_client = LLMClient(
-        gms_base_url=settings.gms_base_url,
-        api_key=settings.gms_api_key,
-        chain=settings.judge_vendors,
-    )
-
-    preset_cache = PresetCache()
-    async with db.acquire() as conn:
-        rows = await keyword_preset_repo.load_active(conn, settings.embedding_profile)
-    loaded = preset_cache.load(rows)
-    if loaded == 0:
-        raise RuntimeError(
-            "Keyword Preset 적재 0건 — 부트스트랩(load_presets) 미실행이거나 "
-            f"Profile 불일치(profile={settings.embedding_profile}). 기동 중단."
-        )
-    log.info("preset cache loaded: %d presets", loaded)
-
-    embedding_service = EmbeddingService(db, embedding_client, settings)
-    keyword_service = KeywordService(db, llm_client, preset_cache, settings)
-
-    app.state.settings = settings
-    app.state.db = db
-    app.state.embedding_client = embedding_client
-    app.state.llm_client = llm_client
-    app.state.preset_cache = preset_cache
-    app.state.search_service = SearchService(db, embedding_client, settings)
-    app.state.context_processing_service = ContextProcessingService(
-        db, embedding_service, keyword_service
-    )
-
     try:
-        yield
+        async with AsyncExitStack() as stack:
+            db = Database(settings.database_url)
+            await db.connect()
+            stack.push_async_callback(db.disconnect)
+
+            place_http = await stack.enter_async_context(
+                httpx.AsyncClient(
+                    limits=httpx.Limits(
+                        max_connections=4,
+                        max_keepalive_connections=4,
+                    )
+                )
+            )
+
+            embedding_client = EmbeddingClient(
+                base_url=settings.gms_base_url,
+                api_key=settings.gms_api_key,
+                model=settings.embedding_model,
+                dimension=settings.embedding_dimension,
+            )
+            llm_client = LLMClient(
+                gms_base_url=settings.gms_base_url,
+                api_key=settings.gms_api_key,
+                chain=settings.judge_vendors,
+            )
+
+            preset_cache = PresetCache()
+            async with db.acquire() as conn:
+                rows = await keyword_preset_repo.load_active(
+                    conn, settings.embedding_profile
+                )
+            loaded = preset_cache.load(rows)
+            if loaded == 0:
+                raise RuntimeError(
+                    "Keyword Preset 적재 0건 — 부트스트랩(load_presets) 미실행이거나 "
+                    f"Profile 불일치(profile={settings.embedding_profile}). 기동 중단."
+                )
+            log.info("preset cache loaded: %d presets", loaded)
+
+            embedding_service = EmbeddingService(db, embedding_client, settings)
+            keyword_service = KeywordService(db, llm_client, preset_cache, settings)
+            vision_client = GmsGeminiVisionClient(
+                place_http,
+                gms_base_url=settings.gms_base_url,
+                api_key=settings.gms_api_key,
+                model=settings.image_model,
+                timeout_sec=settings.image_model_timeout_sec,
+                max_image_bytes=settings.gms_image_max_bytes,
+                max_request_bytes=settings.gms_vision_request_max_bytes,
+            )
+            kakao_client = HttpKakaoLocalClient(
+                place_http,
+                api_key=settings.kakao_rest_api_key,
+                timeout_sec=settings.kakao_timeout_sec,
+            )
+
+            app.state.settings = settings
+            app.state.db = db
+            app.state.embedding_client = embedding_client
+            app.state.llm_client = llm_client
+            app.state.preset_cache = preset_cache
+            app.state.search_service = SearchService(db, embedding_client, settings)
+            app.state.context_processing_service = ContextProcessingService(
+                db, embedding_service, keyword_service
+            )
+            app.state.place_suggestion_service = PlaceSuggestionService(
+                vision_client,
+                kakao_client,
+                max_upload_bytes=settings.image_max_bytes,
+                max_concurrency=settings.vision_max_concurrency,
+                timeout_sec=settings.place_suggestion_timeout_sec,
+                log_results=settings.place_suggestion_log_results,
+            )
+            yield
     finally:
         # 진행 중인 GMS 집계 창을 마지막으로 한 번 내보낸다. 요약은 다음 호출이 밀어내는
         # 구조라(`_calls.py`), 이것이 없으면 종료 직전 구간이 통째로 사라진다 — 시연이
         # 끝나고 파드를 내리는 순간의 실패율이 그렇게 사라진다.
         call_meter.flush()
-        await db.disconnect()
 
 
 def create_app() -> FastAPI:
@@ -136,7 +173,11 @@ def create_app() -> FastAPI:
         detail = (
             "database unavailable"
             if isinstance(exc, DatabaseTransientError)
-            else "embedding upstream unavailable"
+            else (
+                "vision upstream unavailable"
+                if isinstance(exc, VisionTransientError)
+                else "embedding upstream unavailable"
+            )
         )
         return JSONResponse(status_code=503, content={"detail": detail})
 
@@ -147,7 +188,11 @@ def create_app() -> FastAPI:
         detail = (
             "database rejected the request"
             if isinstance(exc, DatabasePermanentError)
-            else "embedding upstream rejected the request"
+            else (
+                "vision upstream rejected the request"
+                if isinstance(exc, VisionPermanentError)
+                else "embedding upstream rejected the request"
+            )
         )
         return JSONResponse(status_code=502, content={"detail": detail})
 
@@ -158,11 +203,12 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     from app.api import probe
-    from app.api.internal.v1 import context, search
+    from app.api.internal.v1 import context, place_suggestion, search
 
     app.include_router(probe.router)  # /ready — 무인증(프로브가 헤더 없이 호출)
     app.include_router(search.router, prefix="/internal/v1")
     app.include_router(context.router, prefix="/internal/v1")
+    app.include_router(place_suggestion.router, prefix="/internal/v1")
 
     return app
 
