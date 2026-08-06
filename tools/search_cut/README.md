@@ -35,6 +35,7 @@
 | `keyword_matrix.py` | keyword 신호 artifact 생성 — 질의별 전체 활성 Preset 코사인 + Context 별 keyword·confidence·상태. **GMS 임베딩 배치 1회 + DB 읽기** |
 | `fusion_sweep.py` | fusion 방식(binary·confidence·idf·RRF)×가중치×floor×RRF cutoff 격자 — **P48 구조**(후보 합집합 후 병합 점수에 컷). `keyword_matrix.json` 과 행렬 셋만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
 | `fusion_rerank_sweep.py` | keyword 재정렬 전용 병합 격자 — **P49 §4 구조**(컷 통과 집합 고정·순서만 조정). BASE·binary(floor×weight)·RRF 비교. 같은 파일만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
+| `rerank_verify_live.py` | keyword 재정렬의 **실서버 on/off 대조** — 플래그만 다른 두 서버의 실응답으로 다섯 계약(후보 불변·재정렬 정확성·무관 무노출·정답 무퇴행·off 현행 동일)을 판정한다. **GMS 임베딩 질의당·서버당 1회** |
 | `lexical_matrix.py` | 문자열 매치 artifact — 본문에 질의가 그대로 있는지를 (질의×소유자×Record)로 굳힌다. 본문은 저장하지 않는다. **스냅샷 DB(:25432) 읽기 · GMS 0회** |
 | `lexical_sweep.py` | 문자열 병합 규칙 격자 — 게이트 3단×병합 3종. `lexical_matrix.json` 과 행렬 셋만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
 
@@ -207,6 +208,13 @@ profile·preset_version 이 현행과 어긋나도 멈춘다(`--expect-*` 로 �
 파일뿐이라 같은 입력·같은 인자면 같은 출력이어야 하고, 다르면 하네스가 비결정적인
 것이다. 신규 출력은 `.search/fusion_rerank_` 접두로 만들어 기존 artifact 를 덮지
 않는다. 결과 판정은 [구현 리포트](../../docs/implements/) 의 `-339` 리포트에 있다.
+
+런타임 구현의 **실서버 검증**은 `rerank_verify_live.py` 로 한다. 스냅샷 DB(:25432)를
+상대로 이 브랜치 코드를 `SEARCH_KEYWORD_RERANK_ENABLED` 만 다르게 두 번 띄우고
+(venv 경로 명시 — T29, 로그는 리디렉션 — T30), 같은 질의 셋(93건)을 각각 수집해
+대조한다. off/on 은 별도 요청이라 임베딩이 흔들릴 수 있으므로(T68) 어긋난 건은 컷
+경계 거리 0.0044 이내면 「경계 위 흔들림」으로 분류하고 `collect --queries` 로
+재시도해 확인한다. 절차 전문은 그 스크립트 도입주석에 있다.
 
 ### 문자열 병합 규칙 (P49 작업 3)
 
