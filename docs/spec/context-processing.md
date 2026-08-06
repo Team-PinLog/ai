@@ -92,10 +92,10 @@ WHERE context_id = :context_id;
 
 중단 조건:
 
-- 행이 없음 — Spring이 아직 State를 커밋하지 않았거나 이미 정리됨. 저장하지 않고 종료.
-- 두 status가 모두 CANCELLED — 삭제되었거나 수정으로 대체된 구 Context. 종료
+- 행이 없음. Spring이 아직 State를 커밋하지 않았거나 이미 정리된 경우입니다. 저장하지 않고 종료합니다.
+- 두 status가 모두 CANCELLED. 삭제되었거나 수정으로 대체된 구 Context입니다. 종료합니다
   (검증 시나리오 6).
-- 두 status가 모두 진행 불가(COMPLETED/FAILED/CANCELLED 조합) — 할 일 없음. 종료.
+- 두 status가 모두 진행 불가(COMPLETED/FAILED/CANCELLED 조합). 할 일이 없으므로 종료합니다.
 
 사전 검사에서 통과했다는 사실은 **아무것도 보장하지 않습니다.** 통과 직후에 Spring이
 Context를 삭제할 수 있으므로, 저장 직전 잠금 검사를 반드시 다시 수행합니다
@@ -120,9 +120,9 @@ Keyword 단계는 `embedding_status = 'COMPLETED'` 조건을 추가하고 대상
 
 영향 행 수 0이 의미하는 것:
 
-- 다른 워커가 방금 PROCESSING으로 전환함 → 중복 실행 방지 (계약 §13.1의 멱등성 근거)
-- 상태가 CANCELLED로 바뀜 → 삭제되었거나 수정으로 대체된 구 Context
-- 상태가 COMPLETED/FAILED로 바뀜 → 처리 대상 아님
+- 다른 워커가 방금 PROCESSING으로 전환한 경우. 중복 실행이 방지됩니다(계약 §13.1의 멱등성 근거).
+- 상태가 CANCELLED로 바뀐 경우. 삭제되었거나 수정으로 대체된 구 Context입니다.
+- 상태가 COMPLETED/FAILED로 바뀐 경우. 처리 대상이 아닙니다.
 
 `PROCESSING` 재선점을 만료된 작업으로 한정하는 이유는
 [state-machine.md](state-machine.md) §3.1을 참조합니다.
@@ -216,12 +216,12 @@ Embedding 저장과 동일한 구조의 트랜잭션입니다.
 
 ## 6. FastAPI가 하지 않는 것
 
-- `retry_count` 증가 — Spring 재스캔의 책임입니다.
-- `PENDING`이나 `CANCELLED`로의 전이 — Spring만 수행합니다.
-- 재시도 소진 Finalizer의 `FAILED` — Spring만 수행합니다(계약 §6.4, §10.4).
-- `is_deleted` 변경 — Spring만 수행합니다.
-- `core.*` 조회 — Context 본문은 요청 본문으로만 받습니다. 재시도 시 해당 Context가 아직
+- `retry_count` 증가. Spring 재스캔의 책임입니다.
+- `PENDING`이나 `CANCELLED`로의 전이. Spring만 수행합니다.
+- 재시도 소진 Finalizer의 `FAILED`. Spring만 수행합니다(계약 §6.4, §10.4).
+- `is_deleted` 변경. Spring만 수행합니다.
+- `core.*` 조회. Context 본문은 요청 본문으로만 받습니다. 재시도 시 해당 Context가 아직
   삭제되지 않았는지 확인하고 요청을 다시 보내는 것도 Spring의 책임입니다(계약 §10.3).
   Context가 불변이므로 재요청의 `text`는 최초 요청과 동일합니다.
-- Context 수정 처리 — 수정은 Spring의 Core 트랜잭션에서 구 Context 삭제와 신 Context 생성으로
+- Context 수정 처리. 수정은 Spring의 Core 트랜잭션에서 구 Context 삭제와 신 Context 생성으로
   이루어집니다. FastAPI는 그 결과로 도착한 **새 `context_id` 요청**만 봅니다(계약 §5.3).
