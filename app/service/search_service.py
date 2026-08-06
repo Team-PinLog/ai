@@ -17,9 +17,10 @@
 from __future__ import annotations
 
 from app.client.embedding_client import EmbeddingClient
+from app.client.rewrite_client import RewriteClient
 from app.core.config import Settings
 from app.core.db import Database
-from app.core.errors import ProfileMismatchError
+from app.core.errors import PermanentError, ProfileMismatchError, TransientError
 from app.repository import context_embedding_repo
 
 
@@ -29,10 +30,12 @@ class SearchService:
         db: Database,
         embedding_client: EmbeddingClient,
         settings: Settings,
+        rewrite_client: RewriteClient | None = None,
     ) -> None:
         self._db = db
         self._embedding = embedding_client
         self._settings = settings
+        self._rewrite = rewrite_client
 
     async def search(
         self, user_id: int, query: str, limit: int, embedding_profile: str
@@ -42,7 +45,19 @@ class SearchService:
                 embedding_profile, self._settings.embedding_profile
             )
 
-        query_embedding = await self._embedding.embed_one(query)
+        # LLM 재작성 (S15P11A705-337, P49 §3). 기본 off. 실패·타임아웃이면 원문으로
+        # 검색한다 — 오류가 아니라 강등이고, 강등 시 동작은 이 기능 도입 전과 동일하다.
+        # 이후 임베딩·컷 판정은 전부 재작성된 질의 기준이다 — 컷의 단어형/문장형 분기는
+        # 임베딩된 텍스트의 유사도 대역을 따라가는 장치이므로, 임베딩 입력과 판정 입력이
+        # 갈리면 안 된다.
+        query_text = query
+        if self._settings.search_llm_enabled and self._rewrite is not None:
+            try:
+                query_text = await self._rewrite.rewrite(query)
+            except (TransientError, PermanentError):
+                query_text = query
+
+        query_embedding = await self._embedding.embed_one(query_text)
 
         async with self._db.acquire() as conn:
             rows = await context_embedding_repo.search(
@@ -55,7 +70,7 @@ class SearchService:
                 "contextId": r["context_id"],
                 "similarity": round(float(r["similarity"]), 4),
             }
-            for r in self._cut(rows, query)
+            for r in self._cut(rows, query_text)
         ]
 
     def _is_word_query(self, query: str) -> bool:

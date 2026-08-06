@@ -178,6 +178,19 @@ class Settings(BaseSettings):
         5, alias="SEARCH_WORD_QUERY_MAX_CHARS"
     )
 
+    # 검색 질의 LLM 재작성 (S15P11A705-337, P49 §3). **기본 off** — 검증 게이트(P49 §7)
+    # 통과 전에는 어떤 환경에서도 켜지 않는다. off 면 검색은 현행과 동일하게 동작한다.
+    # 이 플래그는 배포 통제 수단이 아니라, 운영 중 LLM 장애 시 기존 검색으로 되돌리는
+    # 안전장치다(배포 통제는 브랜치 격리가 한다).
+    search_llm_enabled: bool = Field(False, alias="SEARCH_LLM_ENABLED")
+    # 재작성 호출 예산. 판정(90s·3회)을 상속하지 않는다 — 검색은 사용자가 기다리는
+    # 동기 경로다. attempts 는 폴백 포함 총 HTTP 시도 횟수(RetryPolicy 와 같은 정의).
+    search_llm_timeout_sec: float = Field(5.0, alias="SEARCH_LLM_TIMEOUT_SEC")
+    search_llm_attempts: int = Field(2, alias="SEARCH_LLM_ATTEMPTS")
+    # 질의 단위 재작성 캐시 상한. 같은 질의가 회차마다 다른 재작성을 받으면 검색이
+    # 비결정적이 된다 — 캐시가 그 성질을 막는다(P48 2단계 요구).
+    search_rewrite_cache_size: int = Field(256, alias="SEARCH_REWRITE_CACHE_SIZE")
+
     # PROCESSING 재선점 만료 — Spring 재스캔 만료와 동일 값
     processing_expiry_sec: int = Field(600, alias="PROCESSING_EXPIRY_SEC")
 
