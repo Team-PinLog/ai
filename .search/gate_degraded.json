@@ -106,21 +106,6 @@
           "place": "플랜트 연남점"
         },
         {
-          "recordId": 282,
-          "similarity": 0.3886,
-          "place": "치킨버거 이스트사이드"
-        },
-        {
-          "recordId": 290,
-          "similarity": 0.376,
-          "place": "힉스커피"
-        },
-        {
-          "recordId": 287,
-          "similarity": 0.3653,
-          "place": "동교어린이공원"
-        },
-        {
           "recordId": 285,
           "similarity": 0.4108,
           "place": "월강부산돼지국밥"
@@ -131,9 +116,24 @@
           "place": "진우네 초밥"
         },
         {
+          "recordId": 282,
+          "similarity": 0.3886,
+          "place": "치킨버거 이스트사이드"
+        },
+        {
           "recordId": 278,
           "similarity": 0.381,
           "place": "감나무집기사식당"
+        },
+        {
+          "recordId": 290,
+          "similarity": 0.376,
+          "place": "힉스커피"
+        },
+        {
+          "recordId": 287,
+          "similarity": 0.3653,
+          "place": "동교어린이공원"
         }
       ]
     },
@@ -146,12 +146,12 @@
       "items": [
         {
           "recordId": 279,
-          "similarity": 0.5192,
+          "similarity": 0.5191,
           "place": "사루카메"
         },
         {
           "recordId": 283,
-          "similarity": 0.5102,
+          "similarity": 0.5104,
           "place": "쿠로코식당 연남점"
         }
       ]
@@ -169,23 +169,23 @@
           "place": "카츠요"
         },
         {
-          "recordId": 280,
-          "similarity": 0.3644,
-          "place": "뉴오더클럽 연남"
-        },
-        {
           "recordId": 287,
           "similarity": 0.3675,
           "place": "동교어린이공원"
         },
         {
+          "recordId": 280,
+          "similarity": 0.3642,
+          "place": "뉴오더클럽 연남"
+        },
+        {
           "recordId": 290,
-          "similarity": 0.3617,
+          "similarity": 0.3616,
           "place": "힉스커피"
         },
         {
           "recordId": 292,
-          "similarity": 0.3547,
+          "similarity": 0.3546,
           "place": "적당"
         },
         {
@@ -195,17 +195,17 @@
         },
         {
           "recordId": 285,
-          "similarity": 0.3462,
+          "similarity": 0.3464,
           "place": "월강부산돼지국밥"
         },
         {
           "recordId": 282,
-          "similarity": 0.3281,
+          "similarity": 0.3282,
           "place": "치킨버거 이스트사이드"
         },
         {
           "recordId": 284,
-          "similarity": 0.319,
+          "similarity": 0.3191,
           "place": "진우네 초밥"
         }
       ]
@@ -321,7 +321,7 @@
       "items": [
         {
           "recordId": 272,
-          "similarity": 0.5116,
+          "similarity": 0.5115,
           "place": "주토피아 서울"
         },
         {
@@ -408,12 +408,12 @@
       "items": [
         {
           "recordId": 283,
-          "similarity": 0.4102,
+          "similarity": 0.4103,
           "place": "쿠로코식당 연남점"
         },
         {
           "recordId": 281,
-          "similarity": 0.3304,
+          "similarity": 0.3305,
           "place": "플랜트 연남점"
         },
         {
@@ -556,7 +556,7 @@
       "items": [
         {
           "recordId": 268,
-          "similarity": 0.3007,
+          "similarity": 0.3008,
           "place": "키친갈매기"
         }
       ]

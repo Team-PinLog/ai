@@ -16,7 +16,7 @@
         },
         {
           "recordId": 255,
-          "similarity": 0.3491,
+          "similarity": 0.3492,
           "place": "[데모] 언덕 위 야경 식당"
         }
       ]
@@ -102,27 +102,12 @@
         },
         {
           "recordId": 281,
-          "similarity": 0.4826,
+          "similarity": 0.4825,
           "place": "플랜트 연남점"
         },
         {
-          "recordId": 282,
-          "similarity": 0.3886,
-          "place": "치킨버거 이스트사이드"
-        },
-        {
-          "recordId": 290,
-          "similarity": 0.376,
-          "place": "힉스커피"
-        },
-        {
-          "recordId": 287,
-          "similarity": 0.3654,
-          "place": "동교어린이공원"
-        },
-        {
           "recordId": 285,
-          "similarity": 0.4107,
+          "similarity": 0.4108,
           "place": "월강부산돼지국밥"
         },
         {
@@ -131,9 +116,24 @@
           "place": "진우네 초밥"
         },
         {
+          "recordId": 282,
+          "similarity": 0.3886,
+          "place": "치킨버거 이스트사이드"
+        },
+        {
           "recordId": 278,
-          "similarity": 0.3809,
+          "similarity": 0.381,
           "place": "감나무집기사식당"
+        },
+        {
+          "recordId": 290,
+          "similarity": 0.376,
+          "place": "힉스커피"
+        },
+        {
+          "recordId": 287,
+          "similarity": 0.3653,
+          "place": "동교어린이공원"
         }
       ]
     },
@@ -169,23 +169,23 @@
           "place": "카츠요"
         },
         {
-          "recordId": 280,
-          "similarity": 0.3644,
-          "place": "뉴오더클럽 연남"
-        },
-        {
           "recordId": 287,
           "similarity": 0.3675,
           "place": "동교어린이공원"
         },
         {
+          "recordId": 280,
+          "similarity": 0.3642,
+          "place": "뉴오더클럽 연남"
+        },
+        {
           "recordId": 290,
-          "similarity": 0.3617,
+          "similarity": 0.3616,
           "place": "힉스커피"
         },
         {
           "recordId": 292,
-          "similarity": 0.3547,
+          "similarity": 0.3546,
           "place": "적당"
         },
         {
@@ -195,17 +195,17 @@
         },
         {
           "recordId": 285,
-          "similarity": 0.3462,
+          "similarity": 0.3464,
           "place": "월강부산돼지국밥"
         },
         {
           "recordId": 282,
-          "similarity": 0.3281,
+          "similarity": 0.3282,
           "place": "치킨버거 이스트사이드"
         },
         {
           "recordId": 284,
-          "similarity": 0.319,
+          "similarity": 0.3191,
           "place": "진우네 초밥"
         }
       ]
@@ -219,7 +219,7 @@
       "items": [
         {
           "recordId": 282,
-          "similarity": 0.5263,
+          "similarity": 0.5264,
           "place": "치킨버거 이스트사이드"
         },
         {
@@ -413,7 +413,7 @@
         },
         {
           "recordId": 283,
-          "similarity": 0.2613,
+          "similarity": 0.2614,
           "place": "쿠로코식당 연남점"
         },
         {
@@ -428,7 +428,7 @@
         },
         {
           "recordId": 282,
-          "similarity": 0.2588,
+          "similarity": 0.2589,
           "place": "치킨버거 이스트사이드"
         },
         {
@@ -438,12 +438,12 @@
         },
         {
           "recordId": 287,
-          "similarity": 0.2454,
+          "similarity": 0.2455,
           "place": "동교어린이공원"
         },
         {
           "recordId": 290,
-          "similarity": 0.2436,
+          "similarity": 0.2435,
           "place": "힉스커피"
         }
       ]
@@ -491,12 +491,12 @@
         },
         {
           "recordId": 290,
-          "similarity": 0.2676,
+          "similarity": 0.2677,
           "place": "힉스커피"
         },
         {
           "recordId": 286,
-          "similarity": 0.266,
+          "similarity": 0.2659,
           "place": "저스트텐동 연남본점"
         },
         {
@@ -571,7 +571,7 @@
       "items": [
         {
           "recordId": 268,
-          "similarity": 0.3007,
+          "similarity": 0.3008,
           "place": "키친갈매기"
         }
       ]
@@ -590,7 +590,7 @@
         },
         {
           "recordId": 293,
-          "similarity": 0.3008,
+          "similarity": 0.3006,
           "place": "키친갈매기"
         }
       ]
@@ -628,7 +628,7 @@
       "items": [
         {
           "recordId": 253,
-          "similarity": 0.3371,
+          "similarity": 0.3372,
           "place": "[데모] 창가 작업실 카페"
         }
       ]
@@ -666,7 +666,7 @@
       "items": [
         {
           "recordId": 273,
-          "similarity": 0.3248,
+          "similarity": 0.3249,
           "place": "오향절면"
         }
       ]
