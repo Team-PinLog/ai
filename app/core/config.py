@@ -225,6 +225,26 @@ class Settings(BaseSettings):
     )
     search_keyword_rerank_top_k: int = Field(3, alias="SEARCH_KEYWORD_RERANK_TOP_K")
 
+    # 검색 결과 LLM 관련도 재판정 (4번째 검색 신호). **기본 off** — 세 신호(재작성·
+    # 재정렬·문자열 병합)를 전부 거쳐도 놓치는 사각지대가 있다: 벡터 유사도는 "본문에
+    # 그 단어가 있는가"보다 "전체적인 분위기"를 보므로, 질의의 핵심 단어가 본문에
+    # 그대로 있는 후보가 없는 후보에 밀리는 사례가 실측됐다(소속 기관명처럼 Preset
+    # 목록에 없는 개념은 재정렬도 못 잡는다). 이 신호는 back 이 최종 후보(본문 포함)를
+    # 새 엔드포인트(POST /internal/v1/search/judge)로 보내면 LLM 이 4단계로 재판정한다.
+    # off 면 이 엔드포인트를 back 이 호출하지 않아 검색은 현행과 동일하게 동작한다.
+    search_relevance_judge_enabled: bool = Field(
+        False, alias="SEARCH_RELEVANCE_JUDGE_ENABLED"
+    )
+    # 사용자가 기다리는 동기 경로다(재작성과 같은 이유로 판정의 90s·3회를 상속하지
+    # 않는다). 후보 최대 10건 × 본문 500자를 한 번에 넣어 재작성(1건)보다 입력이 커
+    # 여유를 둔다.
+    search_relevance_judge_timeout_sec: float = Field(
+        10.0, alias="SEARCH_RELEVANCE_JUDGE_TIMEOUT_SEC"
+    )
+    search_relevance_judge_attempts: int = Field(
+        2, alias="SEARCH_RELEVANCE_JUDGE_ATTEMPTS"
+    )
+
     # PROCESSING 재선점 만료 — Spring 재스캔 만료와 동일 값
     processing_expiry_sec: int = Field(600, alias="PROCESSING_EXPIRY_SEC")
 
