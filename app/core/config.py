@@ -99,7 +99,7 @@ class Settings(BaseSettings):
     place_suggestion_log_results: bool = Field(
         False, alias="PLACE_SUGGESTION_LOG_RESULTS"
     )
-    image_max_bytes: int = Field(5 * 1024 * 1024, alias="IMAGE_MAX_BYTES")
+    image_max_bytes: int = Field(10 * 1024 * 1024, alias="IMAGE_MAX_BYTES")
     gms_image_max_bytes: int = Field(50_000, alias="GMS_IMAGE_MAX_BYTES")
     gms_vision_request_max_bytes: int = Field(
         90_000, alias="GMS_VISION_REQUEST_MAX_BYTES"
