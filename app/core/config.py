@@ -178,6 +178,53 @@ class Settings(BaseSettings):
         5, alias="SEARCH_WORD_QUERY_MAX_CHARS"
     )
 
+    # 검색 질의 LLM 재작성 (S15P11A705-337, P49 §3). **기본 off** — 검증 게이트(P49 §7)
+    # 통과 전에는 어떤 환경에서도 켜지 않는다. off 면 검색은 현행과 동일하게 동작한다.
+    # 이 플래그는 배포 통제 수단이 아니라, 운영 중 LLM 장애 시 기존 검색으로 되돌리는
+    # 안전장치다(배포 통제는 브랜치 격리가 한다).
+    search_llm_enabled: bool = Field(False, alias="SEARCH_LLM_ENABLED")
+    # 재작성 호출 예산. 판정(90s·3회)을 상속하지 않는다 — 검색은 사용자가 기다리는
+    # 동기 경로다. attempts 는 폴백 포함 총 HTTP 시도 횟수(RetryPolicy 와 같은 정의).
+    search_llm_timeout_sec: float = Field(5.0, alias="SEARCH_LLM_TIMEOUT_SEC")
+    search_llm_attempts: int = Field(2, alias="SEARCH_LLM_ATTEMPTS")
+    # 질의 단위 재작성 캐시 상한. 같은 질의가 회차마다 다른 재작성을 받으면 검색이
+    # 비결정적이 된다 — 캐시가 그 성질을 막는다(P48 2단계 요구).
+    search_rewrite_cache_size: int = Field(256, alias="SEARCH_REWRITE_CACHE_SIZE")
+    # 재작성 적용 게이트 — 앞뒤 공백을 정리한 질의가 이 글자 수 이하일 때만 재작성한다.
+    # 실측(I55)에서 재작성의 이득은 전부 짧은 약어 질의(5자 이하)에서 났고, 손해는 긴
+    # 문장형 질의에서만 났다(`파는 데`→`파는 곳` 표현 정규화가 무관 질의 무노출을
+    # 11/15→9/15 로 무너뜨렸다). 성과 기반 게이트(결과 0건·top-1 유사도)는 두 집단의
+    # 값 대역이 겹쳐 분리하지 못했고, 회복 대상(`부캠` — 원문도 오답 3건을 반환)까지
+    # 놓친다. 6 은 이득이 실측된 상한(5자)에 여유 1자를 더한 보수 값이며, 코퍼스상
+    # 5~13자 어디든 지표가 같아 경계 재조정은 운영 질의 관측 후의 일이다.
+    search_rewrite_max_chars: int = Field(6, alias="SEARCH_REWRITE_MAX_CHARS")
+
+    # Preset 키워드 재정렬 (S15P11A705-339, P49 §4). **기본 off** — 검증 게이트(P49 §7)
+    # 통과 전에는 어떤 환경에서도 켜지 않는다. off 면 검색은 현행과 동일하게 동작한다.
+    # 켜면 컷 통과 후보의 **순서만** 바뀐다 — 후보 추가·제거 없음과 similarity 원값
+    # 유지는 계약 테스트(test_search_rerank.py)가 고정한다. 조회·계산이 실패해도
+    # 응답은 실패하지 않고 벡터 순서로 되돌아간다.
+    search_keyword_rerank_enabled: bool = Field(
+        False, alias="SEARCH_KEYWORD_RERANK_ENABLED"
+    )
+    # 아래 세 값은 재정렬 전용 구조의 오프라인 실측이 정했다(-339 리포트,
+    # tools/search_cut/fusion_rerank_sweep.py). P48 구조 실측(I53)의 같은 값과 숫자가
+    # 같지만 **다른 측정의 결과다** — 구조가 달라 재측정했고 같은 값이 다시 통과했다.
+    #
+    #   floor 0.35    질의-Preset 코사인 하한. 0.35~0.36 구간에서 격자 지표가 동일해
+    #                 임베딩 API 흔들림(10⁻⁴ 규모, T68)이 경계를 넘지 못하는 값이다
+    #   weight 0.05   재정렬 정렬 점수 = 원래 코사인 + weight × 신호(match=1).
+    #                 0.10 부터 단어형 hit@3 개선이 사라지고 0.20 은 문장형 hit@1 이
+    #                 퇴행한다. 응답의 similarity 에는 더하지 않는다 — 정렬 전용이다
+    #   top_k 3       질의당 Preset 후보 수. P48 1단계 실측과 같은 값
+    search_keyword_rerank_floor: float = Field(
+        0.35, alias="SEARCH_KEYWORD_RERANK_FLOOR"
+    )
+    search_keyword_rerank_weight: float = Field(
+        0.05, alias="SEARCH_KEYWORD_RERANK_WEIGHT"
+    )
+    search_keyword_rerank_top_k: int = Field(3, alias="SEARCH_KEYWORD_RERANK_TOP_K")
+
     # PROCESSING 재선점 만료 — Spring 재스캔 만료와 동일 값
     processing_expiry_sec: int = Field(600, alias="PROCESSING_EXPIRY_SEC")
 

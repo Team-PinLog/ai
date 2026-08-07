@@ -76,6 +76,14 @@ tools/keyword_eval/compare_out.txt
 # 소유자 3명의 행렬이고 담는 수준은 위 셋과 같다(장소명까지). 행이 1,128 개라 들여쓰기
 # 없이 저장한다. `boundary_sweep.py` 가 이 파일과 `word_grid.json` 을 함께 읽는다.
 !.search/boundary_grid.json
+# `keyword_matrix.json` 도 같다(S15P11A705-336) — 질의 92건 × 전체 활성 Preset 코사인 +
+# Context 별 keyword·confidence·상태의 artifact 다. 다시 뜨려면 GMS 배치를 부른다.
+# `fusion_sweep.py` 가 이 파일과 행렬 셋만 읽으므로(DB·GMS 0회) 유실되면 재측정이 막힌다.
+# 스윕 결과(`fusion_sweep*.json`·`rank_baseline.json`)는 여기서 재구성되므로 커밋하지 않는다.
+!.search/keyword_matrix.json
+# `lexical_matrix.json` 은 문자열 매치 artifact 다(P49 작업 3) — 본문을 담지 않고 Record id 와
+# 매치 여부만 담는다. 재생성에 스냅샷 DB 가 필요하므로 커밋한다. 스윕 결과는 여기서 재구성된다.
+!.search/lexical_matrix.json
 # `layer_probe.json` 은 층별 잔존 건수와 실서버 대조 결과다(S15P11A705-273). 유사도가
 # 아니라 **판정**이라 값이 작고, 다음 사람이 「그때 서버가 무엇을 뱉었나」를 대조할 수
 # 있어야 한다.

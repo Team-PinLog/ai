@@ -7,6 +7,8 @@
   "owned_records": 17,
   "cut": {
     "tau_abs": 0.3,
+    "tau_abs_word": 0.24,
+    "word_max_chars": 5,
     "ratio": 0.6,
     "limit": 20
   },
@@ -18,115 +20,133 @@
       "note": "본문에 그대로 · 나온다고 보고",
       "expect": "동교어린이공원",
       "rank": 1,
-      "sim": 0.518439,
+      "sim": 0.518366,
       "top1_name": "동교어린이공원",
-      "top1_sim": 0.518439,
+      "top1_sim": 0.518366,
       "kept": true,
       "kept_count": 1,
       "candidate_count": 17,
-      "ratio_floor": 0.311063,
+      "ratio_floor": 0.31102,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.518439
+          "sim": 0.518366
         },
         {
           "rank": 2,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.275336
+          "sim": 0.275439
         },
         {
           "rank": 3,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.263217
+          "sim": 0.263349
         },
         {
           "rank": 4,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.253091
+          "sim": 0.253293
         },
         {
           "rank": 5,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.216017
+          "sim": 0.216101
         },
         {
           "rank": 6,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.203826
+          "sim": 0.203799
         },
         {
           "rank": 7,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.197145
+          "sim": 0.197146
         },
         {
           "rank": 8,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.191621
+          "sim": 0.191642
         },
         {
           "rank": 9,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.189377
+          "sim": 0.18947
         },
         {
           "rank": 10,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.185931
+          "sim": 0.18601
         },
         {
           "rank": 11,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.175737
+          "sim": 0.175753
         },
         {
           "rank": 12,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.170391
+          "sim": 0.17035
         },
         {
           "rank": 13,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.159526
+          "sim": 0.159479
         },
         {
           "rank": 14,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.157997
+          "sim": 0.158092
         },
         {
           "rank": 15,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.155965
+          "sim": 0.155925
         },
         {
           "rank": 16,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.150823
+          "sim": 0.150763
         },
         {
           "rank": 17,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.137873
+          "sim": 0.137982
         }
       ],
       "kept_names": [
@@ -142,120 +162,145 @@
       "note": "부분 문자열",
       "expect": "동교어린이공원",
       "rank": 3,
-      "sim": 0.26708,
+      "sim": 0.267107,
       "top1_name": "치킨버거 이스트사이드",
-      "top1_sim": 0.287107,
-      "kept": false,
-      "kept_count": 0,
+      "top1_sim": 0.287139,
+      "kept": true,
+      "kept_count": 6,
       "candidate_count": 17,
-      "ratio_floor": 0.172264,
+      "ratio_floor": 0.172283,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.287107
+          "sim": 0.287139
         },
         {
           "rank": 2,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.267661
+          "sim": 0.267631
         },
         {
           "rank": 3,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.26708
+          "sim": 0.267107
         },
         {
           "rank": 4,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.265941
+          "sim": 0.266037
         },
         {
           "rank": 5,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.242292
+          "sim": 0.242341
         },
         {
           "rank": 6,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.241571
+          "sim": 0.241596
         },
         {
           "rank": 7,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.209279
+          "sim": 0.209344
         },
         {
           "rank": 8,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.201573
+          "sim": 0.201626
         },
         {
           "rank": 9,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.172662
+          "sim": 0.172755
         },
         {
           "rank": 10,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.167893
+          "sim": 0.167882
         },
         {
           "rank": 11,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.153549
+          "sim": 0.15354
         },
         {
           "rank": 12,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.152254
+          "sim": 0.152228
         },
         {
           "rank": 13,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.148226
+          "sim": 0.148162
         },
         {
           "rank": 14,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.147366
+          "sim": 0.147487
         },
         {
           "rank": 15,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.146874
+          "sim": 0.146833
         },
         {
           "rank": 16,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.138782
+          "sim": 0.138839
         },
         {
           "rank": 17,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.134181
+          "sim": 0.134226
         }
       ],
-      "kept_names": [],
-      "cut_verdict": "컷(τ_abs)",
-      "cause": "① 컷이 잘랐다(풀면 3위)"
+      "kept_names": [
+        "치킨버거 이스트사이드",
+        "힉스커피",
+        "동교어린이공원",
+        "저스트텐동 연남본점",
+        "키친갈매기",
+        "모던아시안누들서비스"
+      ],
+      "cut_verdict": "통과",
+      "cause": "— 통과"
     },
     {
       "query": "신한",
@@ -264,121 +309,140 @@
       "note": "완전 일치 단어",
       "expect": "카츠요",
       "rank": 6,
-      "sim": 0.230149,
+      "sim": 0.230176,
       "top1_name": "플랜트 연남점",
-      "top1_sim": 0.388904,
+      "top1_sim": 0.388875,
       "kept": false,
-      "kept_count": 3,
+      "kept_count": 4,
       "candidate_count": 17,
-      "ratio_floor": 0.233342,
+      "ratio_floor": 0.233325,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.388904
+          "sim": 0.388875
         },
         {
           "rank": 2,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.386753
+          "sim": 0.386694
         },
         {
           "rank": 3,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.330748
+          "sim": 0.33071
         },
         {
           "rank": 4,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.241013
+          "sim": 0.241061
         },
         {
           "rank": 5,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.232709
+          "sim": 0.232779
         },
         {
           "rank": 6,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.230149
+          "sim": 0.230176
         },
         {
           "rank": 7,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.210751
+          "sim": 0.210818
         },
         {
           "rank": 8,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.197504
+          "sim": 0.197658
         },
         {
           "rank": 9,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.197419
+          "sim": 0.197486
         },
         {
           "rank": 10,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.195277
+          "sim": 0.195403
         },
         {
           "rank": 11,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.189584
+          "sim": 0.189728
         },
         {
           "rank": 12,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.180767
+          "sim": 0.180887
         },
         {
           "rank": 13,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.179101
+          "sim": 0.179187
         },
         {
           "rank": 14,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.175377
+          "sim": 0.175371
         },
         {
           "rank": 15,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.162519
+          "sim": 0.162565
         },
         {
           "rank": 16,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.161438
+          "sim": 0.161399
         },
         {
           "rank": 17,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.153979
+          "sim": 0.154214
         }
       ],
       "kept_names": [
         "플랜트 연남점",
         "쿠로코식당 연남점",
-        "진우네 초밥"
+        "진우네 초밥",
+        "저스트텐동 연남본점"
       ],
       "cut_verdict": "컷(둘 다)",
       "cause": "③ 컷을 풀어도 6위"
@@ -390,115 +454,133 @@
       "note": "약어",
       "expect": "카츠요",
       "rank": 8,
-      "sim": 0.210469,
+      "sim": 0.210499,
       "top1_name": "쿠로코식당 연남점",
-      "top1_sim": 0.410226,
+      "top1_sim": 0.410231,
       "kept": false,
       "kept_count": 3,
       "candidate_count": 17,
-      "ratio_floor": 0.246136,
+      "ratio_floor": 0.246139,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.410226
+          "sim": 0.410231
         },
         {
           "rank": 2,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.330375
+          "sim": 0.330408
         },
         {
           "rank": 3,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.319498
+          "sim": 0.319453
         },
         {
           "rank": 4,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.223479
+          "sim": 0.223565
         },
         {
           "rank": 5,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.222399
+          "sim": 0.222423
         },
         {
           "rank": 6,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.21289
+          "sim": 0.212918
         },
         {
           "rank": 7,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.21064
+          "sim": 0.210636
         },
         {
           "rank": 8,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.210469
+          "sim": 0.210499
         },
         {
           "rank": 9,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.207915
+          "sim": 0.207929
         },
         {
           "rank": 10,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.193027
+          "sim": 0.193025
         },
         {
           "rank": 11,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.189066
+          "sim": 0.189089
         },
         {
           "rank": 12,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.186522
+          "sim": 0.186534
         },
         {
           "rank": 13,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.181867
+          "sim": 0.181799
         },
         {
           "rank": 14,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.178887
+          "sim": 0.178894
         },
         {
           "rank": 15,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.173942
+          "sim": 0.174036
         },
         {
           "rank": 16,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.159926
+          "sim": 0.159945
         },
         {
           "rank": 17,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.138751
+          "sim": 0.138688
         }
       ],
       "kept_names": [
@@ -516,123 +598,143 @@
       "note": "2자 · 본문 A 에 단독",
       "expect": "동교어린이공원",
       "rank": 3,
-      "sim": 0.281763,
+      "sim": 0.281779,
       "top1_name": "쿠로코식당 연남점",
-      "top1_sim": 0.393353,
-      "kept": false,
-      "kept_count": 2,
+      "top1_sim": 0.393463,
+      "kept": true,
+      "kept_count": 4,
       "candidate_count": 17,
-      "ratio_floor": 0.236012,
+      "ratio_floor": 0.236078,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.393353
+          "sim": 0.393463
         },
         {
           "rank": 2,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.384798
+          "sim": 0.384874
         },
         {
           "rank": 3,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.281763
+          "sim": 0.281779
         },
         {
           "rank": 4,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.27659
+          "sim": 0.276593
         },
         {
           "rank": 5,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.225764
+          "sim": 0.225785
         },
         {
           "rank": 6,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.201276
+          "sim": 0.201326
         },
         {
           "rank": 7,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.195646
+          "sim": 0.195698
         },
         {
           "rank": 8,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.195433
+          "sim": 0.195424
         },
         {
           "rank": 9,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.182309
+          "sim": 0.182261
         },
         {
           "rank": 10,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.161136
+          "sim": 0.161161
         },
         {
           "rank": 11,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.15375
+          "sim": 0.153768
         },
         {
           "rank": 12,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.153431
+          "sim": 0.153417
         },
         {
           "rank": 13,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.140357
+          "sim": 0.140325
         },
         {
           "rank": 14,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.126401
+          "sim": 0.126412
         },
         {
           "rank": 15,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.122811
+          "sim": 0.122899
         },
         {
           "rank": 16,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.113581
+          "sim": 0.113585
         },
         {
           "rank": 17,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.097583
+          "sim": 0.097599
         }
       ],
       "kept_names": [
         "쿠로코식당 연남점",
-        "오케이어 맨션"
+        "오케이어 맨션",
+        "동교어린이공원",
+        "사루카메"
       ],
-      "cut_verdict": "컷(τ_abs)",
-      "cause": "① 컷이 잘랐다(풀면 3위)"
+      "cut_verdict": "통과",
+      "cause": "— 통과"
     },
     {
       "query": "라멘",
@@ -641,122 +743,142 @@
       "note": "2자 · 다른 Record 본문에 단독",
       "expect": "사루카메",
       "rank": 2,
-      "sim": 0.276447,
+      "sim": 0.276594,
       "top1_name": "쿠로코식당 연남점",
-      "top1_sim": 0.321108,
-      "kept": false,
-      "kept_count": 1,
+      "top1_sim": 0.321138,
+      "kept": true,
+      "kept_count": 3,
       "candidate_count": 17,
-      "ratio_floor": 0.192665,
+      "ratio_floor": 0.192683,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.321108
+          "sim": 0.321138
         },
         {
           "rank": 2,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.276447
+          "sim": 0.276594
         },
         {
           "rank": 3,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.249275
+          "sim": 0.249356
         },
         {
           "rank": 4,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.222579
+          "sim": 0.22265
         },
         {
           "rank": 5,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.216744
+          "sim": 0.216829
         },
         {
           "rank": 6,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.210131
+          "sim": 0.210187
         },
         {
           "rank": 7,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.195855
+          "sim": 0.195827
         },
         {
           "rank": 8,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.190465
+          "sim": 0.190504
         },
         {
           "rank": 9,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.184495
+          "sim": 0.184612
         },
         {
           "rank": 10,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.174959
+          "sim": 0.175055
         },
         {
           "rank": 11,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.161523
+          "sim": 0.161609
         },
         {
           "rank": 12,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.157883
+          "sim": 0.157937
         },
         {
           "rank": 13,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.155402
+          "sim": 0.155443
         },
         {
           "rank": 14,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.148854
+          "sim": 0.148997
         },
         {
           "rank": 15,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.133649
+          "sim": 0.133679
         },
         {
           "rank": 16,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.125145
+          "sim": 0.125225
         },
         {
           "rank": 17,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.061085
+          "sim": 0.061193
         }
       ],
       "kept_names": [
-        "쿠로코식당 연남점"
+        "쿠로코식당 연남점",
+        "사루카메",
+        "키친갈매기"
       ],
-      "cut_verdict": "컷(τ_abs)",
-      "cause": "① 컷이 잘랐다(풀면 2위)"
+      "cut_verdict": "통과",
+      "cause": "— 통과"
     },
     {
       "query": "스팟",
@@ -765,120 +887,141 @@
       "note": "2자 · 본문 A 에 단독",
       "expect": "동교어린이공원",
       "rank": 1,
-      "sim": 0.243822,
+      "sim": 0.243831,
       "top1_name": "동교어린이공원",
-      "top1_sim": 0.243822,
-      "kept": false,
-      "kept_count": 0,
+      "top1_sim": 0.243831,
+      "kept": true,
+      "kept_count": 2,
       "candidate_count": 17,
-      "ratio_floor": 0.146293,
+      "ratio_floor": 0.146299,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.243822
+          "sim": 0.243831
         },
         {
           "rank": 2,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.240736
+          "sim": 0.240629
         },
         {
           "rank": 3,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.194379
+          "sim": 0.194391
         },
         {
           "rank": 4,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.17665
+          "sim": 0.176665
         },
         {
           "rank": 5,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.174412
+          "sim": 0.17441
         },
         {
           "rank": 6,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.156894
+          "sim": 0.156897
         },
         {
           "rank": 7,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.152153
+          "sim": 0.152135
         },
         {
           "rank": 8,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.152059
+          "sim": 0.152119
         },
         {
           "rank": 9,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.132726
+          "sim": 0.132772
         },
         {
           "rank": 10,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.12948
+          "sim": 0.129516
         },
         {
           "rank": 11,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.12651
+          "sim": 0.126495
         },
         {
           "rank": 12,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.122988
+          "sim": 0.123037
         },
         {
           "rank": 13,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.118972
+          "sim": 0.119001
         },
         {
           "rank": 14,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.10862
+          "sim": 0.108523
         },
         {
           "rank": 15,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.107377
+          "sim": 0.10738
         },
         {
           "rank": 16,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.081024
+          "sim": 0.081106
         },
         {
           "rank": 17,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.078541
+          "sim": 0.078537
         }
       ],
-      "kept_names": [],
-      "cut_verdict": "컷(τ_abs)",
-      "cause": "① 컷이 잘랐다(풀면 1위)"
+      "kept_names": [
+        "동교어린이공원",
+        "플랜트 연남점"
+      ],
+      "cut_verdict": "통과",
+      "cause": "— 통과"
     },
     {
       "query": "돈카츠",
@@ -887,119 +1030,138 @@
       "note": "3자 · 본문 B 에 단독",
       "expect": "카츠요",
       "rank": 1,
-      "sim": 0.443795,
+      "sim": 0.44391,
       "top1_name": "카츠요",
-      "top1_sim": 0.443795,
+      "top1_sim": 0.44391,
       "kept": true,
-      "kept_count": 1,
+      "kept_count": 2,
       "candidate_count": 17,
-      "ratio_floor": 0.266277,
+      "ratio_floor": 0.266346,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.443795
+          "sim": 0.44391
         },
         {
           "rank": 2,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.277703
+          "sim": 0.277722
         },
         {
           "rank": 3,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.259834
+          "sim": 0.259971
         },
         {
           "rank": 4,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.253657
+          "sim": 0.253691
         },
         {
           "rank": 5,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.229907
+          "sim": 0.229899
         },
         {
           "rank": 6,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.211316
+          "sim": 0.21126
         },
         {
           "rank": 7,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.207394
+          "sim": 0.207522
         },
         {
           "rank": 8,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.205868
+          "sim": 0.205965
         },
         {
           "rank": 9,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.193514
+          "sim": 0.193526
         },
         {
           "rank": 10,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.175421
+          "sim": 0.175475
         },
         {
           "rank": 11,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.174835
+          "sim": 0.17488
         },
         {
           "rank": 12,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.170547
+          "sim": 0.170635
         },
         {
           "rank": 13,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.152309
+          "sim": 0.152472
         },
         {
           "rank": 14,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.143201
+          "sim": 0.143281
         },
         {
           "rank": 15,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.140876
+          "sim": 0.140908
         },
         {
           "rank": 16,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.131172
+          "sim": 0.131291
         },
         {
           "rank": 17,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.084685
+          "sim": 0.084707
         }
       ],
       "kept_names": [
-        "카츠요"
+        "카츠요",
+        "키친갈매기"
       ],
       "cut_verdict": "통과",
       "cause": "— 통과"
@@ -1011,120 +1173,139 @@
       "note": "3자 · 본문 B 에 단독",
       "expect": "카츠요",
       "rank": 1,
-      "sim": 0.375264,
+      "sim": 0.375242,
       "top1_name": "카츠요",
-      "top1_sim": 0.375264,
+      "top1_sim": 0.375242,
       "kept": true,
-      "kept_count": 2,
+      "kept_count": 3,
       "candidate_count": 17,
-      "ratio_floor": 0.225158,
+      "ratio_floor": 0.225145,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.375264
+          "sim": 0.375242
         },
         {
           "rank": 2,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.336703
+          "sim": 0.336663
         },
         {
           "rank": 3,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.245331
+          "sim": 0.245361
         },
         {
           "rank": 4,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.226943
+          "sim": 0.226885
         },
         {
           "rank": 5,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.223631
+          "sim": 0.223615
         },
         {
           "rank": 6,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.222089
+          "sim": 0.222069
         },
         {
           "rank": 7,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.212343
+          "sim": 0.212335
         },
         {
           "rank": 8,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
           "sim": 0.212002
         },
         {
           "rank": 9,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
           "sim": 0.193262
         },
         {
           "rank": 10,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.187486
+          "sim": 0.187521
         },
         {
           "rank": 11,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.181066
+          "sim": 0.181108
         },
         {
           "rank": 12,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.169606
+          "sim": 0.169681
         },
         {
           "rank": 13,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.165562
+          "sim": 0.16558
         },
         {
           "rank": 14,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.154257
+          "sim": 0.154351
         },
         {
           "rank": 15,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.151961
+          "sim": 0.152089
         },
         {
           "rank": 16,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.139373
+          "sim": 0.139352
         },
         {
           "rank": 17,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.130622
+          "sim": 0.130688
         }
       ],
       "kept_names": [
         "카츠요",
-        "뉴오더클럽 연남"
+        "뉴오더클럽 연남",
+        "치킨버거 이스트사이드"
       ],
       "cut_verdict": "통과",
       "cause": "— 통과"
@@ -1136,119 +1317,138 @@
       "note": "5자 · 본문 A 에 단독",
       "expect": "동교어린이공원",
       "rank": 1,
-      "sim": 0.342187,
+      "sim": 0.339589,
       "top1_name": "동교어린이공원",
-      "top1_sim": 0.342187,
+      "top1_sim": 0.339589,
       "kept": true,
-      "kept_count": 1,
+      "kept_count": 2,
       "candidate_count": 17,
-      "ratio_floor": 0.205312,
+      "ratio_floor": 0.203753,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.342187
+          "sim": 0.339589
         },
         {
           "rank": 2,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.245025
+          "sim": 0.241467
         },
         {
           "rank": 3,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.242246
+          "sim": 0.23959
         },
         {
           "rank": 4,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.235859
+          "sim": 0.232512
         },
         {
           "rank": 5,
-          "record_id": 291,
-          "name": "오케이어 맨션",
-          "sim": 0.222988
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.219638
         },
         {
           "rank": 6,
-          "record_id": 289,
-          "name": "모던아시안누들서비스",
-          "sim": 0.222486
+          "record_id": 291,
+          "context_id": 291,
+          "name": "오케이어 맨션",
+          "sim": 0.219105
         },
         {
           "rank": 7,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.191894
+          "sim": 0.193686
         },
         {
           "rank": 8,
-          "record_id": 290,
-          "name": "힉스커피",
-          "sim": 0.182889
+          "record_id": 286,
+          "context_id": 286,
+          "name": "저스트텐동 연남본점",
+          "sim": 0.18207
         },
         {
           "rank": 9,
-          "record_id": 286,
-          "name": "저스트텐동 연남본점",
-          "sim": 0.182065
+          "record_id": 290,
+          "context_id": 290,
+          "name": "힉스커피",
+          "sim": 0.181017
         },
         {
           "rank": 10,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.172796
+          "sim": 0.173496
         },
         {
           "rank": 11,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.170898
+          "sim": 0.171214
         },
         {
           "rank": 12,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.152429
+          "sim": 0.155709
         },
         {
           "rank": 13,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.135215
+          "sim": 0.134749
         },
         {
           "rank": 14,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.131674
+          "sim": 0.134447
         },
         {
           "rank": 15,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.126704
+          "sim": 0.123564
         },
         {
           "rank": 16,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.116219
+          "sim": 0.115038
         },
         {
           "rank": 17,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.114089
+          "sim": 0.114384
         }
       ],
       "kept_names": [
-        "동교어린이공원"
+        "동교어린이공원",
+        "치킨버거 이스트사이드"
       ],
       "cut_verdict": "통과",
       "cause": "— 통과"
@@ -1262,116 +1462,140 @@
       "rank": null,
       "sim": null,
       "top1_name": "치킨버거 이스트사이드",
-      "top1_sim": 0.295281,
+      "top1_sim": 0.295225,
       "kept": false,
-      "kept_count": 0,
+      "kept_count": 5,
       "candidate_count": 17,
-      "ratio_floor": 0.177169,
+      "ratio_floor": 0.177135,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.295281
+          "sim": 0.295225
         },
         {
           "rank": 2,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.284907
+          "sim": 0.284854
         },
         {
           "rank": 3,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.273617
+          "sim": 0.273532
         },
         {
           "rank": 4,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.260661
+          "sim": 0.260587
         },
         {
           "rank": 5,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.248265
+          "sim": 0.24823
         },
         {
           "rank": 6,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.217304
+          "sim": 0.217237
         },
         {
           "rank": 7,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.199778
+          "sim": 0.199764
         },
         {
           "rank": 8,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.198077
+          "sim": 0.197963
         },
         {
           "rank": 9,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.197108
+          "sim": 0.197076
         },
         {
           "rank": 10,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.18782
+          "sim": 0.187812
         },
         {
           "rank": 11,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.182941
+          "sim": 0.182875
         },
         {
           "rank": 12,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.182706
+          "sim": 0.182728
         },
         {
           "rank": 13,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.16648
+          "sim": 0.166418
         },
         {
           "rank": 14,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.163072
+          "sim": 0.163051
         },
         {
           "rank": 15,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.159116
+          "sim": 0.159125
         },
         {
           "rank": 16,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.151638
+          "sim": 0.151635
         },
         {
           "rank": 17,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.1379
+          "sim": 0.137863
         }
       ],
-      "kept_names": [],
+      "kept_names": [
+        "치킨버거 이스트사이드",
+        "연남칼국수",
+        "모던아시안누들서비스",
+        "감나무집기사식당",
+        "키친갈매기"
+      ],
       "cut_verdict": "미검색",
       "cause": "— 통제"
     },
@@ -1382,119 +1606,138 @@
       "note": "2자 · 힉스커피 본문에 단독",
       "expect": "힉스커피",
       "rank": 1,
-      "sim": 0.41993,
+      "sim": 0.419934,
       "top1_name": "힉스커피",
-      "top1_sim": 0.41993,
+      "top1_sim": 0.419934,
       "kept": true,
-      "kept_count": 1,
+      "kept_count": 2,
       "candidate_count": 17,
-      "ratio_floor": 0.251958,
+      "ratio_floor": 0.25196,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.41993
+          "sim": 0.419934
         },
         {
           "rank": 2,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.289945
+          "sim": 0.289927
         },
         {
           "rank": 3,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.245254
+          "sim": 0.245161
         },
         {
           "rank": 4,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.228157
+          "sim": 0.228032
         },
         {
           "rank": 5,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.22753
+          "sim": 0.227422
         },
         {
           "rank": 6,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.226075
+          "sim": 0.226067
         },
         {
           "rank": 7,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.220138
+          "sim": 0.220078
         },
         {
           "rank": 8,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.212119
+          "sim": 0.212182
         },
         {
           "rank": 9,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.210757
+          "sim": 0.210655
         },
         {
           "rank": 10,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.20286
+          "sim": 0.202864
         },
         {
           "rank": 11,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.189936
+          "sim": 0.189841
         },
         {
           "rank": 12,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.169477
+          "sim": 0.169445
         },
         {
           "rank": 13,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.148175
+          "sim": 0.148122
         },
         {
           "rank": 14,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.14244
+          "sim": 0.142374
         },
         {
           "rank": 15,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.130579
+          "sim": 0.130509
         },
         {
           "rank": 16,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.104281
+          "sim": 0.104256
         },
         {
           "rank": 17,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.101369
+          "sim": 0.101296
         }
       ],
       "kept_names": [
-        "힉스커피"
+        "힉스커피",
+        "감나무집기사식당"
       ],
       "cut_verdict": "통과",
       "cause": "— 통과"
@@ -1506,119 +1749,138 @@
       "note": "2자 · 치킨버거 본문에 단독",
       "expect": "치킨버거 이스트사이드",
       "rank": 1,
-      "sim": 0.367011,
+      "sim": 0.367066,
       "top1_name": "치킨버거 이스트사이드",
-      "top1_sim": 0.367011,
+      "top1_sim": 0.367066,
       "kept": true,
-      "kept_count": 1,
+      "kept_count": 2,
       "candidate_count": 17,
-      "ratio_floor": 0.220207,
+      "ratio_floor": 0.22024,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.367011
+          "sim": 0.367066
         },
         {
           "rank": 2,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.272325
+          "sim": 0.272398
         },
         {
           "rank": 3,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.23608
+          "sim": 0.236032
         },
         {
           "rank": 4,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.230047
+          "sim": 0.23001
         },
         {
           "rank": 5,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.224481
+          "sim": 0.22447
         },
         {
           "rank": 6,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.212398
+          "sim": 0.212373
         },
         {
           "rank": 7,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.200807
+          "sim": 0.200824
         },
         {
           "rank": 8,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.189545
+          "sim": 0.189519
         },
         {
           "rank": 9,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.187503
+          "sim": 0.187459
         },
         {
           "rank": 10,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.183803
+          "sim": 0.183813
         },
         {
           "rank": 11,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.173646
+          "sim": 0.173637
         },
         {
           "rank": 12,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.164511
+          "sim": 0.164528
         },
         {
           "rank": 13,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.146749
+          "sim": 0.146744
         },
         {
           "rank": 14,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.137321
+          "sim": 0.137302
         },
         {
           "rank": 15,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.095445
+          "sim": 0.095479
         },
         {
           "rank": 16,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.087043
+          "sim": 0.087097
         },
         {
           "rank": 17,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.050132
+          "sim": 0.050094
         }
       ],
       "kept_names": [
-        "치킨버거 이스트사이드"
+        "치킨버거 이스트사이드",
+        "저스트텐동 연남본점"
       ],
       "cut_verdict": "통과",
       "cause": "— 통과"
@@ -1630,115 +1892,133 @@
       "note": "본문 그대로(치킨버거)",
       "expect": "치킨버거 이스트사이드",
       "rank": 1,
-      "sim": 0.474253,
+      "sim": 0.474249,
       "top1_name": "치킨버거 이스트사이드",
-      "top1_sim": 0.474253,
+      "top1_sim": 0.474249,
       "kept": true,
       "kept_count": 1,
       "candidate_count": 17,
-      "ratio_floor": 0.284552,
+      "ratio_floor": 0.284549,
+      "floor": 0.3,
       "results": [
         {
           "rank": 1,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.474253
+          "sim": 0.474249
         },
         {
           "rank": 2,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.269137
+          "sim": 0.269057
         },
         {
           "rank": 3,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.246075
+          "sim": 0.24599
         },
         {
           "rank": 4,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.234735
+          "sim": 0.234701
         },
         {
           "rank": 5,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.233878
+          "sim": 0.233863
         },
         {
           "rank": 6,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.226007
+          "sim": 0.225926
         },
         {
           "rank": 7,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.197308
+          "sim": 0.197326
         },
         {
           "rank": 8,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.174599
+          "sim": 0.174452
         },
         {
           "rank": 9,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.173309
+          "sim": 0.173305
         },
         {
           "rank": 10,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.171637
+          "sim": 0.17156
         },
         {
           "rank": 11,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.159811
+          "sim": 0.159791
         },
         {
           "rank": 12,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.144405
+          "sim": 0.144386
         },
         {
           "rank": 13,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.14002
+          "sim": 0.140047
         },
         {
           "rank": 14,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.137223
+          "sim": 0.137262
         },
         {
           "rank": 15,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.116719
+          "sim": 0.11674
         },
         {
           "rank": 16,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.093716
+          "sim": 0.093668
         },
         {
           "rank": 17,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.068593
+          "sim": 0.068492
         }
       ],
       "kept_names": [
@@ -1754,119 +2034,142 @@
       "note": "본문 B 에 그대로",
       "expect": "카츠요",
       "rank": 1,
-      "sim": 0.325435,
+      "sim": 0.325307,
       "top1_name": "카츠요",
-      "top1_sim": 0.325435,
+      "top1_sim": 0.325307,
       "kept": true,
-      "kept_count": 1,
+      "kept_count": 6,
       "candidate_count": 17,
-      "ratio_floor": 0.195261,
+      "ratio_floor": 0.195184,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.325435
+          "sim": 0.325307
         },
         {
           "rank": 2,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.287485
+          "sim": 0.28746
         },
         {
           "rank": 3,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.261349
+          "sim": 0.261366
         },
         {
           "rank": 4,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.25895
+          "sim": 0.258853
         },
         {
           "rank": 5,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.245482
+          "sim": 0.245435
         },
         {
           "rank": 6,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.24355
+          "sim": 0.243534
         },
         {
           "rank": 7,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.234582
+          "sim": 0.2347
         },
         {
           "rank": 8,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.233781
+          "sim": 0.233792
         },
         {
           "rank": 9,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.215772
+          "sim": 0.215681
         },
         {
           "rank": 10,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.214062
+          "sim": 0.213997
         },
         {
           "rank": 11,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.174088
+          "sim": 0.173997
         },
         {
           "rank": 12,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.171644
+          "sim": 0.171562
         },
         {
           "rank": 13,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.170266
+          "sim": 0.1702
         },
         {
           "rank": 14,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.169794
+          "sim": 0.169819
         },
         {
           "rank": 15,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.161766
+          "sim": 0.161692
         },
         {
           "rank": 16,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.155392
+          "sim": 0.155318
         },
         {
           "rank": 17,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.130895
+          "sim": 0.130798
         }
       ],
       "kept_names": [
-        "카츠요"
+        "카츠요",
+        "플랜트 연남점",
+        "쿠로코식당 연남점",
+        "치킨버거 이스트사이드",
+        "동교어린이공원",
+        "힉스커피"
       ],
       "cut_verdict": "통과",
       "cause": "— 통과"
@@ -1878,115 +2181,133 @@
       "note": "본문 B 에 연속으로 그대로",
       "expect": "카츠요",
       "rank": 3,
-      "sim": 0.37927,
+      "sim": 0.379262,
       "top1_name": "쿠로코식당 연남점",
-      "top1_sim": 0.454174,
+      "top1_sim": 0.454168,
       "kept": true,
       "kept_count": 3,
       "candidate_count": 17,
-      "ratio_floor": 0.272504,
+      "ratio_floor": 0.272501,
+      "floor": 0.3,
       "results": [
         {
           "rank": 1,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.454174
+          "sim": 0.454168
         },
         {
           "rank": 2,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.416174
+          "sim": 0.416156
         },
         {
           "rank": 3,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.37927
+          "sim": 0.379262
         },
         {
           "rank": 4,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.260483
+          "sim": 0.260614
         },
         {
           "rank": 5,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.251664
+          "sim": 0.251749
         },
         {
           "rank": 6,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.247981
+          "sim": 0.248102
         },
         {
           "rank": 7,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.228715
+          "sim": 0.228832
         },
         {
           "rank": 8,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.211685
+          "sim": 0.211612
         },
         {
           "rank": 9,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.202599
+          "sim": 0.202612
         },
         {
           "rank": 10,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.193027
+          "sim": 0.193034
         },
         {
           "rank": 11,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.192191
+          "sim": 0.192271
         },
         {
           "rank": 12,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.177074
+          "sim": 0.177125
         },
         {
           "rank": 13,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.161884
+          "sim": 0.16181
         },
         {
           "rank": 14,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.161427
+          "sim": 0.161476
         },
         {
           "rank": 15,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
           "sim": 0.14198
         },
         {
           "rank": 16,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.135791
+          "sim": 0.135892
         },
         {
           "rank": 17,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.128264
+          "sim": 0.128311
         }
       ],
       "kept_names": [
@@ -2004,115 +2325,133 @@
       "note": "본문 B 에 없는 표현 · 다른 4건에 그대로",
       "expect": "카츠요",
       "rank": 4,
-      "sim": 0.318867,
+      "sim": 0.318866,
       "top1_name": "쿠로코식당 연남점",
-      "top1_sim": 0.586755,
+      "top1_sim": 0.58669,
       "kept": false,
       "kept_count": 3,
       "candidate_count": 17,
-      "ratio_floor": 0.352053,
+      "ratio_floor": 0.352014,
+      "floor": 0.3,
       "results": [
         {
           "rank": 1,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.586755
+          "sim": 0.58669
         },
         {
           "rank": 2,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.515795
+          "sim": 0.515836
         },
         {
           "rank": 3,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.367848
+          "sim": 0.367863
         },
         {
           "rank": 4,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.318867
+          "sim": 0.318866
         },
         {
           "rank": 5,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.267343
+          "sim": 0.267281
         },
         {
           "rank": 6,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.264453
+          "sim": 0.264347
         },
         {
           "rank": 7,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.236133
+          "sim": 0.236065
         },
         {
           "rank": 8,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.234614
+          "sim": 0.234511
         },
         {
           "rank": 9,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.229984
+          "sim": 0.229862
         },
         {
           "rank": 10,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.223242
+          "sim": 0.223233
         },
         {
           "rank": 11,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.222843
+          "sim": 0.222794
         },
         {
           "rank": 12,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.2114
+          "sim": 0.211243
         },
         {
           "rank": 13,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.207201
+          "sim": 0.207227
         },
         {
           "rank": 14,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.206858
+          "sim": 0.206913
         },
         {
           "rank": 15,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.196478
+          "sim": 0.196385
         },
         {
           "rank": 16,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.169809
+          "sim": 0.169715
         },
         {
           "rank": 17,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.138537
+          "sim": 0.138412
         }
       ],
       "kept_names": [
@@ -2130,115 +2469,133 @@
       "note": "3자 · 본문 B 문두에 단독",
       "expect": "카츠요",
       "rank": 1,
-      "sim": 0.446585,
+      "sim": 0.446599,
       "top1_name": "카츠요",
-      "top1_sim": 0.446585,
+      "top1_sim": 0.446599,
       "kept": true,
       "kept_count": 1,
       "candidate_count": 17,
-      "ratio_floor": 0.267951,
+      "ratio_floor": 0.267959,
+      "floor": 0.24,
       "results": [
         {
           "rank": 1,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.446585
+          "sim": 0.446599
         },
         {
           "rank": 2,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.25779
+          "sim": 0.257768
         },
         {
           "rank": 3,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.220279
+          "sim": 0.220357
         },
         {
           "rank": 4,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.207829
+          "sim": 0.207816
         },
         {
           "rank": 5,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.184905
+          "sim": 0.184934
         },
         {
           "rank": 6,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.175154
+          "sim": 0.175206
         },
         {
           "rank": 7,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.174074
+          "sim": 0.174118
         },
         {
           "rank": 8,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.156339
+          "sim": 0.156351
         },
         {
           "rank": 9,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.147767
+          "sim": 0.147701
         },
         {
           "rank": 10,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.141228
+          "sim": 0.141239
         },
         {
           "rank": 11,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.140464
+          "sim": 0.140453
         },
         {
           "rank": 12,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.137232
+          "sim": 0.137231
         },
         {
           "rank": 13,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.131651
+          "sim": 0.13165
         },
         {
           "rank": 14,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.131525
+          "sim": 0.131526
         },
         {
           "rank": 15,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.124839
+          "sim": 0.124872
         },
         {
           "rank": 16,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.124541
+          "sim": 0.124543
         },
         {
           "rank": 17,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.099627
+          "sim": 0.099685
         }
       ],
       "kept_names": [
@@ -2254,115 +2611,133 @@
       "note": "본문 A 첫 구절 그대로",
       "expect": "동교어린이공원",
       "rank": 1,
-      "sim": 0.564011,
+      "sim": 0.56402,
       "top1_name": "동교어린이공원",
-      "top1_sim": 0.564011,
+      "top1_sim": 0.56402,
       "kept": true,
       "kept_count": 1,
       "candidate_count": 17,
-      "ratio_floor": 0.338407,
+      "ratio_floor": 0.338412,
+      "floor": 0.3,
       "results": [
         {
           "rank": 1,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.564011
+          "sim": 0.56402
         },
         {
           "rank": 2,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.287328
+          "sim": 0.287436
         },
         {
           "rank": 3,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.276898
+          "sim": 0.276948
         },
         {
           "rank": 4,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.234744
+          "sim": 0.234722
         },
         {
           "rank": 5,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.220467
+          "sim": 0.220483
         },
         {
           "rank": 6,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.215136
+          "sim": 0.215108
         },
         {
           "rank": 7,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.206873
+          "sim": 0.206834
         },
         {
           "rank": 8,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.198594
+          "sim": 0.198568
         },
         {
           "rank": 9,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.196397
+          "sim": 0.196525
         },
         {
           "rank": 10,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.192638
+          "sim": 0.192712
         },
         {
           "rank": 11,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.184089
+          "sim": 0.184095
         },
         {
           "rank": 12,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.164586
+          "sim": 0.164546
         },
         {
           "rank": 13,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.154958
+          "sim": 0.154913
         },
         {
           "rank": 14,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.147514
+          "sim": 0.147582
         },
         {
           "rank": 15,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.143557
+          "sim": 0.143551
         },
         {
           "rank": 16,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.141302
+          "sim": 0.141288
         },
         {
           "rank": 17,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.104244
+          "sim": 0.104275
         }
       ],
       "kept_names": [
@@ -2378,115 +2753,133 @@
       "note": "본문 B 거의 전문",
       "expect": "카츠요",
       "rank": 1,
-      "sim": 0.86021,
+      "sim": 0.8602,
       "top1_name": "카츠요",
-      "top1_sim": 0.86021,
+      "top1_sim": 0.8602,
       "kept": true,
       "kept_count": 1,
       "candidate_count": 17,
-      "ratio_floor": 0.516126,
+      "ratio_floor": 0.51612,
+      "floor": 0.3,
       "results": [
         {
           "rank": 1,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.86021
+          "sim": 0.8602
         },
         {
           "rank": 2,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.469401
+          "sim": 0.469432
         },
         {
           "rank": 3,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.392578
+          "sim": 0.392557
         },
         {
           "rank": 4,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.391717
+          "sim": 0.391795
         },
         {
           "rank": 5,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.348168
+          "sim": 0.34824
         },
         {
           "rank": 6,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.344055
+          "sim": 0.344151
         },
         {
           "rank": 7,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.321953
+          "sim": 0.321943
         },
         {
           "rank": 8,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.313329
+          "sim": 0.313372
         },
         {
           "rank": 9,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.309488
+          "sim": 0.309509
         },
         {
           "rank": 10,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.300923
+          "sim": 0.300971
         },
         {
           "rank": 11,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.293157
+          "sim": 0.293204
         },
         {
           "rank": 12,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.292875
+          "sim": 0.29295
         },
         {
           "rank": 13,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.281779
+          "sim": 0.281754
         },
         {
           "rank": 14,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.261717
+          "sim": 0.261697
         },
         {
           "rank": 15,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.227253
+          "sim": 0.227237
         },
         {
           "rank": 16,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.172974
+          "sim": 0.172969
         },
         {
           "rank": 17,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.150073
+          "sim": 0.150074
         }
       ],
       "kept_names": [
@@ -2502,115 +2895,133 @@
       "note": "demo_queries 5번",
       "expect": "카츠요",
       "rank": 1,
-      "sim": 0.606892,
+      "sim": 0.606873,
       "top1_name": "카츠요",
-      "top1_sim": 0.606892,
+      "top1_sim": 0.606873,
       "kept": true,
       "kept_count": 8,
       "candidate_count": 17,
-      "ratio_floor": 0.364135,
+      "ratio_floor": 0.364124,
+      "floor": 0.3,
       "results": [
         {
           "rank": 1,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.606892
+          "sim": 0.606873
         },
         {
           "rank": 2,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.48257
+          "sim": 0.482538
         },
         {
           "rank": 3,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.410748
+          "sim": 0.410761
         },
         {
           "rank": 4,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.40541
+          "sim": 0.405442
         },
         {
           "rank": 5,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.388574
+          "sim": 0.388606
         },
         {
           "rank": 6,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.380924
+          "sim": 0.380971
         },
         {
           "rank": 7,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.376026
+          "sim": 0.376046
         },
         {
           "rank": 8,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.365358
+          "sim": 0.365434
         },
         {
           "rank": 9,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.356763
+          "sim": 0.356822
         },
         {
           "rank": 10,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.352983
+          "sim": 0.352971
         },
         {
           "rank": 11,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.334565
+          "sim": 0.334577
         },
         {
           "rank": 12,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.311071
+          "sim": 0.311044
         },
         {
           "rank": 13,
           "record_id": 279,
+          "context_id": 279,
           "name": "사루카메",
-          "sim": 0.280351
+          "sim": 0.280407
         },
         {
           "rank": 14,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.277022
+          "sim": 0.276986
         },
         {
           "rank": 15,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.264799
+          "sim": 0.264836
         },
         {
           "rank": 16,
           "record_id": 289,
+          "context_id": 289,
           "name": "모던아시안누들서비스",
-          "sim": 0.219405
+          "sim": 0.21949
         },
         {
           "rank": 17,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.100926
+          "sim": 0.100903
         }
       ],
       "kept_names": [
@@ -2633,115 +3044,133 @@
       "note": "demo_queries 8번",
       "expect": "동교어린이공원",
       "rank": 2,
-      "sim": 0.457292,
+      "sim": 0.45781,
       "top1_name": "치킨버거 이스트사이드",
-      "top1_sim": 0.5264,
+      "top1_sim": 0.525771,
       "kept": true,
       "kept_count": 5,
       "candidate_count": 17,
-      "ratio_floor": 0.31584,
+      "ratio_floor": 0.315463,
+      "floor": 0.3,
       "results": [
         {
           "rank": 1,
           "record_id": 282,
+          "context_id": 282,
           "name": "치킨버거 이스트사이드",
-          "sim": 0.5264
+          "sim": 0.525771
         },
         {
           "rank": 2,
           "record_id": 287,
+          "context_id": 287,
           "name": "동교어린이공원",
-          "sim": 0.457292
+          "sim": 0.45781
         },
         {
           "rank": 3,
           "record_id": 291,
+          "context_id": 291,
           "name": "오케이어 맨션",
-          "sim": 0.399592
+          "sim": 0.398954
         },
         {
           "rank": 4,
           "record_id": 285,
+          "context_id": 285,
           "name": "월강부산돼지국밥",
-          "sim": 0.333748
+          "sim": 0.333058
         },
         {
           "rank": 5,
           "record_id": 283,
+          "context_id": 283,
           "name": "쿠로코식당 연남점",
-          "sim": 0.325634
+          "sim": 0.325608
         },
         {
           "rank": 6,
           "record_id": 284,
+          "context_id": 284,
           "name": "진우네 초밥",
-          "sim": 0.311601
+          "sim": 0.309727
         },
         {
           "rank": 7,
           "record_id": 286,
+          "context_id": 286,
           "name": "저스트텐동 연남본점",
-          "sim": 0.288293
+          "sim": 0.289302
         },
         {
           "rank": 8,
           "record_id": 281,
+          "context_id": 281,
           "name": "플랜트 연남점",
-          "sim": 0.288237
+          "sim": 0.286293
         },
         {
           "rank": 9,
           "record_id": 277,
+          "context_id": 277,
           "name": "카츠요",
-          "sim": 0.269999
+          "sim": 0.268234
         },
         {
           "rank": 10,
           "record_id": 278,
+          "context_id": 278,
           "name": "감나무집기사식당",
-          "sim": 0.248143
+          "sim": 0.247238
         },
         {
           "rank": 11,
-          "record_id": 289,
-          "name": "모던아시안누들서비스",
-          "sim": 0.233325
+          "record_id": 279,
+          "context_id": 279,
+          "name": "사루카메",
+          "sim": 0.233539
         },
         {
           "rank": 12,
-          "record_id": 279,
-          "name": "사루카메",
-          "sim": 0.233207
+          "record_id": 289,
+          "context_id": 289,
+          "name": "모던아시안누들서비스",
+          "sim": 0.23325
         },
         {
           "rank": 13,
           "record_id": 290,
+          "context_id": 290,
           "name": "힉스커피",
-          "sim": 0.232672
+          "sim": 0.230075
         },
         {
           "rank": 14,
           "record_id": 292,
+          "context_id": 292,
           "name": "적당",
-          "sim": 0.220666
+          "sim": 0.217538
         },
         {
           "rank": 15,
           "record_id": 293,
+          "context_id": 293,
           "name": "키친갈매기",
-          "sim": 0.213381
+          "sim": 0.212521
         },
         {
           "rank": 16,
           "record_id": 288,
+          "context_id": 288,
           "name": "연남칼국수",
-          "sim": 0.193601
+          "sim": 0.192411
         },
         {
           "rank": 17,
           "record_id": 280,
+          "context_id": 280,
           "name": "뉴오더클럽 연남",
-          "sim": 0.119771
+          "sim": 0.119515
         }
       ],
       "kept_names": [

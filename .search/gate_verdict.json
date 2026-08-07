@@ -1,0 +1,31 @@
+{
+  "1_recover": {
+    "신한": true,
+    "부캠": true,
+    "신한 부캠": true,
+    "그네": true,
+    "스팟": true
+  },
+  "2_offtopic_silent": {
+    "silent": 11,
+    "total": 15,
+    "baseline": 11
+  },
+  "3_demo_no_regression": {
+    "regressed": [],
+    "top1": 10,
+    "total": 12
+  },
+  "4_off_is_current": {
+    "demo_top1_failed": [],
+    "case_mismatch": [],
+    "offtopic_silent": 11,
+    "unsorted": []
+  },
+  "5_degraded": {
+    "case_mismatch": [],
+    "demo_regressed": []
+  },
+  "failed": [],
+  "passed": true
+}
