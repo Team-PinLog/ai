@@ -57,9 +57,12 @@ for _s in (sys.stdout, sys.stderr):
 
 SEARCH = ROOT / ".search"
 
-# 시연 정본은 15432 다(T33). `matrix.py`·`word_matrix.py`·`recall_probe.py` 와 같은 가드 —
-# 데이터가 없는 DB 를 재면 「keyword 신호가 아무 데도 없다」가 결론으로 나온다.
-EXPECT_PORT = "15432"
+# 검색 고도화 측정 정본은 스냅샷 DB 다(P49 §6) — `lexical_matrix.py` 와 같은 가드다.
+# 이 상수는 P48 1단계 때 시연 DB(:15432)를 재던 값(T33)으로 남아 있었고, 트랙이 스냅샷으로
+# 옮겨간 뒤에도 이 도구만 갱신되지 않았다. 시연 DB 를 직접 재면 측정과 시연이 같은 데이터를
+# 공유해 부수효과가 섞인다. 데이터가 없는 DB 를 재면 「keyword 신호가 아무 데도 없다」가
+# 결론으로 나오는 것은 그대로 막는다.
+EXPECT_PORT = "25432"
 
 MATRICES = ("matrix.json", "word_grid.json", "recall_probe.json")
 
