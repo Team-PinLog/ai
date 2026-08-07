@@ -13,6 +13,24 @@
 
 DB 는 가짜 커넥션으로 대체한다 — 여기서 재는 것은 재정렬 경로이지 SQL 이 아니다.
 같은 계약의 오프라인 판은 tests/test_search_fusion.py §9(rerank 픽스처)에 있다.
+
+## 이 파일이 고정하지 않는 것 (S15P11A705-402)
+
+위 다섯은 **재정렬 자신의 계약**이다 — 순서를 바꾸되 후보를 추가·제거하지 않는다.
+`OFFTOPIC-CONFIDENCE-GATE-HANDOFF-DRAFT.md`(중앙 조정 세션 인계 문서) §4가 제안하고
+`back` 레포가 구현한 **결합 신뢰도 게이트**(S15P11A705-400)는 정반대 성질을 가진다 —
+S1(벡터) 신호 하나뿐이고 유사도가 낮은 후보를 **의도적으로 제거한다.**
+
+두 계약을 같은 파일·같은 절로 두면 "재정렬은 후보를 안 지운다"는 ②가 게이트에도
+적용돼야 한다는 오독이 생긴다. **그렇지 않다** — 게이트는 재정렬 *이후*, back 이
+문자열 병합 직후에 거는 별도의 마지막 단계이고(BD-52, back 레포), 이 파일이 재는
+`_rerank_by_keyword`·`rerank()`는 그 단계를 전혀 모른다. `keywordMatched` 필드
+(S15P11A705-399, 아래 절)는 그 게이트가 쓸 S3 신호를 실어 보내는 준비 작업일 뿐,
+게이트 판정 자체는 이 레포가 아니라 `back`에 있다.
+
+아래 `test_rerank_never_gates_a_weak_unsupported_candidate`가 이 경계를 실행으로
+고정한다 — 게이트라면 제외했을 조건(신호 없음·낮은 유사도)의 후보도 재정렬은
+지우지 않는다.
 """
 from __future__ import annotations
 
@@ -301,6 +319,48 @@ async def test_keyword_matched_is_false_for_all_when_no_candidate_preset(
     )
     result = await _search(service)
     assert all(r["keywordMatched"] is False for r in result)
+
+
+# ── 재정렬 vs 게이트 경계 (S15P11A705-402) ─────────────────────────────────
+#
+# 위 다섯 계약과 keywordMatched 필드는 전부 **재정렬**의 것이다. 결합 신뢰도
+# 게이트(S15P11A705-400)는 back 레포에 있고 이 레포가 판정하지 않는다 — 아래
+# 테스트는 그 경계를 "재정렬은 게이트라면 지웠을 후보도 지우지 않는다"로 고정한다.
+
+
+@pytest.mark.anyio
+async def test_rerank_never_gates_a_weak_unsupported_candidate(monkeypatch):
+    """게이트라면 뺐을 모양의 후보(신호 없음·기존 컷은 통과·낮은 유사도)도 재정렬은 남긴다.
+
+    104는 기존 컷(`τ_word=0.24`·`r=0.6`)은 통과하지만(`0.31 ≥ 0.30`) 결합 신뢰도
+    게이트의 채택 임계값(0.35, ai 레포 S15P11A705-401)보다는 낮고 S2(문자열)·S3
+    (키워드) 어느 신호도 없다 — back의 게이트였다면 정확히 이 모양의 후보를
+    제외한다. 이 레포의 재정렬은 그 판단 자체를 하지 않으므로 104는 순서만
+    맨 뒤로 밀릴 뿐 후보에서 사라지지 않는다(계약 ②는 여기서도 성립한다).
+    """
+    weak_rows = [
+        {"record_id": 101, "context_id": 11, "similarity": 0.50},
+        {"record_id": 102, "context_id": 12, "similarity": 0.48},
+        {"record_id": 103, "context_id": 13, "similarity": 0.40},
+        {"record_id": 104, "context_id": 14, "similarity": 0.31},
+    ]
+
+    async def _rows(conn, user_id, profile, embedding, limit):
+        return [dict(r) for r in weak_rows]
+
+    monkeypatch.setattr(
+        "app.service.search_service.context_embedding_repo.search", _rows
+    )
+    settings = _settings(monkeypatch, SEARCH_KEYWORD_RERANK_ENABLED="true")
+    service, _ = _service(
+        monkeypatch, settings, presets=ALIGNED, keyword_rows=MATCH_102
+    )
+    result = await _search(service)
+
+    assert {r["recordId"] for r in result} == {101, 102, 103, 104}
+    weakest = next(r for r in result if r["recordId"] == 104)
+    assert weakest["similarity"] == 0.31
+    assert weakest["keywordMatched"] is False
 
 
 def test_candidate_rule_matches_the_harness(monkeypatch):
