@@ -21,6 +21,7 @@ from app.client._calls import meter as call_meter
 from app.client.embedding_client import EmbeddingClient
 from app.client.kakao_local_client import HttpKakaoLocalClient
 from app.client.llm_client import LLMClient
+from app.client.relevance_client import RelevanceJudgeClient
 from app.client.retry import RetryPolicy
 from app.client.rewrite_client import RewriteClient
 from app.client.vision_client import GmsGeminiVisionClient
@@ -83,6 +84,16 @@ async def lifespan(app: FastAPI):
                 cache_size=settings.search_rewrite_cache_size,
             )
 
+            # 검색 결과 LLM 관련도 재판정 (4번째 검색 신호). 기본 off — back 은
+            # SEARCH_RELEVANCE_JUDGE_ENABLED=false 면 이 엔드포인트를 호출하지 않는다.
+            relevance_judge_client = RelevanceJudgeClient(
+                gms_base_url=settings.gms_base_url,
+                api_key=settings.gms_api_key,
+                chain=settings.judge_vendors,
+                timeout=settings.search_relevance_judge_timeout_sec,
+                retry=RetryPolicy(attempts=settings.search_relevance_judge_attempts),
+            )
+
             preset_cache = PresetCache()
             async with db.acquire() as conn:
                 rows = await keyword_preset_repo.load_active(
@@ -124,6 +135,7 @@ async def lifespan(app: FastAPI):
                 db, embedding_client, settings,
                 rewrite_client=rewrite_client, preset_cache=preset_cache,
             )
+            app.state.relevance_judge_client = relevance_judge_client
             app.state.context_processing_service = ContextProcessingService(
                 db, embedding_service, keyword_service
             )
