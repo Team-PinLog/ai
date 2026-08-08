@@ -18,6 +18,11 @@ class SearchResultItem(BaseModel):
     recordId: int
     contextId: int
     similarity: float
+    # 재정렬(S15P11A705-339)이 이미 계산하는 키워드 매치 여부를 버리지 않고 싣는다
+    # (S15P11A705-399). 결과를 보여줄지 정하는 데는 쓰지 않는다 — 이 필드는 신호를
+    # 실어 보내는 것이고, 그 신호로 결과 유무를 정하는 것은 별도 게이트(S15P11A705-400)
+    # 의 몫이다.
+    keywordMatched: bool
 
 
 class SearchResponse(BaseModel):

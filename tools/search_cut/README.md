@@ -30,9 +30,17 @@
 | `boundary_matrix.py` | 단어형 **경계 정의** 두 가지를 가르는 행렬(`S15P11A705-273`). 본문 인접 어절쌍을 `spaced`/`joined` 짝으로 낸다. **GMS 임베딩 배치 3회** |
 | `boundary_sweep.py` | `_is_word_query` 정의 6종을 같은 행렬에 걸어 비교한다. **DB 도 GMS 도 부르지 않는다** |
 | `layer_probe.py` | 질의가 **어느 층에서** 몇 건을 잃는지. 후보·LIMIT·τ·r·**실서버**를 한 줄에 놓는다 |
+| `rank_score.py` | 검색 **순위** 지표 baseline(P48 0단계, I52). 컷 기준 지표로는 순위 변화가 안 보여서 따로 둔다. Hit·Recall·MRR·nDCG 를 컷 전/후 · 단어형/문장형 · 정답/무관으로 갈라 낸다. **DB 도 GMS 도 부르지 않는다** |
+| `fusion.py` | keyword 신호 fusion **순수 로직**(P48 1단계). DB·GMS·파일을 읽지 않고 인자만 받는다 — `tests/test_search_fusion.py` 가 픽스처로 검증한다 |
+| `keyword_matrix.py` | keyword 신호 artifact 생성 — 질의별 전체 활성 Preset 코사인 + Context 별 keyword·confidence·상태. **GMS 임베딩 배치 1회 + DB 읽기** |
+| `fusion_sweep.py` | fusion 방식(binary·confidence·idf·RRF)×가중치×floor×RRF cutoff 격자 — **P48 구조**(후보 합집합 후 병합 점수에 컷). `keyword_matrix.json` 과 행렬 셋만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
+| `fusion_rerank_sweep.py` | keyword 재정렬 전용 병합 격자 — **P49 §4 구조**(컷 통과 집합 고정·순서만 조정). BASE·binary(floor×weight)·RRF 비교. 같은 파일만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
+| `rerank_verify_live.py` | keyword 재정렬의 **실서버 on/off 대조** — 플래그만 다른 두 서버의 실응답으로 다섯 계약(후보 불변·재정렬 정확성·무관 무노출·정답 무퇴행·off 현행 동일)을 판정한다. **GMS 임베딩 질의당·서버당 1회** |
+| `lexical_matrix.py` | 문자열 매치 artifact — 본문에 질의가 그대로 있는지를 (질의×소유자×Record)로 굳힌다. 본문은 저장하지 않는다. **스냅샷 DB(:25432) 읽기 · GMS 0회** |
+| `lexical_sweep.py` | 문자열 병합 규칙 격자 — 게이트 3단×병합 3종. `lexical_matrix.json` 과 행렬 셋만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
 
-`matrix.json` · `recall_probe.json` · `word_grid.json` 은 **커밋한다.** 다시 뜨려면 GMS 를
-부르고, `tau_grid` 의 것과 달리 Context 본문을 담지 않는다(장소명까지).
+`matrix.json` · `recall_probe.json` · `word_grid.json` · `keyword_matrix.json` 은 **커밋한다.**
+다시 뜨려면 GMS 를 부르고, `tau_grid` 의 것과 달리 Context 본문을 담지 않는다(장소명까지).
 
 ## 단어형 컷 격자 (`S15P11A705-266`)
 
@@ -161,6 +169,65 @@ export DATABASE_URL="postgresql://pinlog:pinlog-local@localhost:15432/pinlog"
 
 **worktree 에서 돌린다면 `.env` 를 그쪽에도 둔다.** `get_settings()` 의 `env_file` 은
 CWD 기준이고 `.env` 는 gitignore 라 worktree 에 없다 — `GMS_API_KEY` 부터 없어서 죽는다(T41).
+
+### keyword fusion (P48 1단계, `S15P11A705-336` 실측)
+
+```bash
+.venv/Scripts/python.exe -m pytest tests/test_search_fusion.py tests/test_keyword_matrix_parse.py -q
+                                                          # 픽스처 검증. DB·GMS 0회
+.venv/Scripts/python.exe tools/search_cut/rank_score.py   # 순위 baseline. 파일만 읽는다
+.venv/Scripts/python.exe tools/search_cut/keyword_matrix.py   # GMS 배치 1회 + DB 읽기
+.venv/Scripts/python.exe tools/search_cut/fusion_sweep.py --rrf-cutoff-grid "0,0.004,0.008,0.016" --floor 0.35
+                                                          # 파일만 읽는다
+```
+
+**floor 를 반드시 축으로 훑는다** — 기본값(0.25)은 관련 없는 질의의 결과가 노출되는
+대역이라, 그 값만 보면 무관 노출 조건을 잘못 통과시킨다(T73). `word_matrix.py` 와
+`recall_probe.py` 는 행에 `context_id` 를 포함해야 keyword 조인이 성립한다 — 낡은
+행렬이면 `fusion_sweep.py` 의 가드가 재지 않고 멈춘다. 결과 판정 기준은 P48 §6.1,
+실측 기록은 [구현 리포트 I53](../../docs/implements/2026-08-05-fusion-measurement.md).
+
+### keyword 재정렬 전용 병합 (P49 작업 4, `S15P11A705-339`)
+
+```bash
+.venv/Scripts/python.exe tools/search_cut/fusion_rerank_sweep.py   # 파일만 읽는다
+.venv/Scripts/python.exe tools/search_cut/fusion_rerank_sweep.py \
+    --json .search/fusion_rerank_sweep.json                        # 결정성 회차용 보존
+```
+
+`fusion_sweep.py` 와 **병합 의미가 다르다** — 저쪽은 P48 구조(후보 합집합을 만들고
+컷을 병합 점수에 건다)이고, 이쪽은 P49 §4 가 확정한 구조(현행 컷이 후보를 먼저
+확정하고 keyword 신호는 그 안의 순서만 조정한다)다. I53 의 채택값은 P48 구조의
+관측이므로 이 구조의 채택값은 이 스크립트로 다시 쟀다.
+
+재정렬 전후의 후보 Record id 집합이 다르면 **수치를 내지 않고 멈춘다** — 무관 질의
+노출이 구조적으로 불변이라는 P49 §5 의 전제를 스크립트 스스로 검사한다. artifact 의
+profile·preset_version 이 현행과 어긋나도 멈춘다(`--expect-*` 로 현행 값을 덮어쓴다).
+
+결정성 회차는 `--json` 을 서로 다른 경로로 두 번 돌려 파일이 같은지로 본다 — 입력이
+파일뿐이라 같은 입력·같은 인자면 같은 출력이어야 하고, 다르면 하네스가 비결정적인
+것이다. 신규 출력은 `.search/fusion_rerank_` 접두로 만들어 기존 artifact 를 덮지
+않는다. 결과 판정은 [구현 리포트](../../docs/implements/) 의 `-339` 리포트에 있다.
+
+런타임 구현의 **실서버 검증**은 `rerank_verify_live.py` 로 한다. 스냅샷 DB(:25432)를
+상대로 이 브랜치 코드를 `SEARCH_KEYWORD_RERANK_ENABLED` 만 다르게 두 번 띄우고
+(venv 경로 명시 — T29, 로그는 리디렉션 — T30), 같은 질의 셋(93건)을 각각 수집해
+대조한다. off/on 은 별도 요청이라 임베딩이 흔들릴 수 있으므로(T68) 어긋난 건은 컷
+경계 거리 0.0044 이내면 「경계 위 흔들림」으로 분류하고 `collect --queries` 로
+재시도해 확인한다. 절차 전문은 그 스크립트 도입주석에 있다.
+
+### 문자열 병합 규칙 (P49 작업 3)
+
+```bash
+export DATABASE_URL="postgresql://pinlog:pinlog-local@localhost:25432/pinlog"   # 스냅샷 DB
+.venv/Scripts/python.exe tools/search_cut/lexical_matrix.py   # DB 읽기. GMS 0회
+.venv/Scripts/python.exe tools/search_cut/lexical_sweep.py    # 파일만 읽는다
+```
+
+검색 고도화 트랙의 측정은 시연 DB(:15432)가 아니라 **스냅샷 DB(:25432)** 에서 한다 —
+브랜치는 코드만 격리하고 DB 는 격리하지 않는다(P49 §6). `lexical_matrix.py` 가 포트를
+검사해 다르면 멈춘다. 결과 판정과 규칙 확정안은
+[구현 리포트 I54](../../docs/implements/2026-08-06-lexical-merge-rule.md).
 
 ### 실서버 대조
 

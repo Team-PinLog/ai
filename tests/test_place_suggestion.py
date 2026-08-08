@@ -4,6 +4,7 @@ import asyncio
 import io
 import json
 import logging
+import os
 
 import httpx
 import pytest
@@ -13,7 +14,8 @@ from starlette.datastructures import Headers
 
 from app.client.vision_client import USER_PROMPT, GmsGeminiVisionClient, compact_image
 from app.core.errors import PermanentError, TransientError
-from app.core.image_validation import ValidatedImage
+from app.core.image_validation import ValidatedImage, validate_image
+from app.core.place_suggestion import ImageInputError
 from app.main import create_app
 from app.schema.place_suggestion import (
     ExtractedPlace,
@@ -38,6 +40,14 @@ def _upload(content: bytes | None = None) -> UploadFile:
         filename="chat.png",
         headers=Headers({"content-type": "image/png"}),
     )
+
+
+def _incompressible_image_bytes(*, size: tuple[int, int]) -> bytes:
+    """랜덤 픽셀은 PNG로도 거의 압축되지 않아, 파일 크기를 해상도로 예측 가능하게 만든다."""
+    random_pixels = os.urandom(size[0] * size[1] * 3)
+    buffer = io.BytesIO()
+    Image.frombytes("RGB", size, random_pixels).save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 class FakeVision:
@@ -170,6 +180,29 @@ async def test_development_result_log_contains_place_and_context(caplog):
     assert "request_id=trace-result-log" in message
     assert "place_name='주토피아 서울'" in message
     assert "context='대구랑 서울에만 있다는 화덕피자집'" in message
+
+
+async def test_validate_image_rejects_content_over_max_bytes():
+    max_bytes = 10 * 1024 * 1024
+    oversized = _upload(b"\xff" * (max_bytes + 1))
+
+    with pytest.raises(ImageInputError) as excinfo:
+        await validate_image(oversized, max_bytes=max_bytes)
+
+    assert excinfo.value.status_code == 413
+    assert excinfo.value.code == "IMAGE_TOO_LARGE"
+
+
+async def test_validate_image_accepts_a_real_image_within_the_new_ten_mib_limit():
+    # S15P11A705-366: 5MiB -> 10MiB. 5MiB보다 크고 10MiB보다 작은 실제 이미지는 예전 상한에서는
+    # 거부됐지만(RED) 새 상한에서는 통과해야 한다(GREEN).
+    content = _incompressible_image_bytes(size=(1600, 1536))
+    assert 5 * 1024 * 1024 < len(content) < 10 * 1024 * 1024
+
+    result = await validate_image(_upload(content), max_bytes=10 * 1024 * 1024)
+
+    assert result.media_type == "image/png"
+    assert (result.width, result.height) == (1600, 1536)
 
 
 def test_kakao_query_does_not_add_conflicting_region_to_named_branch():

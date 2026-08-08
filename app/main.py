@@ -21,6 +21,9 @@ from app.client._calls import meter as call_meter
 from app.client.embedding_client import EmbeddingClient
 from app.client.kakao_local_client import HttpKakaoLocalClient
 from app.client.llm_client import LLMClient
+from app.client.relevance_client import RelevanceJudgeClient
+from app.client.retry import RetryPolicy
+from app.client.rewrite_client import RewriteClient
 from app.client.vision_client import GmsGeminiVisionClient
 from app.core.config import get_settings
 from app.core.db import Database
@@ -69,6 +72,27 @@ async def lifespan(app: FastAPI):
                 api_key=settings.gms_api_key,
                 chain=settings.judge_vendors,
             )
+            # 검색 질의 재작성 (S15P11A705-337). 기본 off — SEARCH_LLM_ENABLED 가
+            # false 면 SearchService 가 호출하지 않아 검색은 현행과 동일하다.
+            # 판정과 같은 벤더 체인을 쓰되 예산(타임아웃·시도)은 검색 전용 값이다.
+            rewrite_client = RewriteClient(
+                gms_base_url=settings.gms_base_url,
+                api_key=settings.gms_api_key,
+                chain=settings.judge_vendors,
+                timeout=settings.search_llm_timeout_sec,
+                retry=RetryPolicy(attempts=settings.search_llm_attempts),
+                cache_size=settings.search_rewrite_cache_size,
+            )
+
+            # 검색 결과 LLM 관련도 재판정 (4번째 검색 신호). 기본 off — back 은
+            # SEARCH_RELEVANCE_JUDGE_ENABLED=false 면 이 엔드포인트를 호출하지 않는다.
+            relevance_judge_client = RelevanceJudgeClient(
+                gms_base_url=settings.gms_base_url,
+                api_key=settings.gms_api_key,
+                chain=settings.judge_vendors,
+                timeout=settings.search_relevance_judge_timeout_sec,
+                retry=RetryPolicy(attempts=settings.search_relevance_judge_attempts),
+            )
 
             preset_cache = PresetCache()
             async with db.acquire() as conn:
@@ -105,7 +129,13 @@ async def lifespan(app: FastAPI):
             app.state.embedding_client = embedding_client
             app.state.llm_client = llm_client
             app.state.preset_cache = preset_cache
-            app.state.search_service = SearchService(db, embedding_client, settings)
+            # preset_cache 는 keyword 재정렬(S15P11A705-339)의 질의-Preset 후보용이다.
+            # SEARCH_KEYWORD_RERANK_ENABLED=false(기본)면 검색은 현행과 동일하다.
+            app.state.search_service = SearchService(
+                db, embedding_client, settings,
+                rewrite_client=rewrite_client, preset_cache=preset_cache,
+            )
+            app.state.relevance_judge_client = relevance_judge_client
             app.state.context_processing_service = ContextProcessingService(
                 db, embedding_service, keyword_service
             )

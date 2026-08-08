@@ -1,0 +1,668 @@
+{
+  "phase": "degraded",
+  "back": "http://localhost:8082/api/core",
+  "results": [
+    {
+      "kind": "demo",
+      "query": "비 오는 날 가려고 저장한 곳",
+      "member_id": 75,
+      "expect": "[데모] 골목 안 다방",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 252,
+          "similarity": 0.5019,
+          "place": "[데모] 골목 안 다방"
+        },
+        {
+          "recordId": 255,
+          "similarity": 0.3491,
+          "place": "[데모] 언덕 위 야경 식당"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "혼자 조용히 작업하기 좋은 카페",
+      "member_id": 75,
+      "expect": "[데모] 창가 작업실 카페",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 253,
+          "similarity": 0.4969,
+          "place": "[데모] 창가 작업실 카페"
+        },
+        {
+          "recordId": 256,
+          "similarity": 0.3294,
+          "place": "[데모] 넓은 한상 식당"
+        },
+        {
+          "recordId": 257,
+          "similarity": 0.3164,
+          "place": "[데모] 강변 산책로 초입"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "친구들이랑 시끌벅적하게 놀 만한 곳",
+      "member_id": 75,
+      "expect": "[데모] 연남 골목 선술집",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 254,
+          "similarity": 0.6414,
+          "place": "[데모] 연남 골목 선술집"
+        },
+        {
+          "recordId": 256,
+          "similarity": 0.4069,
+          "place": "[데모] 넓은 한상 식당"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "기념일에 야경 보면서 식사할 곳",
+      "member_id": 75,
+      "expect": "[데모] 언덕 위 야경 식당",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 255,
+          "similarity": 0.5266,
+          "place": "[데모] 언덕 위 야경 식당"
+        },
+        {
+          "recordId": 257,
+          "similarity": 0.4488,
+          "place": "[데모] 강변 산책로 초입"
+        },
+        {
+          "recordId": 254,
+          "similarity": 0.3466,
+          "place": "[데모] 연남 골목 선술집"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "돈카츠 먹으러 자주 갔던 곳",
+      "member_id": 81,
+      "expect": "카츠요",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 277,
+          "similarity": 0.6069,
+          "place": "카츠요"
+        },
+        {
+          "recordId": 281,
+          "similarity": 0.4825,
+          "place": "플랜트 연남점"
+        },
+        {
+          "recordId": 285,
+          "similarity": 0.4108,
+          "place": "월강부산돼지국밥"
+        },
+        {
+          "recordId": 284,
+          "similarity": 0.4054,
+          "place": "진우네 초밥"
+        },
+        {
+          "recordId": 282,
+          "similarity": 0.3886,
+          "place": "치킨버거 이스트사이드"
+        },
+        {
+          "recordId": 278,
+          "similarity": 0.381,
+          "place": "감나무집기사식당"
+        },
+        {
+          "recordId": 290,
+          "similarity": 0.376,
+          "place": "힉스커피"
+        },
+        {
+          "recordId": 287,
+          "similarity": 0.3653,
+          "place": "동교어린이공원"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "미슐랭에 오른 라멘집",
+      "member_id": 81,
+      "expect": "사루카메",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 279,
+          "similarity": 0.5191,
+          "place": "사루카메"
+        },
+        {
+          "recordId": 283,
+          "similarity": 0.5104,
+          "place": "쿠로코식당 연남점"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "친구들이랑 피자에 맥주 마신 곳",
+      "member_id": 81,
+      "expect": "뉴오더클럽 연남",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 277,
+          "similarity": 0.4512,
+          "place": "카츠요"
+        },
+        {
+          "recordId": 287,
+          "similarity": 0.3675,
+          "place": "동교어린이공원"
+        },
+        {
+          "recordId": 280,
+          "similarity": 0.3642,
+          "place": "뉴오더클럽 연남"
+        },
+        {
+          "recordId": 290,
+          "similarity": 0.3616,
+          "place": "힉스커피"
+        },
+        {
+          "recordId": 292,
+          "similarity": 0.3546,
+          "place": "적당"
+        },
+        {
+          "recordId": 278,
+          "similarity": 0.3532,
+          "place": "감나무집기사식당"
+        },
+        {
+          "recordId": 285,
+          "similarity": 0.3464,
+          "place": "월강부산돼지국밥"
+        },
+        {
+          "recordId": 282,
+          "similarity": 0.3282,
+          "place": "치킨버거 이스트사이드"
+        },
+        {
+          "recordId": 284,
+          "similarity": 0.3191,
+          "place": "진우네 초밥"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "밥 먹고 산책하면서 쉬어가는 공원",
+      "member_id": 81,
+      "expect": "동교어린이공원",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 282,
+          "similarity": 0.5264,
+          "place": "치킨버거 이스트사이드"
+        },
+        {
+          "recordId": 287,
+          "similarity": 0.4573,
+          "place": "동교어린이공원"
+        },
+        {
+          "recordId": 291,
+          "similarity": 0.3996,
+          "place": "오케이어 맨션"
+        },
+        {
+          "recordId": 283,
+          "similarity": 0.3256,
+          "place": "쿠로코식당 연남점"
+        },
+        {
+          "recordId": 285,
+          "similarity": 0.3337,
+          "place": "월강부산돼지국밥"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "채식 샌드위치 먹던 단골집",
+      "member_id": 81,
+      "expect": "플랜트 연남점",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 281,
+          "similarity": 0.5682,
+          "place": "플랜트 연남점"
+        },
+        {
+          "recordId": 277,
+          "similarity": 0.4554,
+          "place": "카츠요"
+        },
+        {
+          "recordId": 287,
+          "similarity": 0.3929,
+          "place": "동교어린이공원"
+        },
+        {
+          "recordId": 290,
+          "similarity": 0.3905,
+          "place": "힉스커피"
+        },
+        {
+          "recordId": 282,
+          "similarity": 0.412,
+          "place": "치킨버거 이스트사이드"
+        },
+        {
+          "recordId": 278,
+          "similarity": 0.3952,
+          "place": "감나무집기사식당"
+        },
+        {
+          "recordId": 285,
+          "similarity": 0.3832,
+          "place": "월강부산돼지국밥"
+        },
+        {
+          "recordId": 284,
+          "similarity": 0.3777,
+          "place": "진우네 초밥"
+        },
+        {
+          "recordId": 292,
+          "similarity": 0.3412,
+          "place": "적당"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "책 사면 꽃을 주는 서점",
+      "member_id": 80,
+      "expect": "오케이어 맨션",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 269,
+          "similarity": 0.8023,
+          "place": "오케이어 맨션"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "화덕에 구운 피자집",
+      "member_id": 80,
+      "expect": "주토피아 서울",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 272,
+          "similarity": 0.5115,
+          "place": "주토피아 서울"
+        },
+        {
+          "recordId": 275,
+          "similarity": 0.397,
+          "place": "힉스커피"
+        },
+        {
+          "recordId": 267,
+          "similarity": 0.3396,
+          "place": "애플하우스"
+        },
+        {
+          "recordId": 273,
+          "similarity": 0.3172,
+          "place": "오향절면"
+        }
+      ]
+    },
+    {
+      "kind": "demo",
+      "query": "양갱 파는 분위기 좋은 카페",
+      "member_id": 80,
+      "expect": "적당",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 270,
+          "similarity": 0.8188,
+          "place": "적당"
+        }
+      ]
+    },
+    {
+      "kind": "case",
+      "query": "신한",
+      "member_id": 81,
+      "expect": "카츠요",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 281,
+          "similarity": 0.3889,
+          "place": "플랜트 연남점"
+        },
+        {
+          "recordId": 284,
+          "similarity": 0.3307,
+          "place": "진우네 초밥"
+        },
+        {
+          "recordId": 283,
+          "similarity": 0.3867,
+          "place": "쿠로코식당 연남점"
+        },
+        {
+          "recordId": 286,
+          "similarity": 0.241,
+          "place": "저스트텐동 연남본점"
+        },
+        {
+          "recordId": 280,
+          "similarity": 0.0,
+          "place": "뉴오더클럽 연남"
+        },
+        {
+          "recordId": 278,
+          "similarity": 0.0,
+          "place": "감나무집기사식당"
+        },
+        {
+          "recordId": 277,
+          "similarity": 0.0,
+          "place": "카츠요"
+        }
+      ]
+    },
+    {
+      "kind": "case",
+      "query": "부캠",
+      "member_id": 81,
+      "expect": "카츠요",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 283,
+          "similarity": 0.4103,
+          "place": "쿠로코식당 연남점"
+        },
+        {
+          "recordId": 281,
+          "similarity": 0.3305,
+          "place": "플랜트 연남점"
+        },
+        {
+          "recordId": 284,
+          "similarity": 0.0,
+          "place": "진우네 초밥"
+        },
+        {
+          "recordId": 288,
+          "similarity": 0.3195,
+          "place": "연남칼국수"
+        },
+        {
+          "recordId": 278,
+          "similarity": 0.0,
+          "place": "감나무집기사식당"
+        }
+      ]
+    },
+    {
+      "kind": "case",
+      "query": "신한 부캠",
+      "member_id": 81,
+      "expect": "카츠요",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 283,
+          "similarity": 0.5868,
+          "place": "쿠로코식당 연남점"
+        },
+        {
+          "recordId": 281,
+          "similarity": 0.5158,
+          "place": "플랜트 연남점"
+        },
+        {
+          "recordId": 284,
+          "similarity": 0.3678,
+          "place": "진우네 초밥"
+        }
+      ]
+    },
+    {
+      "kind": "case",
+      "query": "그네",
+      "member_id": 81,
+      "expect": "동교어린이공원",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 282,
+          "similarity": 0.2871,
+          "place": "치킨버거 이스트사이드"
+        },
+        {
+          "recordId": 287,
+          "similarity": 0.2671,
+          "place": "동교어린이공원"
+        },
+        {
+          "recordId": 290,
+          "similarity": 0.2676,
+          "place": "힉스커피"
+        },
+        {
+          "recordId": 286,
+          "similarity": 0.266,
+          "place": "저스트텐동 연남본점"
+        },
+        {
+          "recordId": 293,
+          "similarity": 0.2423,
+          "place": "키친갈매기"
+        },
+        {
+          "recordId": 289,
+          "similarity": 0.2416,
+          "place": "모던아시안누들서비스"
+        }
+      ]
+    },
+    {
+      "kind": "case",
+      "query": "스팟",
+      "member_id": 81,
+      "expect": "동교어린이공원",
+      "status": 200,
+      "items": [
+        {
+          "recordId": 287,
+          "similarity": 0.2438,
+          "place": "동교어린이공원"
+        },
+        {
+          "recordId": 281,
+          "similarity": 0.2407,
+          "place": "플랜트 연남점"
+        }
+      ]
+    },
+    {
+      "kind": "offtopic",
+      "query": "자동차 엔진오일 교환 정비소",
+      "member_id": 75,
+      "expect": null,
+      "status": 200,
+      "items": []
+    },
+    {
+      "kind": "offtopic",
+      "query": "자동차 엔진오일 교환 정비소",
+      "member_id": 80,
+      "expect": null,
+      "status": 200,
+      "items": []
+    },
+    {
+      "kind": "offtopic",
+      "query": "자동차 엔진오일 교환 정비소",
+      "member_id": 81,
+      "expect": null,
+      "status": 200,
+      "items": []
+    },
+    {
+      "kind": "offtopic",
+      "query": "치과 임플란트 상담 받을 곳",
+      "member_id": 75,
+      "expect": null,
+      "status": 200,
+      "items": []
+    },
+    {
+      "kind": "offtopic",
+      "query": "치과 임플란트 상담 받을 곳",
+      "member_id": 80,
+      "expect": null,
+      "status": 200,
+      "items": [
+        {
+          "recordId": 268,
+          "similarity": 0.3008,
+          "place": "키친갈매기"
+        }
+      ]
+    },
+    {
+      "kind": "offtopic",
+      "query": "치과 임플란트 상담 받을 곳",
+      "member_id": 81,
+      "expect": null,
+      "status": 200,
+      "items": [
+        {
+          "recordId": 288,
+          "similarity": 0.3819,
+          "place": "연남칼국수"
+        },
+        {
+          "recordId": 293,
+          "similarity": 0.3006,
+          "place": "키친갈매기"
+        }
+      ]
+    },
+    {
+      "kind": "offtopic",
+      "query": "겨울 스키장 리프트권 파는 데",
+      "member_id": 75,
+      "expect": null,
+      "status": 200,
+      "items": []
+    },
+    {
+      "kind": "offtopic",
+      "query": "겨울 스키장 리프트권 파는 데",
+      "member_id": 80,
+      "expect": null,
+      "status": 200,
+      "items": []
+    },
+    {
+      "kind": "offtopic",
+      "query": "겨울 스키장 리프트권 파는 데",
+      "member_id": 81,
+      "expect": null,
+      "status": 200,
+      "items": []
+    },
+    {
+      "kind": "offtopic",
+      "query": "노트북 액정 수리 서비스센터",
+      "member_id": 75,
+      "expect": null,
+      "status": 200,
+      "items": [
+        {
+          "recordId": 253,
+          "similarity": 0.3371,
+          "place": "[데모] 창가 작업실 카페"
+        }
+      ]
+    },
+    {
+      "kind": "offtopic",
+      "query": "노트북 액정 수리 서비스센터",
+      "member_id": 80,
+      "expect": null,
+      "status": 200,
+      "items": []
+    },
+    {
+      "kind": "offtopic",
+      "query": "노트북 액정 수리 서비스센터",
+      "member_id": 81,
+      "expect": null,
+      "status": 200,
+      "items": []
+    },
+    {
+      "kind": "offtopic",
+      "query": "강아지 예방접종 동물병원",
+      "member_id": 75,
+      "expect": null,
+      "status": 200,
+      "items": []
+    },
+    {
+      "kind": "offtopic",
+      "query": "강아지 예방접종 동물병원",
+      "member_id": 80,
+      "expect": null,
+      "status": 200,
+      "items": [
+        {
+          "recordId": 273,
+          "similarity": 0.3248,
+          "place": "오향절면"
+        }
+      ]
+    },
+    {
+      "kind": "offtopic",
+      "query": "강아지 예방접종 동물병원",
+      "member_id": 81,
+      "expect": null,
+      "status": 200,
+      "items": []
+    }
+  ]
+}
