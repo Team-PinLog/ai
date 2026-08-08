@@ -245,6 +245,64 @@ def test_defaults_are_the_measured_values(monkeypatch):
     assert s.search_keyword_rerank_top_k == 3
 
 
+
+# ── keywordMatched 필드 (S15P11A705-399) ──────────────────────────────────
+#
+# 재정렬이 이미 계산하는 match 여부를 응답에 싣는다. **재정렬 자신의 계약(위 5개)과는
+# 별개다** — 여기서 재는 것은 "필드 값이 실제 match 를 반영하는가"이지 순서가 아니다.
+
+
+@pytest.mark.anyio
+async def test_keyword_matched_is_true_only_for_the_matched_record(
+    monkeypatch, vector_rows
+):
+    settings = _settings(monkeypatch, SEARCH_KEYWORD_RERANK_ENABLED="true")
+    service, _ = _service(
+        monkeypatch, settings, presets=ALIGNED, keyword_rows=MATCH_102
+    )
+    result = await _search(service)
+    assert {r["recordId"]: r["keywordMatched"] for r in result} == {
+        101: False, 102: True, 103: False,
+    }
+
+
+@pytest.mark.anyio
+async def test_keyword_matched_is_false_for_all_when_flag_off(
+    monkeypatch, vector_rows
+):
+    settings = _settings(monkeypatch)
+    service, _ = _service(
+        monkeypatch, settings, presets=ALIGNED, keyword_rows=MATCH_102
+    )
+    result = await _search(service)
+    assert all(r["keywordMatched"] is False for r in result)
+
+
+@pytest.mark.anyio
+async def test_keyword_matched_is_false_for_all_when_fetch_fails(
+    monkeypatch, vector_rows
+):
+    settings = _settings(monkeypatch, SEARCH_KEYWORD_RERANK_ENABLED="true")
+    service, _ = _service(
+        monkeypatch, settings, presets=ALIGNED, error=RuntimeError("db down")
+    )
+    result = await _search(service)
+    assert all(r["keywordMatched"] is False for r in result)
+
+
+@pytest.mark.anyio
+async def test_keyword_matched_is_false_for_all_when_no_candidate_preset(
+    monkeypatch, vector_rows
+):
+    settings = _settings(monkeypatch, SEARCH_KEYWORD_RERANK_ENABLED="true")
+    service, _ = _service(
+        monkeypatch, settings,
+        presets=[_preset(2, OTHER_AXIS)], keyword_rows=MATCH_102,
+    )
+    result = await _search(service)
+    assert all(r["keywordMatched"] is False for r in result)
+
+
 def test_candidate_rule_matches_the_harness(monkeypatch):
     """floor 를 top_k 보다 먼저 걸고 동점은 preset_id 오름차순 — 하네스와 같은 규칙.
 

@@ -141,6 +141,8 @@ async def test_search_returns_context_id(api, conn, settings):
     assert r.status_code == 200
     item = r.json()["results"][0]
     assert item["recordId"] == 50 and item["contextId"] == 5 and "similarity" in item
+    # 재정렬 기본 off — 조회를 안 했으니 매치도 없다(S15P11A705-399).
+    assert item["keywordMatched"] is False
 
 
 # ── 질의 길이별 τ_abs 배선 (S15P11A705-266) ──────────────

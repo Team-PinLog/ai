@@ -79,7 +79,7 @@ class SearchService:
             # 재정렬은 같은 커넥션으로 context_keyword 를 읽어야 해서 컷을 acquire
             # 안으로 옮겼다 — 컷은 순수 계산이라 위치가 결과를 바꾸지 않는다.
             kept = self._cut(rows, query_text)
-            kept = await self._rerank_by_keyword(
+            kept, keyword_matched = await self._rerank_by_keyword(
                 conn, user_id, kept, query_embedding
             )
 
@@ -88,6 +88,11 @@ class SearchService:
                 "recordId": r["record_id"],
                 "contextId": r["context_id"],
                 "similarity": round(float(r["similarity"]), 4),
+                # 재정렬이 이미 계산하는 match 여부를 버리지 않고 싣는다
+                # (S15P11A705-399, OFFTOPIC-CONFIDENCE-GATE-HANDOFF-DRAFT.md §4.2 S3).
+                # 재정렬이 계산되지 않은 모든 경로(off·오류·후보 없음)에서
+                # `keyword_matched` 는 빈 집합이라 여기서 자연히 False 다.
+                "keywordMatched": r["record_id"] in keyword_matched,
             }
             for r in kept
         ]
@@ -206,7 +211,7 @@ class SearchService:
 
     async def _rerank_by_keyword(
         self, conn, user_id: int, kept: list, query_embedding: list[float]
-    ) -> list:
+    ) -> tuple[list, set[int]]:
         """컷 통과 후보의 **순서만** keyword 신호로 조정한다 (S15P11A705-339, P49 §4).
 
         후보를 추가·제거하지 않는다 — 관련 없는 질의에서 컷 통과가 0건이면 재정렬
@@ -220,17 +225,21 @@ class SearchService:
 
         어떤 단계가 실패해도 응답은 실패하지 않는다 — 그 단계만 생략하고 벡터
         순서를 그대로 반환한다(P49 §5 의 실패 시 복귀 규칙).
+
+        두 번째 반환값은 실제로 match 한 Record id 집합이다(S15P11A705-399) — 순서를
+        정하는 데만 쓰고 버리던 신호를 호출부가 응답에 실을 수 있게 넘긴다. 재정렬이
+        생략된 모든 경로(off·오류·후보 없음·match 없음)에서는 빈 집합을 돌려준다.
         """
         if (
             not self._settings.search_keyword_rerank_enabled
             or self._preset_cache is None  # 조립 실수의 방어선 — rewrite 와 같은 규칙
             or len(kept) < 2  # 0·1건은 바꿀 순서가 없다
         ):
-            return kept
+            return kept, set()
         try:
             candidates = self._preset_candidates(query_embedding)
             if not candidates:
-                return kept
+                return kept, set()
             signal_rows = await context_keyword_repo.keywords_for_records(
                 conn, user_id, [r["record_id"] for r in kept]
             )
@@ -240,19 +249,20 @@ class SearchService:
                 if row["keyword_id"] in candidates
             }
             if not matched:
-                return kept
+                return kept, set()
             weight = self._settings.search_keyword_rerank_weight
             # sorted 는 안정 정렬이다 — 점수가 같은 행(신호 없는 행끼리 등)은
             # 벡터 순서가 그대로 유지된다.
-            return sorted(
+            reranked = sorted(
                 kept,
                 key=lambda r: -(
                     float(r["similarity"])
                     + (weight if r["record_id"] in matched else 0.0)
                 ),
             )
+            return reranked, matched
         except Exception:
             log.warning(
                 "keyword rerank failed; falling back to vector order", exc_info=True
             )
-            return kept
+            return kept, set()
