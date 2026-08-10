@@ -11,10 +11,10 @@
 |---|---|---|
 | member | 5 | 주인공 1 + 피드 후보 소유자 4 |
 | Record·Context | 14 | 주인공 6 + 소유자별 2 |
-| Collection | 9 | Record를 재사용하므로 GMS 호출이 늘지 않는다 |
+| Collection | 9 | Record를 재사용하므로 AI API 호출이 늘지 않는다 |
 | Follow | 2 | 주인공 → walker·dessert |
 
-**GMS 실호출 29회** — 임베딩 14 + 판정 14 + 프리셋 1배치. 규모의 근거는
+**AI API 실호출 29회** — 임베딩 14 + 판정 14 + 프리셋 1배치. 규모의 근거는
 [`demo_data.yaml`](demo_data.yaml) 머리말에 있다.
 
 시연 3종이 이 데이터로 성립한다.
@@ -51,7 +51,7 @@ back과 시딩 스크립트가 **같은 RSA 개인키**를 써야 한다. 키가
 경로는 `git worktree` 안에서 실행해도 **메인 워킹트리의 `.demo/`** 하나로 고정된다
 (`_client.shared_root()`). worktree 기준으로 잡으면 `.demo/`가 거기 없어 새 키가
 생기고, back에 주입된 키와 갈라져 **전 요청이 401인데 back 로그에는 아무것도 남지
-않는다**(`S15P11A705-198` 결함 3). 다른 키를 쓰려면 `PINLOG_DEMO_JWT_KEY`로 명시한다.
+않는다**(Jira 작업 결함 3). 다른 키를 쓰려면 `PINLOG_DEMO_JWT_KEY`로 명시한다.
 
 ```bash
 python -c "import sys; sys.path.insert(0,'tools/demo_seed'); import _client; _client.ensure_key()"
@@ -117,7 +117,7 @@ python tools/demo_seed/preflight.py
 
 **왜 시작 전인가**: 2·4는 시딩이 진행된 뒤에 알아도 소용이 없다. `--reset`이
 이미 지운 뒤이기 때문이다. 실제로 그 순서로 두 번 데이터를 잃었다
-([T28](../../docs/troubleshooting/2026-07-30-seeding-quota-and-encoding.md)·`S15P11A705-198` 결함 3).
+([T28](../../docs/troubleshooting/2026-07-30-seeding-quota-and-encoding.md)·Jira 작업 결함 3).
 
 **2가 겨누는 것은 NOT NULL 제약이 아니라 우리가 값을 주지 않는 컬럼이다.**
 `email`은 `V4`에서 nullable로 태어났고 우리는 그 존재를 모른 채 NULL로 두었다.
@@ -135,9 +135,9 @@ python tools/demo_seed/preflight.py
 둘 다 참이므로 도구가 고르지 않는다. preflight가 세어서 보여주고,
 지울지는 `--prune-orphans`로 사람이 정한다.
 
-## 얼마나 걸리나 — 그날 GMS 상태에 달렸다
+## 얼마나 걸리나 — 그날 AI API 상태에 달렸다
 
-**쿼터가 상수가 아니다.** GMS는 SSAFY 공용 게이트웨이라 우리 전용 할당이 아니고,
+**쿼터가 상수가 아니다.** AI API는 공용 게이트웨이라 우리 전용 할당이 아니고,
 시점과 프로바이더 경로에 따라 달라진다([T27](../../docs/troubleshooting/2026-07-30-seeding-quota-and-encoding.md)).
 
 ```

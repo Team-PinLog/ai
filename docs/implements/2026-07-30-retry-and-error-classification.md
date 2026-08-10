@@ -1,4 +1,4 @@
-# 외부 API 재시도·오류 분류 정합화 — 두 클라이언트의 반대 분류를 spec 대로 고쳤다 (S15P11A705-121)
+# 외부 API 재시도·오류 분류 정합화 — 두 클라이언트의 반대 분류를 spec 대로 고쳤다 (Jira 작업)
 
 상태: 완료 · 유형: 구현 · 근거 명세: [failure-recovery.md](../spec/failure-recovery.md) §2.1 · §2.2 · §3.1 · §3.2
 
@@ -9,7 +9,7 @@
 | | spec | 수정 전 구현 | 결과 |
 |---|---|---|---|
 | `429` | Transient (§2.1) | `>= 500` 만 Transient. 나머지 non-200 전부 Permanent | rate limit 한 번에 해당 Context 가 영구 실패로 남는다 |
-| LLM `400`·`401`·`403` | Permanent (§2.2) | 모든 non-200 을 Transient | 인증 실패가 재스캔 주기(5분)마다 GMS 호출을 만든다 |
+| LLM `400`·`401`·`403` | Permanent (§2.2) | 모든 non-200 을 Transient | 인증 실패가 재스캔 주기(5분)마다 AI API 호출을 만든다 |
 
 두 클라이언트가 각자 상태 코드 표를 들고 있었던 것이 원인이다. 그래서 매핑을 `app/core/errors.py` 의 `classify_http_status` 한 곳으로 모았다. spec §2 가 "`errors.py` 에서 분류한다"고 지목한 지점이다. `429` 를 `>= 500` 보다 먼저 판정해야 4xx 로 떨어지지 않는다.
 

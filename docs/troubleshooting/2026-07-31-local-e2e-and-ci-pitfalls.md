@@ -1,6 +1,6 @@
 # 로컬 전 스택 E2E 와 CI 에서 만난 함정 (2026-07-31)
 
-`front` → `back` → FastAPI → GMS → pgvector 전 경로를 브라우저로 처음 돌리면서, 그리고
+`front` → `back` → FastAPI → AI API → pgvector 전 경로를 브라우저로 처음 돌리면서, 그리고
 `dev` → `main` 릴리스와 CI 검사를 넣으면서 만난 것들이다.
 
 **여덟 개 중 넷은 「기대한 출력이 없다」가 증상이었고 원인은 제각각이었다.** 그것이
@@ -79,7 +79,7 @@ DB 에는 `V6` 가 적용돼 있는데 jar 안에 그 파일이 없어서다. **
 cd back && ./gradlew bootJar
 ```
 
-`git pull` 뒤에는 항상 재빌드한다. 이 날 `S15P11A705-198` 작업 중 실제로 겪었고,
+`git pull` 뒤에는 항상 재빌드한다. 이 날 Jira 작업 작업 중 실제로 겪었고,
 진단은 우리 도구가 아니라 back 스택트레이스가 했다.
 
 ## T33. `ai/.env` 의 `DATABASE_URL` 이 시연 DB 를 가리키지 않는다

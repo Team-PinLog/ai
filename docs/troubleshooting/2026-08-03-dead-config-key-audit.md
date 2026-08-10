@@ -1,6 +1,6 @@
 # 죽은 설정 키 전수조사 — 함정 (T66·T67)
 
-`S15P11A705-224` 작업 중 겪은 두 함정. 구현 리포트는
+Jira 작업 작업 중 겪은 두 함정. 구현 리포트는
 [dead-config-keys.md](../implements/2026-08-03-dead-config-keys.md).
 
 ## T66 — alias 매칭은 grep으로 못 잡는다

@@ -1,10 +1,10 @@
 # Keyword fusion 1단계 실측 — 병합 방식·floor 격자와 채택 기준 대조
 
-- **티켓**: `S15P11A705-336`
+- **티켓**: Jira 작업
 - **날짜**: 2026-08-05 (실측 17:1x~17:5x KST · 원 실행은 leo 브랜치 코드 대행 실측)
 - **하네스**: `tools/search_cut/{rank_score,fusion,fusion_sweep,keyword_matrix}.py` — 실행 절차는 그 README
 - **기준 문서**: [P48](../proposals/P48-search-signal-expansion.md) §1·§2·§6.1 · 발견 문제의 기록 [T73~T78](../troubleshooting/2026-08-05-multi-signal-investigation.md)
-- **성격**: **재기만 한다.** 앱 런타임 코드를 바꾸지 않는다. 채택(fusion 활성화) 여부는 이 리포트가 정하지 않는다 — 후속 티켓(`S15P11A705-339`)의 판단 재료다.
+- **성격**: **재기만 한다.** 앱 런타임 코드를 바꾸지 않는다. 채택(fusion 활성화) 여부는 이 리포트가 정하지 않는다 — 후속 티켓(Jira 작업)의 판단 재료다.
 
 ## 요약
 
@@ -28,7 +28,7 @@
 | DB | 시연 DB `:15432` (`pinlog-demo-postgres-1`) · Record 42건 · 소유자 3명 |
 | Preset | 27건 v1 (PUBLIC 25 · PRIVATE_ONLY 2) · keyword 판정 83건 · confidence NULL 0건 |
 | profile | `openai-text-embedding-3-small-1536-cosine-v1` |
-| GMS 호출 | `word_matrix` 배치 1회 · `recall_probe` 재생성 · `keyword_matrix` 배치 1회(질의 92건) — 이후 sweep 은 전부 파일만 읽음 |
+| AI API 호출 | `word_matrix` 배치 1회 · `recall_probe` 재생성 · `keyword_matrix` 배치 1회(질의 92건) — 이후 sweep 은 전부 파일만 읽음 |
 | 컷 | `tau_abs=0.30` · `tau_word=0.24` · `r=0.60` · `limit=20` (현행 기본값) |
 
 `word_grid.json`·`recall_probe.json` 은 `context_id` 를 포함해 재생성했다(P48 §4.1 — keyword 조인 요건). 재생성으로 유사도가 기존 커밋본과 10⁻⁴ 규모로 다를 수 있다(T42·T68) — baseline 재현 대조가 그 흔들림이 판정을 바꾸지 않았음을 보인다.
@@ -129,7 +129,7 @@ floor 0.35 에서 무관 무노출이 baseline 으로 완전히 돌아오고, �
 
 | 경로 | 수명 |
 |---|---|
-| `.search/keyword_matrix.json` | **영구(커밋)** — 재생성에 GMS 배치 1회. `.gitignore` 예외 등록 |
+| `.search/keyword_matrix.json` | **영구(커밋)** — 재생성에 AI API 배치 1회. `.gitignore` 예외 등록 |
 | `.search/word_grid.json` · `recall_probe.json` | **영구(커밋 갱신)** — `context_id` 포함 재생성분 |
 | 스윕 결과 JSON (`fusion_sweep*.json` · `rank_baseline.json`) | **미커밋** — artifact 에서 재구성 가능(기존 규약). 수치는 이 리포트 표가 보존본 |
 | 이 문서 | 영구 |

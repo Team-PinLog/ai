@@ -2,7 +2,7 @@
 
 - **상태**: 해결됨
 - **날짜**: 2026-07-23
-- **맥락**: FastAPI 구현(ai#5·#6)을 로컬 pgvector + 실제 GMS로 end-to-end 검증하는 과정
+- **맥락**: FastAPI 구현(ai#5·#6)을 로컬 pgvector + 실제 AI API로 end-to-end 검증하는 과정
 - **관련**: [implements/2026-07-23-fastapi-implementation.md](../implements/2026-07-23-fastapi-implementation.md)
 
 ## T16 — `.env` UTF-8 BOM으로 첫 키 파싱 실패

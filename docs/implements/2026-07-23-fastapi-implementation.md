@@ -20,8 +20,8 @@ DB 접근은 asyncpg 와 원시 SQL 로 구현했고 ORM 을 도입하지 않았
 | core | `db.py` | asyncpg 풀. `search_path=ai, public` 고정(public 은 vector 확장이 있는 스키마이고, core 는 경로 밖에 유지한다. T21 참조). pgvector 타입 등록 |
 | core | `errors.py` | 영구/일시 오류와 저장 폐기의 분류 |
 | core | `security.py` | 내부 공유 시크릿 미들웨어(`/internal/*` 경로에 적용) |
-| client | `embedding_client.py` | GMS 의 OpenAI 호환 `/embeddings` 호출(하네스 `embed.py` 를 포팅했다) |
-| client | `llm_client.py` | GMS 의 Gemini `generateContent` 호출. responseSchema 와 thinkingBudget=0 을 사용한다 |
+| client | `embedding_client.py` | AI API 의 OpenAI 호환 `/embeddings` 호출(하네스 `embed.py` 를 포팅했다) |
+| client | `llm_client.py` | AI API 의 Gemini `generateContent` 호출. responseSchema 와 thinkingBudget=0 을 사용한다 |
 | cache | `preset_cache.py` | 기동 시 `is_active` 이고 Profile 이 일치하는 Preset 을 적재한다. BLOCKED 는 제외하고, 적재 결과가 0건이면 기동에 실패한다 |
 | repository | `ai_state_repo.py` | 조건부 상태 전이(try_start/complete/fail). 컬럼 조립에는 Stage 열거형만 쓴다 |
 | repository | `context_embedding_repo.py` | 검색 Query 와 UPSERT(`is_deleted` 는 갱신 대상에서 제외)와 fallback 조회 |
@@ -52,7 +52,7 @@ DB 접근은 asyncpg 와 원시 SQL 로 구현했고 ORM 을 도입하지 않았
 
 ## 검증 방법
 
-로컬에서 `pgvector/pgvector:pg16` 컨테이너를 띄우고 back 레포의 Flyway 마이그레이션(V1/V100/V101)으로 `ai.*` 테이블을 생성했다. 부트스트랩으로 Preset 27건을 적재한 뒤, 실제 GMS(임베딩·Gemini)를 호출해 end-to-end 로 확인했다.
+로컬에서 `pgvector/pgvector:pg16` 컨테이너를 띄우고 back 레포의 Flyway 마이그레이션(V1/V100/V101)으로 `ai.*` 테이블을 생성했다. 부트스트랩으로 Preset 27건을 적재한 뒤, 실제 AI API(임베딩·Gemini)를 호출해 end-to-end 로 확인했다.
 
 **`/search`**
 

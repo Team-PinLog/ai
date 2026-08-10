@@ -1,6 +1,6 @@
 # 프리셋 `description`·`examples` 개정 — `examples` 개정만 채택한다. `description` 개정은 키워드가 붙지 않는 Context 를 늘린다
 
-- **티켓**: S15P11A705-228
+- **티켓**: Jira 작업
 - **날짜**: 2026-08-03
 - **선행**: [τ](2026-07-31-candidate-threshold.md)(`-210`) · [프롬프트](2026-07-31-judge-prompt-rule.md)(`-219`) · [다수결](2026-07-31-judge-vote.md)(`-223`). 세 선행 티켓의 라벨·데이터·집계 코드를 그대로 물려받았다
 - **측정 중 발견한 문제**: [T68·T69](../troubleshooting/2026-08-03-preset-description.md)
@@ -723,8 +723,8 @@ T69 에서 확인한 결함이다. 고친다면 `in_k` 필터를 없애고 「ra
 | 데이터 | `pinlog-demo`(:15432) · Context 42건(고유 본문 37 + 중복 5) · 프리셋 27 · 현행 판정 83행 |
 | profile | `openai-text-embedding-3-small-1536-cosine-v1` |
 | 판정 모델 | **`gpt-4o-mini`** — 전 회차 실측(`JudgeResult.model`). 설정값이 아니라 API 가 실제로 답한 값이다(T43) |
-| GMS 판정 | **1,680회** (4조건 × 10회 × 42). 실패 **0** |
-| GMS 임베딩 | 배치 **14회** (`matrix` 5 · `probe` 5 · T68 진단 4). 텍스트 329건 |
+| AI API 판정 | **1,680회** (4조건 × 10회 × 42). 실패 **0** |
+| AI API 임베딩 | 배치 **14회** (`matrix` 5 · `probe` 5 · T68 진단 4). 텍스트 329건 |
 | 테스트 | `430 passed` · line **99.83%**(1163/1165) · branch **98.99%**(196/198) · 게이트 80% 통과 · `ruff check .` 통과 |
 | DB 변경 | **없음.** 측정 전 구간에서 `ai.keyword_preset` 을 변경하지 않았다 |
 | `app/` 변경 | **없음.** 서비스 코드는 건드리지 않았다 |

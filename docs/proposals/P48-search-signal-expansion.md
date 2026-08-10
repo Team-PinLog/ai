@@ -4,14 +4,14 @@
 - **날짜**: 2026-08-05
 - **주도(Driver)**: AI 파트
 - **관련 PR/커밋**: ai#114(하네스·I52·I53 인수) · `39dba0d`(2단계 대체 구현 — P49 §3) · `8a79628`(3단계 규칙 확정 — I54)
-- **관련 티켓**: S15P11A705-336(인수) · -337(2단계 대체) · -339(1단계 채택값·재정렬 기준) · back 문자열 구현 티켓(발급 예정)
-- **근거 리포트**: [implements/2026-08-05-search-rank-baseline.md](../implements/2026-08-05-search-rank-baseline.md)(I52 · 0단계 산출) · [implements/2026-07-31-search-cut.md](../implements/2026-07-31-search-cut.md)(`S15P11A705-213`) · [implements/2026-08-03-search-recall-probe.md](../implements/2026-08-03-search-recall-probe.md)(`S15P11A705-255`) · [implements/2026-08-03-word-query-cut.md](../implements/2026-08-03-word-query-cut.md)(`S15P11A705-266`)
+- **관련 티켓**: Jira 작업(인수) · -337(2단계 대체) · -339(1단계 채택값·재정렬 기준) · back 문자열 구현 티켓(발급 예정)
+- **근거 리포트**: [implements/2026-08-05-search-rank-baseline.md](../implements/2026-08-05-search-rank-baseline.md)(I52 · 0단계 산출) · [implements/2026-07-31-search-cut.md](../implements/2026-07-31-search-cut.md)(Jira 작업) · [implements/2026-08-03-search-recall-probe.md](../implements/2026-08-03-search-recall-probe.md)(Jira 작업) · [implements/2026-08-03-word-query-cut.md](../implements/2026-08-03-word-query-cut.md)(Jira 작업)
 
 > **[승계 공지 — 2026-08-06]** 이 문서는 검색 신호 확장의 원안과 실험 기반을 보존하는
 > 선행 문서다. 현재 실행 상태: **0단계 완료**(I52) · **1단계 오프라인 구현·실측 완료**
 > (ai#114 로 인수, 통합 브랜치 병합 대기 — 런타임 병합 정책은
 > [P49](P49-multi-signal-search.md) §4 가 컷 이후 재정렬 전용으로 변경) ·
-> **2단계는 P49 §3 과 S15P11A705-337 로 대체**(프리셋 제한 출력과 단어형 한정은 현행
+> **2단계는 P49 §3 과 Jira 작업 로 대체**(프리셋 제한 출력과 단어형 한정은 현행
 > 런타임 설계가 아니다 — 약어를 프리셋 밖 표현으로 풀어야 해서다) ·
 > **3단계는 P49 와 I54 로 승계**(규칙 확정, back 구현 대기).
 >
@@ -60,9 +60,9 @@
 근거 리포트 셋이 이미 이 구조의 한계를 각각 다른 각도에서 기록했다.
 
 ```
-S15P11A705-213   컷 두 겹(τ_abs · r)이 서로를 대체하지 못한다
-S15P11A705-255   세 이슈의 원인이 서로 다르다 — 컷 · 약어 · 짧은 질의
-S15P11A705-266   τ_abs 단일값으로는 단어형과 문장형 중 한쪽이 반드시 손해를 본다
+Jira 작업   컷 두 겹(τ_abs · r)이 서로를 대체하지 못한다
+Jira 작업   세 이슈의 원인이 서로 다르다 — 컷 · 약어 · 짧은 질의
+Jira 작업   τ_abs 단일값으로는 단어형과 문장형 중 한쪽이 반드시 손해를 본다
 ```
 
 **세 리포트가 같은 것을 말하고 있다.** 원인이 여러 개인데 대응 수단이 하나뿐이라,
@@ -190,7 +190,7 @@ keyword 신호가 있는데 코사인이 없는 Record 가 나오면 그것은 *
 ```
 tools/search_cut/rank_score.py   (신규)
 
-  입력   기존 행렬 셋 — 새 데이터도 GMS 호출도 필요 없다
+  입력   기존 행렬 셋 — 새 데이터도 AI API 호출도 필요 없다
   출력   recall@k · MRR
          · 단어형 / 문장형 분리        두 대역이 겹치지 않으므로(-266) 합산은 무의미
          · 컷 적용 전 / 후 각각        컷 후만 보면 순위 개선이 가려진다
@@ -333,7 +333,7 @@ P9([`spec/architecture.md`](../spec/architecture.md) §1)가 금지한다.
 > 검색 경로에는 LLM이 없고 임베딩은 결정적이라 이쪽 재구성은 정확하다 —
 > `verify_live.py`가 실서버와 일치를 확인한다.
 
-`sweep`류가 DB도 GMS도 부르지 않는 것은 행렬에 (질의 × Record) 코사인이 **전량** 굳어
+`sweep`류가 DB도 AI API도 부르지 않는 것은 행렬에 (질의 × Record) 코사인이 **전량** 굳어
 있기 때문이다. 점수가 코사인만의 함수가 아니게 되면 **그 성질이 깨진다.**
 
 **현행 artifact로는 1단계를 재구성할 수 없다.** 2026-08-05 확인 결과다.
@@ -392,11 +392,11 @@ top-k 와 하한은 그 목록을 자르는 연산이므로 sweep에서 자유�
 #### 4.3 호출 경계
 
 ```
-artifact 생성   GMS 임베딩 배치 1회 + DB 읽기        허용 (현행 matrix.py 와 같다)
-rank·fusion sweep   GMS 0회 · DB 0회                 필수
+artifact 생성   AI API 임베딩 배치 1회 + DB 읽기        허용 (현행 matrix.py 와 같다)
+rank·fusion sweep   AI API 0회 · DB 0회                 필수
 ```
 
-**기능보다 하네스를 먼저 확장한다.** 순서가 뒤집히면 가중치 하나 바꿀 때마다 GMS를
+**기능보다 하네스를 먼저 확장한다.** 순서가 뒤집히면 가중치 하나 바꿀 때마다 AI API를
 부르게 되고, 이 레포의 실측 문화가 그 비용을 못 견딘다.
 
 `profile` · `preset_version` · 생성 조건을 artifact에 함께 저장해 **낡은 artifact로
@@ -442,7 +442,7 @@ rank·fusion sweep   GMS 0회 · DB 0회                 필수
 
 ```
 ① baseline 계산의 결정성            같은 입력에 같은 출력
-② 확장 artifact 재구성 = 원본 계산   DB/GMS 실계산과 정확 일치 (verify_live.py 와 같은 요구)
+② 확장 artifact 재구성 = 원본 계산   DB/AI API 실계산과 정확 일치 (verify_live.py 와 같은 요구)
 ③ sweep 반복 실행 결과 일치          artifact 만 읽으므로 흔들릴 이유가 없다
 ④ 잘못된 profile·version·context 매핑이면 계산하지 않고 실패
 ```
@@ -469,7 +469,7 @@ rank·fusion sweep   GMS 0회 · DB 0회                 필수
 **선결 조건**
 
 1. ~~0단계 완료와 baseline 보존~~ — **완료**(I52).
-2. artifact 확장. 데모 DB와 GMS 키 환경이 필요하다. — **해소**(ai#114: `word_grid`·`recall_probe` 에 `context_id` 추가, `keyword_matrix.json` 신규)
+2. artifact 확장. 데모 DB와 AI API 키 환경이 필요하다. — **해소**(ai#114: `word_grid`·`recall_probe` 에 `context_id` 추가, `keyword_matrix.json` 신규)
 3. **티켓 발급.** 단계별로 분리하며, 3단계는 back 티켓과 연결한다. — **해소**(-336·-337·-339 발급, back 티켓 발급 예정)
    **Jira 키 없이 런타임 구현을 시작하지 않는다**(`CONTRIBUTING.md`).
 
@@ -477,7 +477,7 @@ rank·fusion sweep   GMS 0회 · DB 0회                 필수
 
 - 0단계 하네스와 이 문서 개정까지만 진행한다.
 - **artifact 값을 추정하거나 임의 생성하지 않는다.**
-- DB/GMS 미실행으로 막힌 항목과 필요한 실행 명령을 결과에 남긴다.
+- DB/AI API 미실행으로 막힌 항목과 필요한 실행 명령을 결과에 남긴다.
 
 **미결**
 

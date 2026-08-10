@@ -1,10 +1,10 @@
 # 단어형 질의로 컷 격자를 다시 훑는다 — `τ_abs` 를 질의 길이로 가른다
 
-- **티켓**: S15P11A705-266
+- **티켓**: Jira 작업
 - **날짜**: 2026-08-03 (측정 10:57 KST · 실서버 대조 11:1x KST)
 - **이슈**: [ai#87](https://github.com/Team-PinLog/ai/issues/87)(`그네`) — 이 티켓이 닫는다
-- **선행**: [재현율 판별](2026-08-03-search-recall-probe.md) (`S15P11A705-255`) ·
-  [검색 결과 컷](2026-07-31-search-cut.md) (`S15P11A705-213`)
+- **선행**: [재현율 판별](2026-08-03-search-recall-probe.md) (Jira 작업) ·
+  [검색 결과 컷](2026-07-31-search-cut.md) (Jira 작업)
 - **하네스**: `tools/search_cut/word_matrix.py` · `word_sweep.py` — 실행 절차는 그 README
 - **명세**: [personal-search.md §6.1](../spec/personal-search.md)
 
@@ -87,7 +87,7 @@ expect(질의, 소유자) = { 그 소유자의 Record 중 본문에 질의가 �
 
 장소명은 정답 기준에서 뺐다. 임베딩이 받는 것은 `context`
 하나뿐이라(`demo_data.yaml` §①) 장소명을 넣으면 모델에 주지 않은 정보를 기대하게
-된다. 「진우네 초밥」의 본문에 「초밥」이 없는 것이 그 예이고, 가드가 GMS 를 부르기
+된다. 「진우네 초밥」의 본문에 「초밥」이 없는 것이 그 예이고, 가드가 AI API 를 부르기
 전에 그 질의를 잡아냈다.
 
 부작용이 이득이었다. 같은 질의를 소유자 셋에게 던지면 정답 있는 행과 없는 행이
@@ -222,7 +222,7 @@ offtopic  45행   PinLog 범주 밖 (`-213` 무관 5종의 단어형)  **무관 
 
 ### 실측했다 — 회차 3개
 
-같은 질의 집합을 세 번 떠서 대조했다(`word_sweep.py --repro`). 회차별 GMS 임베딩 배치
+같은 질의 집합을 세 번 떠서 대조했다(`word_sweep.py --repro`). 회차별 AI API 임베딩 배치
 1회씩, 2026-08-03 10:57 · 11:23 · 11:24 KST.
 
 ```
@@ -311,10 +311,10 @@ app/service/search_service.py `_cut(rows, query)` · `_is_word_query` 9줄
 
 **실행한 것**
 
-- 단어형 54건 × 소유자 3명 = 207행 측정. **GMS 임베딩 배치 1회**(69건)
-- 격자 240조합(τ_abs 20 × r 12)을 단어형·문장형 **동시에** 훑음. GMS·DB 미호출
+- 단어형 54건 × 소유자 3명 = 207행 측정. **AI API 임베딩 배치 1회**(69건)
+- 격자 240조합(τ_abs 20 × r 12)을 단어형·문장형 **동시에** 훑음. AI API·DB 미호출
 - **재현성 회차 3개**(§재현성) — `T68` 대응. 변동 상한 0.000209 · 격자 판정 전 구간
-  3회 일치 · 경계점 `스팟` 스프레드 0.000000. 회차당 GMS 배치 1회씩 추가
+  3회 일치 · 경계점 `스팟` 스프레드 0.000000. 회차당 AI API 배치 1회씩 추가
 - **실서버 대조 87/87 PASS** — 이 브랜치 코드로 띄운 서버(:8002)에 문장형 27건 +
   두 하한에서 결과가 갈리는 단어형 60행을 던졌다. 갈리지 않는 행은 서버가 무엇을 하든
   통과하므로 표본에서 뺐다. 재구성 쪽에 길이 분기를 다시 적어(구현 `import` 금지,
@@ -432,12 +432,12 @@ app/service/search_service.py `_cut(rows, query)` · `_is_word_query` 9줄
 
 | 경로 | 수명 | |
 |---|---|---|
-| `tools/search_cut/word_matrix.py` | **영구** | 단어형 행렬. GMS 배치 1회. 가드 둘이 재기 전에 멈춘다 |
-| `tools/search_cut/word_sweep.py` | **영구** | 두 행렬 동시 격자. GMS·DB 미호출 |
+| `tools/search_cut/word_matrix.py` | **영구** | 단어형 행렬. AI API 배치 1회. 가드 둘이 재기 전에 멈춘다 |
+| `tools/search_cut/word_sweep.py` | **영구** | 두 행렬 동시 격자. AI API·DB 미호출 |
 | `tools/search_cut/verify_live.py` | **영구(확장)** | 길이 분기를 재구성에 다시 적고, 분기가 드러나는 행만 골라 던진다 |
-| `.search/word_grid.json` | **영구(커밋)** | 단어형 유사도 행렬. 다시 뜨려면 GMS 를 부른다. `.gitignore` 예외 등록 |
+| `.search/word_grid.json` | **영구(커밋)** | 단어형 유사도 행렬. 다시 뜨려면 AI API 를 부른다. `.gitignore` 예외 등록 |
 | `.search/word_sweep.json` | **휘발** | 격자 결과. 행렬에서 언제든 재구성된다 |
-| `.search/word_grid_run2.json` · `run3` | **휘발** | 재현성 회차. GMS 를 부르면 다시 뜬다 — `word_grid.json` 과 달리 **보존 가치가 없다**(같은 값을 재는 것이 목적이므로) |
+| `.search/word_grid_run2.json` · `run3` | **휘발** | 재현성 회차. AI API 를 부르면 다시 뜬다 — `word_grid.json` 과 달리 **보존 가치가 없다**(같은 값을 재는 것이 목적이므로) |
 | 이 문서 | **영구** | |
 
 `word_grid.json` 은 `matrix.json`·`recall_probe.json` 과 같은 원칙으로 커밋한다.

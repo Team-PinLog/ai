@@ -1,6 +1,6 @@
 # E2E 검증 드라이버
 
-실제 GMS를 호출하는 **실경로 검증** 도구입니다. Fake 기반 `tests/`(46 케이스, Docker만 필요)와 달리
+실제 AI API를 호출하는 **실경로 검증** 도구입니다. Fake 기반 `tests/`(46 케이스, Docker만 필요)와 달리
 **실제 DB·실제 API 키·기동 중인 서버**가 필요합니다.
 
 검증 결과와 판단 근거: [docs/implements/2026-07-27-e2e-verification.md](../../docs/implements/2026-07-27-e2e-verification.md)
@@ -52,7 +52,7 @@ python tools/e2e/run_search.py --base http://localhost:8001
 
 ## 주의
 
-- **실제 GMS를 호출합니다.** 임베딩·판정 비용이 발생합니다.
+- **실제 AI API를 호출합니다.** 임베딩·판정 비용이 발생합니다.
 - **`e2e_contexts.yaml`의 id는 검증 전용 대역**(user 9001·9002 / record 5xxx / context 1xxx)입니다.
   실제 데이터가 있는 DB에 그대로 쓰지 마세요.
 - **벡터 컬럼을 읽는 스크립트는 반드시 `app.core.db.Database`를 씁니다.** raw `asyncpg`로 붙으면

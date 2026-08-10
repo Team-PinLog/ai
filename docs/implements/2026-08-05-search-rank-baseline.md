@@ -2,10 +2,10 @@
 
 - **티켓**: 미발급([P48](../proposals/P48-search-signal-expansion.md) 0단계, 런타임 변경 없음)
 - **날짜**: 2026-08-05
-- **하네스**: `tools/search_cut/rank_score.py` — 기존 행렬만 읽는다. **DB 0회 · GMS 0회**
+- **하네스**: `tools/search_cut/rank_score.py` — 기존 행렬만 읽는다. **DB 0회 · AI API 0회**
 - **산출**: 이 문서 §3의 표가 **보존본**이다. `--json` 산출물(`.search/rank_baseline.json`)은
   커밋하지 않는다 — `.gitignore`가 "스윕 결과는 matrix에서 언제든 재구성되므로 남기지
-  않는다"고 정했고, 이 계산은 GMS·DB를 부르지 않아 재생성 비용이 0이다
+  않는다"고 정했고, 이 계산은 AI API·DB를 부르지 않아 재생성 비용이 0이다
 - **선행**: [검색 결과 컷](2026-07-31-search-cut.md)(`-213`) · [원인 판별](2026-08-03-search-recall-probe.md)(`-255`) · [단어형 컷](2026-08-03-word-query-cut.md)(`-266`)
 - **성격**: 재기만 한다. **컷 값도 모델도 앱 코드도 고치지 않는다.**
 

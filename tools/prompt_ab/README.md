@@ -1,22 +1,22 @@
 # 판정 프롬프트 A/B 측정
 
-`S15P11A705-219`. 결론과 수치는
+Jira 작업. 결론과 수치는
 [구현 리포트](../../docs/implements/2026-07-31-judge-prompt-rule.md)에 있고, 이 문서는
 **어떻게 다시 돌리는가**만 적는다.
 
-선행은 `S15P11A705-210`([τ 리포트](../../docs/implements/2026-07-31-candidate-threshold.md))이다.
+선행은 Jira 작업([τ 리포트](../../docs/implements/2026-07-31-candidate-threshold.md))이다.
 후보 선정 층(유사도 임계값)으로는 오분류를 못 푼다는 것을 실측하고 끝났고, 그 §6 이
 「판정 프롬프트로 옮긴다」를 후속으로 남겼다. **라벨과 데이터를 그대로 물려받는다** —
 기준이 바뀌면 `-210` 과 비교가 불가능해지기 때문이다.
 
 ## 왜 τ 하네스를 그대로 못 쓰나
 
-`tau_grid` 는 유사도 행렬을 한 번 떠 두고 **임의의 τ 를 GMS 호출 없이 재구성**한다.
+`tau_grid` 는 유사도 행렬을 한 번 떠 두고 **임의의 τ 를 AI API 호출 없이 재구성**한다.
 프롬프트는 그렇게 못 한다 — LLM 을 실제로 불러야 답이 나온다. 그래서 이 하네스는
 호출을 전제로 짰고, 그 전제가 설계 전부를 규정한다.
 
 ```
-회차마다 즉시 파일로      중단되면 그 회차까지는 남는다. GMS 호출은 되돌릴 수 없다
+회차마다 즉시 파일로      중단되면 그 회차까지는 남는다. AI API 호출은 되돌릴 수 없다
 이미 있는 회차는 건너뜀    재개가 곧 이어달리기다
 후보는 matrix.json 고정    재임베딩·재시딩 없음. A·B 의 후보 집합이 완전히 같아야 한다
 벤더 단일 고정            폴백이 살면 회차마다 다른 모델이 섞인다
@@ -27,7 +27,7 @@
 | | |
 |---|---|
 | `variants.py` | 조건 정본. A(현행)·B(개정) 시스템 프롬프트 **전문**과 무엇을 왜 더했는지 |
-| `run.py` | 조건 하나를 N회 돌린다. **GMS 를 부르는 유일한 파일** |
+| `run.py` | 조건 하나를 N회 돌린다. **AI API 를 부르는 유일한 파일** |
 | `score_ab.py` | 회차들을 라벨에 붙여 집계. 비결정성과 조건 효과를 같은 자로 낸다 |
 | `labels_extra.yaml` | 재판정에서 새로 나온 행의 라벨. `tau_grid/labels.yaml` 은 건드리지 않는다 |
 
@@ -39,7 +39,7 @@
 cd ai
 export DATABASE_URL="postgresql://pinlog:pinlog-local@localhost:15432/pinlog"
 
-.venv/Scripts/python.exe tools/tau_grid/matrix.py            # GMS 호출 없음. DB 만 읽는다
+.venv/Scripts/python.exe tools/tau_grid/matrix.py            # AI API 호출 없음. DB 만 읽는다
 .venv/Scripts/python.exe tools/prompt_ab/run.py --variant A --reps 5   # LLM 210회
 .venv/Scripts/python.exe tools/prompt_ab/run.py --variant B --reps 5   # LLM 210회
 .venv/Scripts/python.exe tools/prompt_ab/score_ab.py         # 파일만 읽는다
@@ -65,7 +65,7 @@ Context 42건 전부가 τ=0.30 에서 후보를 갖는다(`-210` §2). 그러�
 
 5회는 회차 5개씩 열 관측을 만든다. 그러면 **두 조건의 관측 범위가 아예 겹치지 않는가**를
 볼 수 있고, 효과가 없는데 그렇게 갈릴 확률은 1/C(10,5) ≈ 0.4% 다. 3회면 그 확률이 5% 로
-올라 흔들림과 구분이 안 되고, 10회면 GMS 840회를 쓰면서 판정 기준은 그대로다.
+올라 흔들림과 구분이 안 되고, 10회면 AI API 840회를 쓰면서 판정 기준은 그대로다.
 
 ## 라벨을 넓힐 때
 

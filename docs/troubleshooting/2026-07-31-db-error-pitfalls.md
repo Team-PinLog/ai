@@ -1,6 +1,6 @@
 # DB 오류 분류의 경계를 그으며 만난 함정 (2026-07-31)
 
-`S15P11A705-221` — DB 실패를 `TransientError`/`PermanentError` 로 분류하고, 그것을
+Jira 작업 — DB 실패를 `TransientError`/`PermanentError` 로 분류하고, 그것을
 **로컬에서 실제로 DB 를 멈춰** 확인하는 과정에서 만난 세 문제다.
 
 셋 다 **증상이 원인을 가리키지 않는다.** 첫째는 테스트가 전부 초록인데 티켓이 해결되지
