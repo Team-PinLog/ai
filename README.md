@@ -1,120 +1,271 @@
 # PinLog AI
 
-PinLog의 FastAPI AI 서버. **AI 계산과 AI 파생 데이터 처리**를 담당합니다.
+PinLog의 내부용 FastAPI AI 서버입니다. Context 임베딩과 Keyword 판정 결과를 만들고,
+사용자별 자연어 검색과 이미지 기반 장소 제안을 제공합니다. Client는 이 서버를 직접 호출하지
+않으며, Spring Backend가 내부 네트워크의 `/internal/v1/*` API를 호출합니다.
 
-- Context Embedding 생성·저장
-- Keyword Preset 후보 벡터 검색 + LLM 최종 판정(`gemini-2.5-flash`)
-- 개인 Context 자연어 검색(질의 Embedding + exact cosine)
-- AI State 기반 멱등 실행·부분 재개
+## 시스템 아키텍처
 
-담당하지 않는 것: Core 도메인(`core.*`) 접근·상태 변경, User 인증, Feed, DB Migration 실행(back 소유).
-Client는 이 서버를 직접 호출하지 않으며, `/internal/v1/*` 계약으로 내부 네트워크에서만 노출됩니다.
+![PinLog AI 시스템 아키텍처](docs/assets/system-architecture-ai.png)
 
-## 구성
+FastAPI는 AI 계산과 `ai` 스키마의 파생 데이터만 소유합니다. User 인증, 소유권 판단,
+Core 도메인 상태 변경, Feed 계산, 최종 응답 조립은 Spring Backend의 책임입니다.
 
-계층형 구조(`docs/spec/architecture.md` §2): `api → service → {repository, cache, client}`.
+### 런타임 경계
 
+- **Internal-only API**: `/internal/v1/*`는 서비스 간 공유 시크릿을 검증하며 외부 Client에
+  노출하지 않습니다. `/health`와 `/ready`만 Kubernetes probe를 위해 인증 경계 밖에 둡니다.
+- **단방향 의존**: `api → service → {repository, cache, client}`만 허용합니다. Router는 요청
+  검증과 HTTP 계약, service는 오케스트레이션과 트랜잭션 경계, repository는 `ai` SQL,
+  cache는 Preset 스냅샷, client는 외부 AI·검색 API 호출을 담당합니다.
+- **DB 경계**: 애플리케이션 DB role은 `ai` 스키마만 접근합니다. 연결의 `search_path`는
+  `ai, public`이며 `public`은 pgvector 타입 등록에만 필요합니다. `core`는 경로와 권한에서
+  제외하고 조회도 하지 않습니다.
+- **Migration 소유권**: DDL과 Flyway migration은 Backend가 소유합니다. Backend Flyway가
+  `ai` 스키마를 먼저 준비해야 서버와 Preset bootstrap을 실행할 수 있으며, AI 앱은 시작 시
+  migration이나 DDL을 실행하지 않습니다.
+
+상세 계약은 [`docs/spec/architecture.md`](docs/spec/architecture.md)를 따릅니다.
+
+## 핵심 처리 흐름
+
+### Context 처리: 비동기 접수
+
+`POST /internal/v1/context/process`는 요청을 BackgroundTasks에 등록하고 **202 Accepted**를 즉시
+반환합니다. 202는 완료가 아니라 접수 성공을 뜻하며, 완료 webhook이나 polling API는 없습니다.
+Backend는 `ai.context_ai_state`를 조회해 진행 상태를 확인합니다.
+
+```text
+State 사전 검사
+→ Embedding 생성 또는 완료 결과 재사용
+→ Preset cosine Top-K 후보 선정
+→ 후보 안에서만 LLM judge
+→ 저장 직전 State 재검사
+→ 파생 데이터 저장과 COMPLETED 전이
 ```
+
+Embedding과 Keyword는 독립 상태이므로 Embedding이 이미 완료된 요청은 Keyword 단계부터 부분
+재개할 수 있습니다. Preset 후보가 없으면 LLM을 호출하지 않고 Keyword 0건으로 정상 완료합니다.
+자세한 순서와 상태 계약은
+[`context-processing.md`](docs/spec/context-processing.md),
+[`state-machine.md`](docs/spec/state-machine.md),
+[`partial-resume.md`](docs/spec/partial-resume.md),
+[`keyword-preset.md`](docs/spec/keyword-preset.md)를 참고합니다.
+
+### 개인 검색: 동기 응답
+
+`POST /internal/v1/search`는 요청 안에서 동기적으로 다음 흐름을 완료합니다.
+
+```text
+Embedding Profile 검사
+→ 질의 전체를 한 번 Embedding
+→ user_id · is_deleted · COMPLETED · Profile 필터
+→ pgvector exact cosine 계산
+→ Record별 최고 유사도 Context 집계와 결과 컷
+→ recordId · contextId · similarity · keywordMatched 반환
+```
+
+검색은 HNSW/IVFFlat 같은 ANN 인덱스를 사용하지 않고 pgvector `<=>` 연산자의 **exact cosine**을
+사용합니다. 후보를 사용자와 상태로 먼저 제한하고, Record마다 가장 유사한 Context 하나만
+반환합니다. 원문과 소유권은 `core`에서 Backend가 다시 확인하며 FastAPI는 Core 본문을 읽거나
+반환하지 않습니다. 검색 질의 재작성과 Keyword 재정렬은 설정으로 활성화할 수 있는 강등 가능한
+보조 신호이며, 실패하면 기본 벡터 검색으로 복귀합니다. 별도의
+`POST /internal/v1/search/judge`는 Backend가 보낸 후보의 LLM 관련도를 동기 판정합니다.
+
+정확한 Query와 반환 계약은 [`docs/spec/personal-search.md`](docs/spec/personal-search.md)를
+참고합니다.
+
+### 삭제·중복·stale 작업 방어
+
+모델 호출은 DB 트랜잭션 밖에서 수행하고, 상태 잠금은 결과 저장 직전에만 짧게 잡습니다.
+
+1. 잠금 없는 사전 검사는 이미 취소되거나 완료된 작업의 모델 호출 비용을 막습니다.
+2. 조건부 UPDATE는 `PENDING` 또는 만료된 `PROCESSING`만 선점합니다. 영향 행 수가 0이면
+   중복 요청, 활성 작업, 완료·실패·취소 상태로 보고 정상 중단합니다.
+3. Embedding/LLM 호출 뒤 같은 저장 트랜잭션에서 `SELECT ... FOR UPDATE`로 상태를 다시
+   확인합니다. 삭제·수정으로 `CANCELLED`가 되었거나 기대 상태가 아니면 늦은 결과를 폐기합니다.
+4. 일시 오류는 `PROCESSING`을 유지해 만료 후 재스캔이 회수하고, 영구 오류만 해당 단계를
+   `FAILED`로 전이합니다. FastAPI는 `CANCELLED`, `PENDING`, `retry_count`, `is_deleted`를
+   쓰지 않습니다.
+
+이 방어는 Context 수정도 새 `context_id` 생성과 기존 Context 취소로 취급한다는 불변성에
+기반합니다. 상세 내용은
+[`docs/spec/deletion-race-control.md`](docs/spec/deletion-race-control.md)와
+[`docs/spec/failure-recovery.md`](docs/spec/failure-recovery.md)를 참고합니다.
+
+## Preset startup cache
+
+활성 상태이고 현재 Embedding Profile과 일치하는 Keyword Preset을 lifespan startup에서 한 번
+읽어 프로세스 메모리에 올립니다. `BLOCKED` Preset은 후보에서 제외하며, 유효한 Preset이 0건이면
+잘못된 Keyword 완료를 만들지 않도록 서버 시작을 실패시킵니다. 캐시는 worker별 읽기 전용
+스냅샷이고 TTL 갱신은 없습니다. Preset 변경은 bootstrap과 배포 후 프로세스 재시작으로
+반영합니다.
+
+## 코드 구조
+
+```text
 app/
-├── main.py                  # lifespan, 라우터, 미들웨어, /health
-├── api/probe.py             # /ready (readiness)
-├── api/internal/v1/         # context.py(/context/process), search.py(/search)
-├── service/                 # context_processing, embedding, keyword, search
-├── repository/              # ai_state, context_embedding, context_keyword, keyword_preset
-├── client/                  # embedding_client(GMS), llm_client(Gemini)
-├── cache/preset_cache.py    # Preset 메모리 캐시
-├── core/                    # config, db, errors, security, logging
-├── bootstrap/load_presets.py
-└── smoke/gms_roundtrip.py   # GMS 양방향 실호출 스모크(배포 게이트)
-data/keyword_preset.yaml     # Preset 시드(27개)
-tests/                       # 통합 테스트(Testcontainers) — tests/README.md 참고
+├── main.py                    # lifespan 조립, middleware, exception handler, /health
+├── api/
+│   ├── probe.py               # /ready
+│   └── internal/v1/           # context, search/judge, place-suggestions
+├── service/                   # 처리·검색·장소 제안 오케스트레이션
+├── repository/                # ai schema SQL
+├── cache/preset_cache.py      # worker-local Preset snapshot
+├── client/                    # Embedding, LLM, vision, Kakao clients
+├── core/                      # config, DB pool, error, security, logging
+├── bootstrap/load_presets.py  # Preset bootstrap CLI
+└── smoke/gms_roundtrip.py     # 배포 전 외부 AI round-trip smoke
+data/keyword_preset.yaml       # Preset seed source
+tests/                         # pgvector Testcontainers 기반 테스트
 ```
 
-## 환경
+## 기술 스택
 
-Python **3.12 고정**(`.python-version`, `pyproject.toml`). 챗봇/GraphRAG 스택 대비 상한 `<3.13`.
+- Python `>=3.12,<3.13` (`pyproject.toml`, `.python-version`)
+- FastAPI `0.139.2`, Pydantic `2.13.4`, Uvicorn `0.51.0`
+- asyncpg `0.31.0`, pgvector Python client `0.5.0`, NumPy `2.5.1`
+- PostgreSQL pgvector `0.8.5-pg16` 테스트·개발 계약
 
-```bash
-py -V:3.12 -m venv .venv                    # Windows (또는 python3.12 -m venv)
-.venv/Scripts/pip install -r requirements.lock -r requirements-dev.lock
+`requirements.txt`와 `requirements-dev.txt`는 직접 의존성 하한을, `requirements.lock`과
+`requirements-dev.lock`은 CI·Docker가 설치하는 정확 버전을 관리합니다.
+
+## 환경변수
+
+값은 README, 코드, 로그에 기록하지 않습니다. 로컬 값은 gitignore된 `.env`, 배포 값은 Secret과
+배포 설정으로 주입하며 실제 값과 endpoint는 각 환경의 비밀 저장소에서 확인합니다.
+
+필수 연결·인증 이름:
+
+```text
+DATABASE_URL
+GMS_API_KEY
+GMS_BASE_URL
+KAKAO_REST_API_KEY
+INTERNAL_SHARED_SECRET
 ```
 
-`requirements.txt`는 사람용 하한, `requirements.lock`/`requirements-dev.lock`은 정확 버전(CI·Docker 설치 기준).
+공개 profile·동작 설정 이름:
 
-## 로컬 기동
+```text
+PINLOG_EMBEDDING_MODEL
+PINLOG_EMBEDDING_DIMENSION
+PINLOG_EMBEDDING_DISTANCE
+PINLOG_EMBEDDING_PROFILE
+PINLOG_JUDGE_CHAIN
+PINLOG_JUDGE_VOTE_N
+KEYWORD_CANDIDATE_TOP_K
+SIMILARITY_FLOOR
+PROCESSING_EXPIRY_SEC
+PINLOG_IMAGE_MODEL
+IMAGE_MODEL_TIMEOUT_SEC
+KAKAO_TIMEOUT_SEC
+PLACE_SUGGESTION_TIMEOUT_SEC
+VISION_MAX_CONCURRENCY
+PLACE_SUGGESTION_LOG_RESULTS
+IMAGE_MAX_BYTES
+GMS_IMAGE_MAX_BYTES
+GMS_VISION_REQUEST_MAX_BYTES
+SEARCH_SIMILARITY_FLOOR
+SEARCH_SIMILARITY_FLOOR_WORD
+SEARCH_TOP_RATIO
+SEARCH_WORD_QUERY_MAX_CHARS
+SEARCH_LLM_ENABLED
+SEARCH_LLM_TIMEOUT_SEC
+SEARCH_LLM_ATTEMPTS
+SEARCH_REWRITE_CACHE_SIZE
+SEARCH_REWRITE_MAX_CHARS
+SEARCH_KEYWORD_RERANK_ENABLED
+SEARCH_KEYWORD_RERANK_FLOOR
+SEARCH_KEYWORD_RERANK_WEIGHT
+SEARCH_KEYWORD_RERANK_TOP_K
+SEARCH_RELEVANCE_JUDGE_ENABLED
+SEARCH_RELEVANCE_JUDGE_TIMEOUT_SEC
+SEARCH_RELEVANCE_JUDGE_ATTEMPTS
+```
 
-DSN은 아래 pgvector 컨테이너 기준 `pinlog:pinlog@localhost:5433/pinlog`로 통일한다
-(`.env.example` 기본값). back `compose.yaml`은 포트·계정이 다르므로(15432·pinlog-local) 혼용하지 않는다.
+기본값과 교차 검증 규칙의 코드 정본은 [`app/core/config.py`](app/core/config.py)입니다.
+
+## 로컬 개발
+
+### 1. Python 환경
 
 ```bash
-# 1. pgvector 기동
-#    이미지는 back compose.yaml·Testcontainers와 동일하게 digest까지 고정한다.
-docker run -d --name pinlog-pgv -e POSTGRES_USER=pinlog -e POSTGRES_PASSWORD=pinlog \
-  -e POSTGRES_DB=pinlog -p 5433:5432 \
-  pgvector/pgvector:0.8.5-pg16@sha256:1d533553fefe4f12e5d80c7b80622ba0c382abb5758856f52983d8789179f0fb
+# Linux/macOS
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.lock -r requirements-dev.lock
 
-# 2. ai 스키마 생성 — back Flyway 마이그레이션을 순차 적용 (ai 레포는 Migration을 실행하지 않는다)
-#    파일 위치: back/src/main/resources/db/migration/
-#    ai.* 테이블은 V1·V100·V101 소관. V102(feed_event)는 core 소관이므로 제외한다.
-#    로컬에 psql 클라이언트가 없으면 컨테이너의 psql로 적용:
-for f in V1__ V100__ V101__; do
-  docker exec -i pinlog-pgv psql -U pinlog -d pinlog \
-    < "$(ls ../back/src/main/resources/db/migration/${f}*.sql)"
-done
+# Windows
+py -V:3.12 -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.lock -r requirements-dev.lock
+```
 
-# 3. 설정 — .env.example을 .env로 복사 (DSN 기본값이 1단계 컨테이너와 일치, GMS 키만 채운다)
-cp .env.example .env   # GMS_API_KEY · INTERNAL_SHARED_SECRET 등 CHANGME 치환
+### 2. DB와 Preset 준비
 
-# 4. Preset 부트스트랩 (임베딩 생성 → ai.keyword_preset)
+Backend의 pgvector 개발 DB를 시작하고 **Backend Flyway를 먼저 완료**합니다. 개별 migration SQL을
+AI 레포에서 수동 선택 적용하지 않습니다. 그 다음 환경별 값을 `.env`에 주입하고 Preset을
+bootstrap합니다.
+
+```bash
 python -m app.bootstrap.load_presets
+```
 
-# 5. 기동
+### 3. 서버 실행
+
+```bash
 uvicorn app.main:app --port 8000
 ```
 
-DB 조회도 로컬 psql 없이 컨테이너로: `docker exec -it pinlog-pgv psql -U pinlog -d pinlog`.
+## Probe와 배포 smoke
 
-## 프로브와 스모크
+| 경로                                | 판정                            | 용도                                             |
+| ----------------------------------- | ------------------------------- | ------------------------------------------------ |
+| `GET /health`                       | 정적 process 생존 응답          | liveness · startup. DB·캐시 상태를 포함하지 않음 |
+| `GET /ready`                        | DB 연결 + Preset cache 1건 이상 | readiness. 외부 AI API를 호출하지 않음           |
+| `python -m app.smoke.gms_roundtrip` | Embedding 1회 + judge 1회       | 배포 activation 전 외부 연동 smoke               |
 
-배포 계약(`docs/implements/2026-07-29-dev-deployment-gates.md`)이 정한 세 경로입니다.
+Probe와 smoke 출력에는 credential, endpoint, profile 값을 포함하지 않습니다. 배포 게이트의 근거는
+[`docs/implements/2026-07-29-dev-deployment-gates.md`](docs/implements/2026-07-29-dev-deployment-gates.md)입니다.
 
-| 경로 | 판정 | 용도 |
-|---|---|---|
-| `GET /health` | 정적 `{"status":"ok"}` | liveness · startup. DB·캐시 상태를 섞지 않는다 |
-| `GET /ready` | DB `SELECT 1` + Preset 캐시 ≥ 1건 → `200 ready` / `503 not_ready` | readiness. GMS는 호출하지 않는다 |
-| `python -m app.smoke.gms_roundtrip` | embedding 1회 + judge 1회, 한쪽이라도 실패 시 exit 1 | 배포 activation 게이트. DB 접근 없음 |
+## 테스트와 정적 검증
 
-두 프로브 모두 무인증입니다(`/internal/` 밖). 응답·출력에 credential·endpoint·profile 값을 싣지 않습니다.
-
-## 테스트
+빠른 전체 테스트는 Docker가 필요합니다. Testcontainers가 digest로 고정된 pgvector를 실행하며,
+외부 AI API는 fake 또는 MockTransport로 대체합니다.
 
 ```bash
-pytest                       # Docker 필요 — Testcontainers가 pgvector 0.8.5(digest 고정) 기동
+ruff check .
+python -m compileall app tools
+pytest tests/ -v
 ```
 
-계층·컨벤션(Fake·TRUNCATE·호출 횟수·on_call 훅)은 [`tests/README.md`](tests/README.md), 시나리오 정의는 [`docs/spec/integration-tests.md`](docs/spec/integration-tests.md).
+PR 전 coverage gate까지 포함한 검증:
+
+```bash
+pytest --cov=app --cov-branch --cov-report=term-missing --cov-report=json:coverage.json
+python tools/check_coverage_gate.py
+```
+
+테스트 계층과 동시성 규칙은 [`tests/README.md`](tests/README.md), 계약 시나리오는
+[`docs/spec/integration-tests.md`](docs/spec/integration-tests.md)를 참고합니다.
 
 ## Docker
 
 ```bash
-docker build -t pinlog-ai .  # python:3.12-slim, requirements.lock 설치
-
-# 이미지는 .env를 제외(.dockerignore)하므로 실행 시 env를 주입한다.
-# host의 pgvector 컨테이너(5433)에 접근하려면 host.docker.internal을 쓴다:
-docker run -d --name pinlog-ai -p 8000:8000 --env-file .env \
-  -e DATABASE_URL="postgresql://pinlog:pinlog@host.docker.internal:5433/pinlog" \
-  --add-host=host.docker.internal:host-gateway pinlog-ai
+docker build -t pinlog-ai .
+docker run --rm -p 8000:8000 --env-file .env pinlog-ai
 ```
 
-## 공용 계약
+이미지는 `.env`를 포함하지 않습니다. 실제 배포에서는 Kubernetes Secret과 GitOps 설정으로 값을
+주입합니다.
 
-파트 간 계약(원칙·상태 정의·테이블 역할·내부 API·검증 시나리오)의 단일 원본은
-**`Team-PinLog/docs`의 `static/05_AI_설계.md`**입니다. `docs/` 아래 문서는 그 계약을 참조하며,
-어긋나면 `static/05_AI_설계.md`가 우선합니다.
+## 문서와 협업
 
-## 연동 대상
+파트 간 계약의 단일 원본은 `Team-PinLog/docs`의 `static/05_AI_설계.md`입니다. 이 레포의
+[`docs/README.md`](docs/README.md)는 구현 명세, 제안, 구현 기록, 문제 해결 문서의 색인입니다.
+충돌하면 공용 계약을 우선합니다.
 
-| 파트 | 스택 | 비고 |
-|---|---|---|
-| Spring Backend | Java 21 / Spring Boot 4.1.0 | Core 도메인·최종 응답, `ai` 스키마 포함 Migration 실행 |
-| PostgreSQL + pgvector | `ai` 스키마 | FastAPI DB 권한은 `ai` 스키마로 한정 |
+- 개발 규칙: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- 작업 순서: [`docs/development/workflow.md`](docs/development/workflow.md)
+- 리뷰 기준: [`docs/development/code-review.md`](docs/development/code-review.md)
+- 모델 Profile: [`docs/spec/model-profile.md`](docs/spec/model-profile.md)
