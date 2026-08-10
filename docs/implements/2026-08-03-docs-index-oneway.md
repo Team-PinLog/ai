@@ -1,6 +1,6 @@
 # 구현 리포트 파일 표에 번호 컬럼을 넣어 반대 방향 누락도 잡는다
 
-- **티켓**: S15P11A705-230
+- **티켓**: Jira 작업
 - **날짜**: 2026-08-03
 - **선행**: [문서 색인 정합 검사](2026-07-31-docs-index-check.md) (티켓 없음) · [T64·T65](../troubleshooting/2026-07-31-docs-index-check.md)
 - **산출**: [`tools/check_docs_index.py`](../../tools/check_docs_index.py) 의 ⑤ ·
@@ -106,7 +106,7 @@ entries - ledger = 7건  (재확인, -226 시점과 동일)
 
 - `merge=union` 이 낡은 무번호 파일 표 전체를 되살렸다. 내가 번호 컬럼을 넣어 갱신한
   26행 아래에, 번호 컬럼 없는 낡은 26행이 다시 붙었다.
-- 병렬 PR #81(S15P11A705-227, GMS vision-probe)이 같은 I36 을 잡아 충돌했다. 그쪽은
+- 병렬 PR #81(Jira 작업, AI API vision-probe)이 같은 I36 을 잡아 충돌했다. 그쪽은
   병합 시점 dev 의 마지막 번호(I35) 다음을 골랐고, 내 브랜치도 독립적으로 I36 을
   골라 같은 번호가 됐다.
 

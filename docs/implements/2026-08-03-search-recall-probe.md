@@ -1,12 +1,12 @@
 # 본문에 있는 말로 검색해도 안 나온다 — 세 이슈의 원인이 서로 다르다는 것을 판별했다
 
-- **티켓**: S15P11A705-255
+- **티켓**: Jira 작업
 - **날짜**: 2026-08-03 (측정 10:29 KST)
 - **이슈**: [ai#86](https://github.com/Team-PinLog/ai/issues/86)(`신한`) ·
   [ai#87](https://github.com/Team-PinLog/ai/issues/87)(`그네`) ·
   [ai#88](https://github.com/Team-PinLog/ai/issues/88)(`부캠`)
-- **선행**: [검색 결과 컷](2026-07-31-search-cut.md) (`S15P11A705-213`) ·
-  [임베딩 4조건](2026-07-31-embedding-grid.md) (`S15P11A705-191`)
+- **선행**: [검색 결과 컷](2026-07-31-search-cut.md) (Jira 작업) ·
+  [임베딩 4조건](2026-07-31-embedding-grid.md) (Jira 작업)
 - **하네스**: `tools/search_cut/recall_probe.py` — 실행 절차는 그 README
 - **성격**: 측정만 한다. 컷 값도 모델도 코드도 고치지 않는다.
 
@@ -200,7 +200,7 @@ embedding_profile         openai-text-embedding-3-small-1536-cosine-v1 (설정�
 ### 부분어 — `#87` 의 BPE 가설은 반증됐다
 
 계약이 「확인 없이 단정하지 마라」고 한 항목이다. 프로파일이 `text-embedding-3-small`
-(GMS 를 통한 OpenAI 경로)이므로 토크나이저가 `cl100k_base` 로 특정된다. 실제로
+(AI API 를 통한 OpenAI 경로)이므로 토크나이저가 `cl100k_base` 로 특정된다. 실제로
 분해해서 확인했다.
 
 ```
@@ -305,7 +305,7 @@ BPE 는 `그네팟` 을 한 덩어리로 묶지 않는다. `cl100k_base` 는 한
 **실행한 것**
 
 - 벡터 유무 전수 확인 (42/42 `COMPLETED`, 프로파일 일치)
-- 질의 22건 × Record 17건 유사도 측정. **GMS 임베딩 배치 1회**
+- 질의 22건 × Record 17건 유사도 측정. **AI API 임베딩 배치 1회**
 - 컷 재구성 — `SearchService._cut` 을 다시 적어 순서(LIMIT → 컷)까지 맞춤
 - 토크나이저 실측 — `cl100k_base` 로 질의·본문 분해와 공유 토큰 확인
 - 본문 길이 × 유사도 순위 상관
@@ -346,7 +346,7 @@ BPE 는 `그네팟` 을 한 덩어리로 묶지 않는다. `cl100k_base` 는 한
 | 경로 | 수명 | |
 |---|---|---|
 | `tools/search_cut/recall_probe.py` | **영구** | 하네스. `--replay`(판정 재계산) · `--lengths`(길이 상관) |
-| `.search/recall_probe.json` | **영구(커밋)** | 유사도 행렬. 다시 뜨려면 GMS 를 부른다. `.gitignore` 예외에 등록 |
+| `.search/recall_probe.json` | **영구(커밋)** | 유사도 행렬. 다시 뜨려면 AI API 를 부른다. `.gitignore` 예외에 등록 |
 | 이 문서 | **영구** | |
 
 `matrix.json` 과 같은 원칙으로 커밋한다. Context 본문을 담지 않고 Record 대표

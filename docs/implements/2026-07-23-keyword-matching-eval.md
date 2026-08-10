@@ -15,7 +15,7 @@
 
 `tools/keyword_eval/` 에 커밋했다. 팀이 실제 샘플로 재실행할 수 있게 하기 위해서다. 구성은 다음과 같다.
 
-- `embed.py` — GMS 임베딩 호출. 결과를 디스크에 캐시한다.
+- `embed.py` — AI API 임베딩 호출. 결과를 디스크에 캐시한다.
 - `samples.yaml` — 임시 맥락 35개. 프리셋을 아는 작성자가 만든 샘플이라 self-reference 편향이 있으므로, 수치는 절대값이 아니라 경향으로 해석한다.
 - `test_a/b/c` — 테스트 3종 실행 코드.
 - `prompts/keyword_judgment.md` — 판정 프롬프트.
@@ -37,14 +37,14 @@
 
 ### C-2 — 판정 모델 비교
 
-확정한 프롬프트로 3사 4모델(gpt-5-mini, gpt-5-nano, claude-haiku-4-5, gemini-2.5-flash)을 GMS 경로에서 실행해 비교했다. 정확도(스키마 준수·선택 분포)는 4모델이 사실상 동일했다. 따라서 경량 tier 모델로 충분하다. 그중 가장 빠르고(1.12s) 토큰을 가장 적게 쓴(25314) `gemini-2.5-flash`(thinkingBudget=0)를 확정했다. gpt-5-nano 는 지연이 가장 길고 토큰을 가장 많이 써서 탈락했다. 모델이 반환하는 confidence 값은 모든 모델에서 변별력이 낮아 랭킹 신호로 사용하지 않는다. Gemini 는 function-calling 응답이 malformed 로 나와서, 대신 `responseSchema` 방식으로 호출한다.
+확정한 프롬프트로 3사 4모델(gpt-5-mini, gpt-5-nano, claude-haiku-4-5, gemini-2.5-flash)을 AI API 경로에서 실행해 비교했다. 정확도(스키마 준수·선택 분포)는 4모델이 사실상 동일했다. 따라서 경량 tier 모델로 충분하다. 그중 가장 빠르고(1.12s) 토큰을 가장 적게 쓴(25314) `gemini-2.5-flash`(thinkingBudget=0)를 확정했다. gpt-5-nano 는 지연이 가장 길고 토큰을 가장 많이 써서 탈락했다. 모델이 반환하는 confidence 값은 모든 모델에서 변별력이 낮아 랭킹 신호로 사용하지 않는다. Gemini 는 function-calling 응답이 malformed 로 나와서, 대신 `responseSchema` 방식으로 호출한다.
 
 확정 사항은 [P26](../proposals/P26-keyword-preset-judgment.md)에 반영했다(M4 종결).
 
 ## 남은 것
 
 - 팀원이 프리셋을 보지 않고 작성한 실제 샘플로 B/C 를 다시 측정해야 한다. 현재 샘플은 self-reference 편향이 있어, Recall 과 트리키 케이스가 실제로 유효한지는 새 샘플로만 검증할 수 있다.
-- GMS 모델별 크레딧 단가표가 나오면 토큰 사용량을 비용으로 환산해야 한다([spec/cost-estimate.md](../spec/cost-estimate.md) §4 공식에 대입).
+- AI API 모델별 크레딧 단가표가 나오면 토큰 사용량을 비용으로 환산해야 한다([spec/cost-estimate.md](../spec/cost-estimate.md) §4 공식에 대입).
 
 ## 관련
 

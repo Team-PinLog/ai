@@ -2,7 +2,7 @@
 
 - **상태**: 완료
 - **날짜**: 2026-07-29
-- **Jira**: S15P11A705-58
+- **Jira**: Jira 작업
 - **관련 PR**: (이 PR)
 - **근거 계약**: [spec/context-processing.md](../spec/context-processing.md), [spec/personal-search.md](../spec/personal-search.md), [spec/state-machine.md](../spec/state-machine.md)
 - **선행 기록**: [2026-07-27-e2e-verification.md](2026-07-27-e2e-verification.md) (I21)
@@ -52,7 +52,7 @@ SQL 직접 INSERT 의 위험은 비용이 아니라 거짓 성공이다. 화면�
 
 그 외 Record·Context·Collection·Follow 는 전부 API 로 만든다.
 
-> **`core` 에 쓰는 것이 계약 위반 아닌가.** 계약이 금지하는 것은 *FastAPI 런타임이* `core` 를 읽고 쓰는 것이다(README:10, [architecture.md](../spec/architecture.md) §7). `tools/` 의 로컬 스크립트는 런타임이 아니고, 앱 코드에는 `core` 참조가 한 줄도 늘지 않았다. I21 이 실증한 대로 로컬 접속 롤은 슈퍼유저라 DB 가 이 경계를 강제하지 않는다(`S15P11A705-61` 미해소). 그래서 쓰기 범위를 표식으로 좁히고 문서에 남기는 것이 현재 쓸 수 있는 유일한 방어선이다.
+> **`core` 에 쓰는 것이 계약 위반 아닌가.** 계약이 금지하는 것은 *FastAPI 런타임이* `core` 를 읽고 쓰는 것이다(README:10, [architecture.md](../spec/architecture.md) §7). `tools/` 의 로컬 스크립트는 런타임이 아니고, 앱 코드에는 `core` 참조가 한 줄도 늘지 않았다. I21 이 실증한 대로 로컬 접속 롤은 슈퍼유저라 DB 가 이 경계를 강제하지 않는다(Jira 작업 미해소). 그래서 쓰기 범위를 표식으로 좁히고 문서에 남기는 것이 현재 쓸 수 있는 유일한 방어선이다.
 
 ### back 변경은 필요하지 않았다
 
@@ -63,7 +63,7 @@ SQL 직접 INSERT 의 위험은 비용이 아니라 거짓 성공이다. 화면�
 
 ---
 
-## 판단 2 — GMS 실호출 몇 건이 적정인가
+## 판단 2 — AI API 실호출 몇 건이 적정인가
 
 ### 결론: Context 14건 = 실호출 29회 (임베딩 14 + 판정 14 + 프리셋 1배치)
 
@@ -75,11 +75,11 @@ SQL 직접 INSERT 의 위험은 비용이 아니라 거짓 성공이다. 화면�
 | 탐색 피드 | 타 소유자와 그 Context | 4명 × 2 = 8 | `max-per-owner=2` 라 소유자 4명이 카드 8장의 상한이다 |
 | Keyword | (위에 자연히 붙는다) | 0 | 별도 Context 를 만들지 않는다 |
 
-Collection 9개와 Follow 2건은 Record 를 재사용하므로 GMS 호출이 늘지 않는다. 소유자당 Collection 을 2개로 둔 것도 같은 이유다. 화면은 채워지고 비용은 그대로다.
+Collection 9개와 Follow 2건은 Record 를 재사용하므로 AI API 호출이 늘지 않는다. 소유자당 Collection 을 2개로 둔 것도 같은 이유다. 화면은 채워지고 비용은 그대로다.
 
 ### 진짜 제약은 돈이 아니라 429였다
 
-비용 산정보다 먼저 부딪힌 것은 GMS 게이트웨이의 Gemini 429 다. 판정 호출을 15초 간격으로 12회 던져 측정했다.
+비용 산정보다 먼저 부딪힌 것은 AI API 게이트웨이의 Gemini 429 다. 판정 호출을 15초 간격으로 12회 던져 측정했다.
 
 ```
    1.8s  OK      81.4s  OK     146.4s  OK
@@ -125,7 +125,7 @@ I21 이후 ai `app/` 에 들어온 변경은 `-96` 의 둘(`/ready`·`GMS_BASE_U
 |---|---|
 | `run_pipeline.py` | Context 8건 → 6.0초에 두 status 전부 COMPLETED (I21 과 동일) |
 | `run_search.py` | 계약 3종(200·422·401) 통과, 관련 질의 6건 전부 1위, 분리도 +0.2120 |
-| `run_equivalence.py` | GMS 429 로 중단 (아래) |
+| `run_equivalence.py` | AI API 429 로 중단 (아래) |
 | `run_attribution.py` | 미실행 — 위와 같은 사유 |
 
 ### 검색 수치가 소수점 넷째 자리까지 같다
@@ -323,7 +323,7 @@ return new RecordDetailResponse(
 `verify.py` 는 DB 를 세어 통과시키지 않는다. 시연에서 실제로 호출될 두 API 를 그대로 호출하고 그 응답만으로 판정한다.
 
 ```
-A. 자연어 검색  POST /internal/v1/search    (FastAPI, 주인공 userId, 실 GMS 임베딩)
+A. 자연어 검색  POST /internal/v1/search    (FastAPI, 주인공 userId, 실 AI API 임베딩)
 B. 탐색 피드    GET  /v1/feed/collections   (back, 주인공 인증)
 C. Keyword      B의 응답 keywords + GET /v1/records/{id}
 ```

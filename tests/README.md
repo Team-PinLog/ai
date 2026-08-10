@@ -9,10 +9,10 @@ AI 서버 통합 테스트 규칙. 계약 근거는 [`docs/spec/integration-test
 - **외부 API는 인터페이스 레벨 Fake**([fakes.py](fakes.py)), HTTP mock 아님. **호출 횟수 기록
   필수** — "호출 안 함"/"정확히 한 번"이 여러 시나리오의 핵심 단언.
   이 규칙은 **파이프라인이 client를 무엇으로 대체하는가**에 대한 것이다. 두 계층의 구분은
-  [integration-tests.md §4.2](../docs/spec/integration-tests.md) 가 정본이다(`S15P11A705-110`에서 명문화).
+  [integration-tests.md §4.2](../docs/spec/integration-tests.md) 가 정본이다.
   **client 자신의 HTTP 계층은 §4.2 범위 밖**이며 [test_client_retry.py](test_client_retry.py)가
   `httpx.MockTransport`로 검증한다 — 상태 코드→오류 타입 매핑은 인터페이스 Fake로 볼 수 없고,
-  그 공백이 429를 영구 오류로·LLM 401을 일시 오류로 둔 채 남긴 원인이었다(`S15P11A705-121`).
+  그 공백이 429를 영구 오류로·LLM 401을 일시 오류로 둔 채 남긴 원인이었다.
 - **오류 경로도 Fake로 주입한다** — `raise_exc`로 `TransientError`/`PermanentError`를 넣어
   상태가 PROCESSING으로 남는지·해당 단계만 FAILED가 되는지 단언한다. 주입 파라미터를 두고
   쓰지 않으면 그 경로는 한 번도 실행되지 않는다.
@@ -25,7 +25,7 @@ AI 서버 통합 테스트 규칙. 계약 근거는 [`docs/spec/integration-test
 - **외부 실호출을 CI에 넣지 않는다.** `app.smoke.gms_roundtrip`은 `_CHECKS`를 스텁으로 교체해
   집계·종료 코드·값 미노출 규약만 검증하고, 스크립트 실행 경로는 **클라이언트 클래스**를
   스텁으로 갈아 끼워 검증한다. 실제 GMS 왕복은 배포 절차에서 수동 실행한다 —
-  실호출을 CI에 넣으면 GMS 가용성이 CI 성패에 들어온다.
+  실호출을 CI에 넣으면 AI API 가용성이 CI 성패에 들어온다.
 - **`if __name__ == "__main__"` 아래는 `runpy`로 검증한다.** import로는 한 줄도 실행되지 않는다.
   `runpy.run_module(..., run_name="__main__")`은 **새 네임스페이스**에서 모듈을 다시 실행하므로
   캐시된 모듈에 건 패치가 보이지 않는다 — `monkeypatch.setattr("app.client.embedding_client.EmbeddingClient", ...)`
@@ -46,7 +46,7 @@ AI 서버 통합 테스트 규칙. 계약 근거는 [`docs/spec/integration-test
 
 > `test_bootstrap.py`·`test_lifespan.py`는 요청 경로 **밖**이라 파이프라인·API 테스트로는
 > 실행되지 않는다(`test_api.py`는 lifespan을 우회하고 `app.state`에 Fake를 직접 꽂는다).
-> `S15P11A705-110` 기준선에서 두 파일이 덮는 영역이 각각 0%·58%였다.
+> 초기 기준선에서 두 파일이 덮는 영역이 각각 0%·58%였다.
 > lifespan 테스트는 **진짜 클라이언트를 조립하는지**를 단언하므로 Fake로 바꾸지 않는다 —
 > 생성자는 IO를 하지 않으므로 실호출 금지 규칙과 충돌하지 않는다.
 

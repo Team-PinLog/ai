@@ -1,13 +1,13 @@
 # Runtime Secret handoff — AI 값은 Environment 경계에서만 전달한다
 
-`S15P11A705-154`
+Jira 작업
 
 > **상태: 대체(구현 주체 이관) — 설계 근거는 보존**
 >
-> 이 문서의 이전 판(`S15P11A705-96`, 레포 자체 workflow `seal-ai-secrets.yml`)이 기록한
-> 구현은 `S15P11A705-154`에서 Infra 공용 action
+> 이 문서의 이전 판(Jira 작업, 레포 자체 workflow `seal-ai-secrets.yml`)이 기록한
+> 구현은 Jira 작업에서 Infra 공용 action
 > `Team-PinLog/infra/.github/actions/sealedsecret-infra-pr`으로 대체됐다. 아래
-> [대체된 구현의 설계 근거](#대체된-구현의-설계-근거-s15p11a705-96--보존)의 판단은
+> [대체된 구현의 설계 근거](#대체된-구현의-설계-근거-보존)의 판단은
 > 폐기된 것이 아니라 해당 action 에 반영되어 있다.
 >
 > `docs/implements/README.md`의 보존 원칙("완료된 항목도 삭제하지 않고 상태 표시만
@@ -55,7 +55,7 @@ GitOps revision 으로 되돌리는 방식으로 처리한다. 이 변경은 liv
 action SHA, 입력과 exact key set 을 검증한다. 실제 Secret 값과 live sealing 결과는 이
 변경에서 조회하거나 실행하지 않는다.
 
-## 대체된 구현의 설계 근거 (`S15P11A705-96` · 보존)
+## 대체된 구현의 설계 근거 (보존)
 
 이 절은 봉인을 AI 레포 workflow 가 직접 수행했을 때의 판단 기록이다. 실행 주체는 Infra
 공용 action 으로 옮겼고, 아래 근거는 그 action 이 이어받았다. 같은 실수를 다시 하지 않기

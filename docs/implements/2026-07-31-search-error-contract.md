@@ -1,10 +1,10 @@
 # 검색 API 오류 응답 계약 — 임베딩 502 가 검색 500 이 되던 것을 끊는다
 
-- **티켓**: S15P11A705-220
+- **티켓**: Jira 작업
 - **상태**: 완료
 - **날짜**: 2026-07-31
 - **선행**: [외부 API 재시도·오류 분류](2026-07-30-retry-and-error-classification.md) (`-121`) ·
-  [GMS 호출 계측](2026-07-31-gms-call-observability.md) (`-197`)
+  [AI API 호출 계측](2026-07-31-gms-call-observability.md) (`-197`)
 - **근거**: [`ai#69`](https://github.com/Team-PinLog/ai/issues/69) — 인프라 파트 운영 보고
 
 ## 이 문서가 다루는 것
@@ -67,7 +67,7 @@
 
 | 상태 | 의미 |
 |---|---|
-| 지금 | 전부 500. "AI 가 깨졌나 GMS 가 깨졌나"를 로그 없이 구분할 수 없다 |
+| 지금 | 전부 500. "AI 가 깨졌나 AI API 가 깨졌나"를 로그 없이 구분할 수 없다 |
 | 이후 503 | 게이트웨이 장애·타임아웃. 기다리면 낫는다 |
 | 이후 502 | 키·모델명·base URL·차원. 배포 설정을 고쳐야 낫는다 |
 | 이후 500 | 우리 코드의 결함. 비로소 알림 대상이 된다 |
@@ -89,10 +89,10 @@ f"embedding error: {resp.status_code} {resp.text[:200]}"   # embedding_client.py
 
 ```
 app.core.errors.PermanentError: embedding error: 401 Unauthorized:
-api key sk-live-DEADBEEF rejected by gms.ssafy.io
+api key sk-live-DEADBEEF rejected by https://api.example.com
 ```
 
-실제 GMS 가 무엇을 담는지는 우리가 통제하지 않는다. `probe.py` 가 세운
+실제 AI API 가 무엇을 담는지는 우리가 통제하지 않는다. `probe.py` 가 세운
 *"credential·endpoint·profile 값을 어떤 분기에서도 싣지 않는다"* 와 `-197` 이 로그로
 확장한 같은 기준(§2.4 원칙 4)에 어긋난다. 핸들러가 이 누출도 막는다.
 
@@ -179,7 +179,7 @@ Fake client 를 쓰지 않는 것이 이 파일의 요점이다.
 ### 3.3 실서버 대조 — 502 를 만들어 503 을 봤다
 
 테스트만으로는 「핸들러 코드를 넣었다」까지만 확인된다. 실제 동작을 보기 위해 로컬
-GMS 스텁(`/gmsapi/api.openai.com/v1`)을
+AI API 스텁(`/gmsapi/api.openai.com/v1`)을
 띄우고 시연 DB(`:15432`, preset 27건)에 붙인 uvicorn 두 대를 같은 스텁에 물려 대조했다.
 
 | 업스트림 | `origin/dev`(a5e1142) | 이 브랜치 |

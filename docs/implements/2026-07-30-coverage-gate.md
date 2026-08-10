@@ -1,12 +1,12 @@
-# app coverage 게이트 활성화 — line·branch 각각 80% 이상을 병합 차단 조건으로 전환했다 (S15P11A705-110)
+# app coverage 게이트 활성화 — line·branch 각각 80% 이상을 병합 차단 조건으로 전환했다 (Jira 작업)
 
 상태: 완료 · 유형: 구현 · 근거: [CONTRIBUTING.md](../../CONTRIBUTING.md) 검증 절, [integration-tests.md](../spec/integration-tests.md) §4.2 · §5
 
-`S15P11A705-108` 이 비차단으로 도입한 `app` line·branch coverage 측정을 병합 차단 게이트로 전환했다. 티켓 완료 조건은 *"line 과 branch 각각 80% 이상"* 이다.
+Jira 작업 이 비차단으로 도입한 `app` line·branch coverage 측정을 병합 차단 게이트로 전환했다. 티켓 완료 조건은 *"line 과 branch 각각 80% 이상"* 이다.
 
 ## 1. 기준선이 낡아 있었다
 
-티켓 본문의 수치는 2026-07-28(52 tests) 관측이다. 그 사이 `S15P11A705-121`(ai#44, `b45aa93`)이 client 재시도·오류 분류 테스트 58개를 추가해 상황이 바뀌었다. 그래서 착수 시점에 재측정했다.
+티켓 본문의 수치는 2026-07-28(52 tests) 관측이다. 그 사이 Jira 작업(ai#44, `b45aa93`)이 client 재시도·오류 분류 테스트 58개를 추가해 상황이 바뀌었다. 그래서 착수 시점에 재측정했다.
 
 | | 티켓 기재 (07-28) | 재측정 (`b45aa93` 시점) | 최종 |
 |---|---|---|---|

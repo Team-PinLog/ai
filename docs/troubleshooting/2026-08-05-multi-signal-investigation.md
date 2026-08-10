@@ -1,9 +1,9 @@
 # 다신호 검색 조사 및 실측 결과
 
-- **티켓**: 미발급. `S15P11A705-336` 인수 트랙과 [P49](../proposals/P49-multi-signal-search.md) 제안의 근거 기록이다.
+- **티켓**: 미발급. Jira 작업 인수 트랙과 [P49](../proposals/P49-multi-signal-search.md) 제안의 근거 기록이다.
 - **날짜**: 2026-08-05
 - **대상 코드**: `origin/leo` `fcb397c`. 대상 파일은 `tools/search_cut/{rank_score,fusion,fusion_sweep,keyword_matrix}.py` 와 `tests/test_search_fusion.py` 다.
-- **실측 환경**: 시연 DB `:15432`(`pinlog-demo-postgres-1`) · profile `openai-text-embedding-3-small-1536-cosine-v1` · Preset 27건 v1(PUBLIC 25 · PRIVATE_ONLY 2) · Context 42건 · keyword 판정 83건 · GMS 임베딩 3배치
+- **실측 환경**: 시연 DB `:15432`(`pinlog-demo-postgres-1`) · profile `openai-text-embedding-3-small-1536-cosine-v1` · Preset 27건 v1(PUBLIC 25 · PRIVATE_ONLY 2) · Context 42건 · keyword 판정 83건 · AI API 임베딩 3배치
 - **선행 기록**: [검색 실패 원인 판별](2026-08-03-search-recall-probe.md)(`-255`) · [단어형 컷 격자](2026-08-03-word-query-cut.md)(`-266`) · [짧은 질의 층 관측](2026-08-05-short-query-boundary.md)(`-273`) · leo 의 순위 지표 baseline 리포트 I52(`origin/leo`)
 - **번호는 잠정이다.** T73~T78 은 병합 직전 `origin/dev` 로 rebase 한 뒤 확정한다(T48·T60 규칙).
 - **수치의 성격**: 이 문서의 수치는 2026-08-05 실측 시점의 관측값이다. 산출물 JSON 5종은 실측 worktree 에 있고 아직 커밋되지 않았다. 측정 기록의 정본은 `-336` 실측 리포트로 정식화할 예정이다. 값이 앞으로도 같다고 주장하지 않는다(T70/R-18).
@@ -224,9 +224,9 @@ UnicodeEncodeError: 'cp949' codec can't encode character '—'
 
 **실행한 것** [측정]
 
-- leo 픽스처 테스트 24종 통과 (`tests/test_search_fusion.py`, DB·GMS 호출 없음)
+- leo 픽스처 테스트 24종 통과 (`tests/test_search_fusion.py`, DB·AI API 호출 없음)
 - `rank_score.py` 순위 지표 재현 결과가 leo I52 기록과 일치 (환경 동등성 확인)
-- `word_matrix.py`·`recall_probe.py` 재생성(`context_id` 포함) 과 `keyword_matrix.py` 신규 artifact 생성 (GMS 3배치)
+- `word_matrix.py`·`recall_probe.py` 재생성(`context_id` 포함) 과 `keyword_matrix.py` 신규 artifact 생성 (AI API 3배치)
 - `fusion_sweep.py` 실행 — 기본 축, RRF cutoff 격자(0/0.004/0.008/0.016/0.033), floor 축(0.25/0.30/0.35/0.40)
 - back 의 검색 응답 소비 경로 확인 — `RecordSearchService.java` 는 FastAPI 가 준 순서를 재정렬하지 않고, similarity 값으로 필터하지 않으며, 값이 null 인 항목만 버린다
 

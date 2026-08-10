@@ -11,7 +11,7 @@
 
 ## 하네스 (`tests/`)
 
-- **`conftest.py`** — 세션 스코프의 `PostgresContainer(PGVECTOR_IMAGE)`를 띄운다. 이미지는 현재 `pgvector/pgvector:0.8.5-pg16@sha256:1d53…` 로, 운영 환경과 back 레포 `compose.yaml` 의 이미지와 digest 까지 일치한다(최초에는 `0.8.1-pg16` 이었고 `S15P11A705-122` 에서 정합화했다. 경위는 아래 「결정」 참조). 컨테이너에 `schema/ai_snapshot.sql`(back V1/V100/V101 에서 파생)을 적용한 뒤 asyncpg 풀을 연다. 테스트 간 격리는 TRUNCATE 로 한다. 롤백 격리를 쓰지 않는 이유는 동시성 테스트가 여러 커넥션을 쓰기 때문이다. `settings` fixture 가 Embedding Profile 을 주입하며, 테스트 코드에 Profile 문자열 리터럴을 쓰는 것은 금지다.
+- **`conftest.py`** — 세션 스코프의 `PostgresContainer(PGVECTOR_IMAGE)`를 띄운다. 이미지는 현재 `pgvector/pgvector:0.8.5-pg16@sha256:1d53…` 로, 운영 환경과 back 레포 `compose.yaml` 의 이미지와 digest 까지 일치한다(최초에는 `0.8.1-pg16` 이었고 Jira 작업에서 정합화했다. 경위는 아래 「결정」 참조). 컨테이너에 `schema/ai_snapshot.sql`(back V1/V100/V101 에서 파생)을 적용한 뒤 asyncpg 풀을 연다. 테스트 간 격리는 TRUNCATE 로 한다. 롤백 격리를 쓰지 않는 이유는 동시성 테스트가 여러 커넥션을 쓰기 때문이다. `settings` fixture 가 Embedding Profile 을 주입하며, 테스트 코드에 Profile 문자열 리터럴을 쓰는 것은 금지다.
 - **`fakes.py`** — `FakeEmbeddingClient`/`FakeLLMClient`. 벡터는 sha256 기반으로 결정론적으로 생성한다. 무작위 벡터를 쓰면 유사도 순서 단언이 실행마다 흔들리기 때문이다. 호출 횟수를 기록한다. 여러 시나리오의 핵심 단언이 "호출하지 않았다" 또는 "정확히 한 번 호출했다"이기 때문이다. `on_call` 훅으로 모델 호출과 저장 사이의 시간 창을 결정론적으로 재현한다. sleep 으로 타이밍을 맞추는 방식은 금지다.
 - **`builders.py`** — `make_state`/`make_embedding`/`make_preset`. `embedding_profile`·`is_deleted`·두 status 컬럼을 항상 명시한다. 본문 버전 인자는 두지 않았다. 버전은 설계에서 제거된 개념이라 테스트 빌더가 되살리면 안 되기 때문이다. 본문 수정 시나리오는 `context_id` 가 다른 두 State 로 표현한다.
 - **`schema/ai_snapshot.sql`** — 테스트 전용 스키마 스냅샷. `ai` 스키마만 담는다(ai 테이블은 core 로의 FK 가 없다). 파일 헤더에 back 파생 출처와 갱신 누락 위험을 명시했다.
@@ -33,7 +33,7 @@
 ## 결정
 
 - **Python 3.12 로 통일하고 상한을 `<3.13` 으로 둔다.** GraphRAG 스택(torch/transformers/igraph)의 wheel 이 최신 Python 을 늦게 지원하므로 3.12 가 안전하다. 3.13 지원이 확산되면 상한 완화를 재검토한다.
-- **pgvector 이미지는 `0.8.5-pg16` 에 digest 까지 고정한다.** 운영과 back `compose.yaml` 의 실제 이미지와 digest 까지 일치시켜 재현성을 확보했다. 롤링 태그 `pg16` 은 금지한다. 태그만 고정하는 것도 금지한다. 같은 태그가 다른 이미지를 가리킬 수 있기 때문이다. 경위를 남긴다. 최초 결정은 `0.8.1-pg16` 태그 고정이었고 근거는 "back `compose.yaml` 과 일치한다"였다. 그런데 back#31 이 compose 를 `0.8.5-pg16@sha256:1d53…` 로 올리면서 그 근거가 무효가 됐다(운영도 0.8.5 다. infra#41). 어긋난 쪽이 ai 였으므로 `S15P11A705-122` 에서 digest 까지 맞췄다.
+- **pgvector 이미지는 `0.8.5-pg16` 에 digest 까지 고정한다.** 운영과 back `compose.yaml` 의 실제 이미지와 digest 까지 일치시켜 재현성을 확보했다. 롤링 태그 `pg16` 은 금지한다. 태그만 고정하는 것도 금지한다. 같은 태그가 다른 이미지를 가리킬 수 있기 때문이다. 경위를 남긴다. 최초 결정은 `0.8.1-pg16` 태그 고정이었고 근거는 "back `compose.yaml` 과 일치한다"였다. 그런데 back#31 이 compose 를 `0.8.5-pg16@sha256:1d53…` 로 올리면서 그 근거가 무효가 됐다(운영도 0.8.5 다. infra#41). 어긋난 쪽이 ai 였으므로 Jira 작업에서 digest 까지 맞췄다.
 - **lock 파일을 도입한다.** 합류자의 환경 재현성을 위해서다. `requirements.txt` 는 사람이 읽는 하한 명세로, lock 은 정확한 버전 고정으로 역할을 나눈다.
 - **ai-ci 의 PR 제목 Jira 키 검증.** 형식만 보증하며 티켓이 실제로 존재하는지는 보증하지 않는다. 이 한계는 수용했다.
 

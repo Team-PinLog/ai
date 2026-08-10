@@ -21,11 +21,11 @@
 | [2026-07-24-e3-ci-and-search-path.md](2026-07-24-e3-ci-and-search-path.md) | E3 CI·런타임 이슈 — lock 플랫폼 종속·pytest pythonpath·search_path (T19~T21) |
 | [2026-07-27-e2e-env-issues.md](2026-07-27-e2e-env-issues.md) | E2E 검증 환경 이슈 — `.env` CRLF·register_vector 미등록·한글 인코딩 (T22~T24) |
 | [2026-07-28-shared-worktree-and-env-cache.md](2026-07-28-shared-worktree-and-env-cache.md) | 멀티세션 워킹트리 오염 · import 시점 `.env` 캐시 (T25·T26) |
-| [2026-07-30-seeding-quota-and-encoding.md](2026-07-30-seeding-quota-and-encoding.md) | GMS 판정 쿼터·콘솔 인코딩으로 인한 시딩 중단 (T27·T28) |
+| [2026-07-30-seeding-quota-and-encoding.md](2026-07-30-seeding-quota-and-encoding.md) | AI API 판정 쿼터·콘솔 인코딩으로 인한 시딩 중단 (T27·T28) |
 | [2026-07-31-local-e2e-and-ci-pitfalls.md](2026-07-31-local-e2e-and-ci-pitfalls.md) | 로컬 E2E·CI 함정 — venv·로그 버퍼·jar 낙후·포트·로그인 쿠키 (T29~T36) |
 | [2026-07-31-tau-measurement.md](2026-07-31-tau-measurement.md) | 후보 임계값 τ 측정 — 틀린 진단·인코딩 재발·대조군 부재 (T37~T39) |
 | [2026-07-31-search-cut-measurement.md](2026-07-31-search-cut-measurement.md) | 검색 결과 컷 측정 — 반대 방향 질의 부재·worktree `.env`·배치 구성과 임베딩 재현성 (T40~T42) |
-| [2026-07-31-error-contract-pitfalls.md](2026-07-31-error-contract-pitfalls.md) | 오류 응답 계약 검증 — ASGITransport 예외 전파·GMS 스텁 URL 형식·시연 DB 자격증명·색인 갱신 중복 (T50~T52 · T56) |
+| [2026-07-31-error-contract-pitfalls.md](2026-07-31-error-contract-pitfalls.md) | 오류 응답 계약 검증 — ASGITransport 예외 전파·AI API 스텁 URL 형식·시연 DB 자격증명·색인 갱신 중복 (T50~T52 · T56) |
 | [2026-07-31-judge-prompt-ab.md](2026-07-31-judge-prompt-ab.md) | 판정 프롬프트 A/B — 죽은 설정 키·라벨 커버리지·조건 노출·사전 기준·1회 분포·번호 충돌 (T43~T49) |
 | [2026-07-31-db-error-pitfalls.md](2026-07-31-db-error-pitfalls.md) | DB 오류 분류 — 접속 실패는 asyncpg 예외가 아니다·`min_size=1` 재현 불가·curl 한글 본문 (T53~T55) |
 | [2026-07-31-log-redaction-pitfalls.md](2026-07-31-log-redaction-pitfalls.md) | 로그 마스킹 — 잘려서 에코되는 요청 값·거대 본문의 오해를 부르는 400·docstring을 잡는 소스 규약 검사 (T61~T63) |
@@ -64,7 +64,7 @@
 | T24 | Git Bash + `curl`에서 한글 본문 인코딩 깨짐(ASCII 본문은 통과 → T22와 증상 동일) | 한글 요청은 Python `httpx`로 전송, `curl`은 ASCII 경로에만 |
 | T25 | 멀티세션이 단일 git 워킹트리·인덱스·HEAD 공유 → 3파일 커밋에 타 세션 15파일 섞여 push | 격리 `git worktree` 기본, `git add` 개별(`-A` 금지)·커밋 전 브랜치 확인 |
 | T26 | `main.py` 모듈 레벨 `create_app()` import 시점 `.env` 캐시 → API 3건만 401(로컬 `.env` 우연 일치로 은폐) | `settings` fixture에서 `get_settings()` 캐시 재설정 + conftest placeholder env 선주입 |
-| T27 | **GMS 판정 쿼터는 상수가 아니다** — 공용 게이트웨이라 시점·프로바이더 경로별로 다르다. 07-29 분당 2건 → 07-30 분당 30건 이상 | `--pace` 기본값 1. 방어는 `retry.py` 백오프 + 회수 루프. 근본 대책은 벤더 폴백(`-175`) |
+| T27 | **AI API 판정 쿼터는 상수가 아니다** — 공용 게이트웨이라 시점·프로바이더 경로별로 다르다. 07-29 분당 2건 → 07-30 분당 30건 이상 | `--pace` 기본값 1. 방어는 `retry.py` 백오프 + 회수 루프. 근본 대책은 벤더 폴백(`-175`) |
 | T28 | 콘솔이 cp949면 `—` 한 글자에 `UnicodeEncodeError` → **`--reset` 직후 죽어 데이터만 지워진 상태**가 됨 | `sys.stdout.reconfigure(utf-8)` + `log()` 최후 방어. 호출자가 `PYTHONIOENCODING`을 기억하지 않게 (T22·T24 계열) |
 | T29 | `python -m uvicorn` 이 시스템 Python 을 타서 `No module named uvicorn` — **exit 0 이라 「완료」로 보인다** | `.venv/Scripts/python.exe -m uvicorn` |
 | T30 | 백그라운드 파이프(`\| tail`)가 서버 로그를 버퍼에 가둔다 — 살아 있는 동안 0바이트 | 파이프 대신 `> file 2>&1` |
@@ -81,7 +81,7 @@
 | T41 | worktree 에 `.env` 가 없어 `get_settings()` 가 `GMS_API_KEY` 부터 죽는다(`env_file` 은 CWD 기준·gitignore) | `.env` 를 worktree 에 복사하고 `DATABASE_URL` 만 환경변수로 덮는다. `.demo/` 키 분기(`-198`)와 같은 원인 |
 | T42 | **임베딩 배치 구성이 바뀌면** 같은 텍스트의 유사도가 `10⁻⁴` 규모로 흔들린다(0.5264→0.5258). 「임베딩은 결정적」은 같은 배치일 때의 이야기다 | 그 규모 차이가 결론을 가르는 값을 채택하지 않는다. 재현용으로 유사도 행렬을 커밋한다 |
 | T50 | `httpx.ASGITransport` 는 앱 예외를 **응답으로 바꾸지 않는다**(`raise_app_exceptions=True` 기본) — 「500 이 나간다」를 단언하려는데 예외가 테스트로 튄다 | 500 을 보려면 `raise_app_exceptions=False`. 무엇이 새는지 보려면 기본값 그대로 |
-| T51 | 로컬 GMS 스텁 URL 에 `/gmsapi/` 가 없으면 **앱이 기동에서 죽는다**(`_gms_base_url_shape`) — 증상이 「스텁이 안 불린다」가 아니라 「안 뜬다」다 | 스텁도 `/gmsapi/api.openai.com/v1/embeddings` 경로를 흉내낸다 |
+| T51 | 로컬 AI API 스텁 URL 에 `/gmsapi/` 가 없으면 **앱이 기동에서 죽는다**(`_gms_base_url_shape`) — 증상이 「스텁이 안 불린다」가 아니라 「안 뜬다」다 | 스텁도 `/gmsapi/api.openai.com/v1/embeddings` 경로를 흉내낸다 |
 | T52 | 시연 DB 는 포트뿐 아니라 **비밀번호도 `.env` 와 다르다**(`pinlog-local`). T33 대로 `:15432` 만 고치면 `InvalidPasswordError` | DSN 일부만 고치지 않는다. `docker inspect` 로 컨테이너 env 를 직접 읽는다 |
 | T43 | `.env` 의 `PINLOG_JUDGE_MODEL` 은 `-175` 가 대체해 **읽히지 않는데** 값이 그럴듯해(체인 2순위) 리포트의 판정 모델을 잘못 적게 한다. 실제 응답은 체인 1순위 `gpt-4o-mini` | 측정 도구는 벤더를 인자로 받고, 읽은 값이 아니라 **답한 값**(`JudgeResult.model`)을 남긴다 |
 | T44 | `labels.yaml` 은 **현행 판정 83행만** 덮는다 — τ 스윕과 달리 재판정은 없던 행을 만들어 표 밖으로 나간다(24종). 빼고 세면 조건 비교가 기운다 | 원본은 고치지 않고 `labels_extra.yaml` 로 넓힌다. 남는 것은 `unlabeled` 로 세어 양극단으로 돌린다 |
@@ -101,7 +101,7 @@
 | T64 | `merge=union` 이 표 안에 남긴 **빈 줄이 GFM 표를 끊는다** — 그 뒤 행이 파이프 문자 문단으로 렌더된다. 에디터·diff 에서는 표로 보여 아무 증상이 없다. union 은 「추가만 하면 안전」으로 통하지만(T56 은 *갱신*을 겨눴다) 추가하는 줄에 빈 줄이 딸리면 추가만으로 깨진다 | 새 행은 빈 줄 없이 마지막 행 바로 아래 붙인다. 색인을 고쳤으면 GitHub 의 **렌더된 화면**을 한 번 본다 — 색인은 고치려고 여는 파일이라 읽는 사람이 없다 |
 | T65 | 「색인에 있는가」를 README **전체 링크**로 재면 전수 표(`I##`)의 링크가 파일 표의 누락을 가린다 — 착수 시점 `dev` 위반 3건 중 **2건이 그 상태**라 검사가 자기가 겨눈 사고(07-31 사고 3)를 못 잡는다 | 판정 범위를 파일 표 섹션으로 좁힌다. **어느 표가 색인인지**를 먼저 정하지 않으면 검사는 가장 느슨한 해석을 택하고, 느슨한 해석은 원래 잡으려던 것을 통과시킨다 |
 | T61 | 오류 본문이 요청 값을 에코하는지 **완전 일치**로 재면 「안 샌다」가 나온다 — OpenAI 는 앞뒤 3자만 남기고 잘라서 되돌린다(`Invalid value: 'PIN...def'`). 이 사실이 마스킹 규칙의 근거 전체였다 | 완전 일치로 끝내지 않고 **본문 원문을 본다**. 자동화하려면 마커의 앞/뒤 n자도 함께 찾는다 |
-| T62 | 요청 본문이 아주 크면 GMS 가 **`Model not found in request for domain ...` 400** 을 낸다 — `model` 은 멀쩡히 들어 있다. `PermanentError` 로 분류돼 재시도 없이 `FAILED` 가 되는데 문구는 모델명을 가리킨다 | 「모델이 없다」400 은 설정을 고치기 전에 **본문 크기부터** 본다. 같은 모델명으로 짧은 요청이 통과하면 원인은 모델명이 아니다 |
+| T62 | 요청 본문이 아주 크면 AI API 가 **`Model not found in request for domain ...` 400** 을 낸다 — `model` 은 멀쩡히 들어 있다. `PermanentError` 로 분류돼 재시도 없이 `FAILED` 가 되는데 문구는 모델명을 가리킨다 | 「모델이 없다」400 은 설정을 고치기 전에 **본문 크기부터** 본다. 같은 모델명으로 짧은 요청이 통과하면 원인은 모델명이 아니다 |
 | T63 | 소스 규약(`resp.text` 를 마스킹 없이 쓰지 않는다)을 정규식으로 훑으면 그것을 **설명하는 docstring** 이 위반으로 잡힌다 — 예외 목록을 손으로 유지하면 검사가 규약보다 약해지는 방향으로만 고쳐진다 | `ast.parse` 로 본다. 문자열 리터럴은 후보에 들어오지 않으므로 예외 목록이 필요 없다 |
 | T66 | pydantic Settings 는 필드명을 소문자로 선언해도 `alias=` 로 지정한 대문자 env 를 읽는다 — `.env`·문서에 키 이름이 리터럴로 남아 있어도(전부 "이제 안 읽는다"는 설명 맥락) 그 문자열 존재가 "읽힌다"의 증거가 아니다. `-210`(threshold 가 `config.py:114`에 있었던 사고)과 정반대 모양의 오판 | 후보 키마다 sentinel 값을 주입해 실제로 `Settings()` 를 생성하고 필드 값에 반영되는지 확인한다. `os.environ` 을 통째로 비우면 Windows `asyncio.windows_events` 가 `SYSTEMROOT` 를 못 찾아 죽으므로 필요한 키만 얹었다 뗀다 |
 | T67 | "`.env` 13 대 `.env.example` 12" 를 단일 방향 차집합(13-12=1)으로 예단하면 틀린다 — 실제로는 `.env` 만의 키가 2개(둘 다 죽음), `.env.example` 만의 키가 1개(살아 있음)였다. 공통 11 + 2 = 13, 공통 11 + 1 = 12 로 총계는 맞지만 "하나만 다르다"는 전제와 실제 구성이 다르다 | 두 파일의 키 이름 집합을 대칭차(symmetric difference)로 비교한다 — 숫자 차이만으로 "어느 하나를 채우면 끝"이라 판단하지 않는다 |

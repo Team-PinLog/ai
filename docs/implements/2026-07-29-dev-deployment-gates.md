@@ -1,10 +1,10 @@
-# dev 배포 게이트 3종 — `/ready` 프로브, `GMS_BASE_URL` 기동 검증, GMS 양방향 스모크를 구현했다
+# dev 배포 게이트 3종 — `/ready` 프로브, `GMS_BASE_URL` 기동 검증, AI API 양방향 스모크를 구현했다
 
 - **상태**: 완료
 - **날짜**: 2026-07-29
 - **관련 PR**: [ai#33](https://github.com/Team-PinLog/ai/pull/33)
-- **근거 계약**: [ai#32](https://github.com/Team-PinLog/ai/pull/32) `docs/S15P11A705-96-dev-deployment-contract.md` — 인프라(김세민) 요청 §2·§3과 코멘트 합의(2026-07-29)
-- **Jira**: [S15P11A705-96](https://ssafy.atlassian.net/browse/S15P11A705-96)
+- **근거 계약**: [ai#32](https://github.com/Team-PinLog/ai/pull/32) 배포 계약 문서 — 인프라(김세민) 요청 §2·§3과 코멘트 합의(2026-07-29)
+- **Jira**: Jira 작업
 
 ## 무엇을 만들었나
 
@@ -27,7 +27,7 @@ preset  현재 Embedding Profile 기준 캐시 ≥ 1건
 
 설계 판단 4건을 남긴다.
 
-- **GMS 를 호출하지 않는다.** 준비 판정에 외부 게이트웨이의 가용성을 섞으면, 자기 책임 밖의 장애 때문에 인스턴스가 트래픽에서 빠지게 된다. GMS 도달성은 배포 시점의 스모크가 따로 증명한다(계약 §2 의 요청과 일치한다).
+- **AI API 를 호출하지 않는다.** 준비 판정에 외부 게이트웨이의 가용성을 섞으면, 자기 책임 밖의 장애 때문에 인스턴스가 트래픽에서 빠지게 된다. AI API 도달성은 배포 시점의 스모크가 따로 증명한다(계약 §2 의 요청과 일치한다).
 - **Profile 조건을 재조회하지 않는다.** 캐시는 lifespan 이 `settings.embedding_profile` 로 조회한 행만 담는다(`main.py`). 따라서 캐시 건수가 1건 이상이라는 것이 곧 "현재 Profile 기준 1건 이상"이다. 별도 쿼리를 두는 것은 같은 사실을 두 번 묻는 일이다.
 - **무인증으로 연다.** `SharedSecretMiddleware` 는 `/internal/` 경로만 가로채므로 `/ready` 는 헤더 없이 호출된다. 프로브가 시크릿을 들고 다니지 않게 하려는 계약상의 의도다.
 - **응답에 내부 값을 싣지 않는다.** 무인증으로 노출되는 경로이므로 `{"status": ...}` 한 필드만 싣는다. 실패 시 로그에도 예외 타입 이름만 남긴다. asyncpg 예외 메시지에는 DSN 이 섞여 들어올 수 있기 때문이다.
@@ -52,7 +52,7 @@ preset  현재 Embedding Profile 기준 캐시 ≥ 1건
 
 검증 대상은 `/gmsapi/` 세그먼트 포함 여부 하나다. scheme·host 형식은 검사하지 않는다. 그쪽 오류는 스모크가 실제 호출로 잡는 편이 확실하고, 검증 규칙을 늘리면 정상 값을 잘못 막을 위험만 커지기 때문이다.
 
-## 3. GMS 양방향 스모크 (`app/smoke/gms_roundtrip.py`)
+## 3. AI API 양방향 스모크 (`app/smoke/gms_roundtrip.py`)
 
 ```bash
 python -m app.smoke.gms_roundtrip
@@ -78,7 +78,7 @@ python -m app.smoke.gms_roundtrip
 | 테스트 | `pytest -q` | **66 passed** (기존 52 → +14) |
 | `/ready` 실기동 | `uvicorn app.main:app --port 8011` → `curl /ready` | `200 {"status":"ready"}` (실 pgvector·preset 27건) |
 | `/health` 실기동 | `curl /health` | `200 {"status":"ok"}` — 형태 불변 |
-| 스모크 정상 | `python -m app.smoke.gms_roundtrip` (실 GMS) | `embedding: ok` / `judge: ok` / exit **0** |
+| 스모크 정상 | `python -m app.smoke.gms_roundtrip` (실 AI API) | `embedding: ok` / `judge: ok` / exit **0** |
 | 스모크 비대칭 실패 | 위 명령 + `PINLOG_JUDGE_MODEL=<미존재 모델>` | `embedding: ok` / `judge: failed (TransientError)` / exit **1** |
 | URL fail-fast | `GMS_BASE_URL=<세그먼트 없는 값> python -c "import app.main"` | `SettingsError` 로 기동 중단. 메시지에 값 없음 |
 
@@ -89,7 +89,7 @@ python -m app.smoke.gms_roundtrip
 | `tests/test_api.py` | 6 | `/ready` 200·503(캐시 0건)·503(DB 끊김)·무인증·값 미노출·`/health` 불변 회귀 |
 | `tests/test_unit.py` | 8 | `GMS_BASE_URL` 거부 2·수용 1·값 미노출 1 · 스모크 집계 3·출력 1 |
 
-스모크의 실제 호출은 단위 테스트로 덮지 않았다. 외부 의존이므로 `_CHECKS` 를 스텁으로 교체해 집계·종료 코드·값 미노출 규약만 검증하고, 실제 GMS 왕복은 위 표의 수동 실측으로 대신했다. 실제 호출을 CI 에 넣으면 GMS 가용성이 CI 성패에 들어오기 때문이다.
+스모크의 실제 호출은 단위 테스트로 덮지 않았다. 외부 의존이므로 `_CHECKS` 를 스텁으로 교체해 집계·종료 코드·값 미노출 규약만 검증하고, 실제 AI API 왕복은 위 표의 수동 실측으로 대신했다. 실제 호출을 CI 에 넣으면 AI API 가용성이 CI 성패에 들어오기 때문이다.
 
 ## 인프라에 전달할 것
 
@@ -100,5 +100,5 @@ python -m app.smoke.gms_roundtrip
 ## 남은 것
 
 - `_profile_consistency` 의 `ValueError` 경로 값 노출(§2 의 범위 밖 관찰) — 별도 티켓으로 다룬다.
-- 외부 API retry/error classification — `S15P11A705-121`. dev 배포의 blocker 는 아니다(ai#32 합의).
+- 외부 API retry/error classification — Jira 작업. dev 배포의 blocker 는 아니다(ai#32 합의).
 - `llm_client` 의 `/gmsapi/` 리터럴과 `config.GMS_PATH_SEGMENT` 가 각자 리터럴로 존재한다. 통합은 client 계층 변경이라 이번 범위 밖이다.

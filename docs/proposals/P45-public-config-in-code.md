@@ -2,7 +2,7 @@
 
 - 상태: Accepted
 - 날짜: 2026-07-29
-- 관련: `S15P11A705-96` · [P32](README.md) · [model-profile.md §2.1](../spec/model-profile.md) · [ai#32](https://github.com/Team-PinLog/ai/pull/32) · [ai#34](https://github.com/Team-PinLog/ai/pull/34)
+- 관련: Jira 작업 · [P32](README.md) · [model-profile.md §2.1](../spec/model-profile.md) · [ai#32](https://github.com/Team-PinLog/ai/pull/32) · [ai#34](https://github.com/Team-PinLog/ai/pull/34)
 
 ## 무엇을 정하는가
 
@@ -85,6 +85,6 @@ Infra 가 주입 경로를 하나로 요구했으므로 그 요구를 따르는 
 
 **Spring 과의 이중화가 남는다.** [§2](../spec/model-profile.md)의 "단일 정본"은 Spring 과 FastAPI 가 같은 값을 갖게 하려는 것인데, 코드 기본값을 두면 나중에 Spring 쪽에도 같은 값의 리터럴이 생길 수 있다.
 
-현재는 문제가 되지 않는다. **Spring 은 아직 `embeddingProfile`을 다루지 않는다**(레포 전수 검색 0건). 검색 연동(`S15P11A705-135`)에서 Spring 이 이 값을 다루게 되면 §2.2 의 런타임 대조가 불일치를 잡는 역할을 하지만, **어느 쪽이 정본인지는 그때 정해야 한다.** 지금 정하지 않는 이유는, 소비자가 없는 상태에서 정한 규칙은 실제로 붙일 때 다시 뒤집히기 때문이다.
+현재는 문제가 되지 않는다. **Spring 은 아직 `embeddingProfile`을 다루지 않는다**(레포 전수 검색 0건). 검색 연동(Jira 작업)에서 Spring 이 이 값을 다루게 되면 §2.2 의 런타임 대조가 불일치를 잡는 역할을 하지만, **어느 쪽이 정본인지는 그때 정해야 한다.** 지금 정하지 않는 이유는, 소비자가 없는 상태에서 정한 규칙은 실제로 붙일 때 다시 뒤집히기 때문이다.
 
 **기본값이 낡을 수 있다.** 배포 환경이 실제로 다른 모델을 쓰는데 코드 기본값을 고치지 않으면, 주입을 잊었을 때 낡은 profile 로 기동한다. 이 상태는 §3.1 의 런타임 대조가 잡지만 그 전까지는 드러나지 않는다. **덮어쓰기를 상시 운영 수단으로 쓰지 않는 것**이 이 결정의 전제다. 상시 덮어쓰기가 필요해지면 그 값은 공개 설정이 아니라 환경 종속 설정이므로 분류를 다시 봐야 한다.

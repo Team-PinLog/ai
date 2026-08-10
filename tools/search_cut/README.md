@@ -1,6 +1,6 @@
 # 검색 결과 컷 측정 — `τ_abs` × `r`
 
-`S15P11A705-213`. 결론과 수치는
+Jira 작업. 결론과 수치는
 [구현 리포트](../../docs/implements/2026-07-31-search-cut.md)에 있고, 이 문서는
 **어떻게 다시 돌리는가**만 적는다.
 
@@ -19,30 +19,30 @@
 
 | | |
 |---|---|
-| `matrix.py` | 질의를 임베딩하고 질의별 Record 전량의 유사도를 `.search/matrix.json` 으로 굳힌다. **GMS 임베딩 배치 1회** |
+| `matrix.py` | 질의를 임베딩하고 질의별 Record 전량의 유사도를 `.search/matrix.json` 으로 굳힌다. **AI API 임베딩 배치 1회** |
 | `labels.yaml` | 정답 아닌 141행 중 `plausible` 인 것. 판정 기준이 머리말에 있다 |
-| `sweep.py` | 분포와 `τ_abs × r` 격자. **DB 도 GMS 도 부르지 않는다** |
+| `sweep.py` | 분포와 `τ_abs × r` 격자. **DB 도 AI API 도 부르지 않는다** |
 | `label_sheet.py` | 라벨을 손으로 채우기 위한 시트(본문 포함). 출력물은 커밋하지 않는다 |
 | `verify_live.py` | 오프라인 재구성이 실서버 응답과 같은지. **정확 일치를 요구한다** |
-| `recall_probe.py` | 「본문에 있는 말로 검색해도 안 나온다」의 원인 판별(`S15P11A705-255`). 질의 22건 × Record 전량. **GMS 임베딩 배치 1회** |
-| `word_matrix.py` | **단어형** 질의 54건 × 소유자 3명의 행렬(`S15P11A705-266`). 기대 정답을 손으로 짝짓지 않고 **본문 문자열 포함으로 계산**한다. **GMS 임베딩 배치 1회** |
-| `word_sweep.py` | 단어형·문장형을 **한 표에** 놓고 격자를 훑는다. **DB 도 GMS 도 부르지 않는다** |
-| `boundary_matrix.py` | 단어형 **경계 정의** 두 가지를 가르는 행렬(`S15P11A705-273`). 본문 인접 어절쌍을 `spaced`/`joined` 짝으로 낸다. **GMS 임베딩 배치 3회** |
-| `boundary_sweep.py` | `_is_word_query` 정의 6종을 같은 행렬에 걸어 비교한다. **DB 도 GMS 도 부르지 않는다** |
+| `recall_probe.py` | 「본문에 있는 말로 검색해도 안 나온다」의 원인 판별(Jira 작업). 질의 22건 × Record 전량. **AI API 임베딩 배치 1회** |
+| `word_matrix.py` | **단어형** 질의 54건 × 소유자 3명의 행렬(Jira 작업). 기대 정답을 손으로 짝짓지 않고 **본문 문자열 포함으로 계산**한다. **AI API 임베딩 배치 1회** |
+| `word_sweep.py` | 단어형·문장형을 **한 표에** 놓고 격자를 훑는다. **DB 도 AI API 도 부르지 않는다** |
+| `boundary_matrix.py` | 단어형 **경계 정의** 두 가지를 가르는 행렬(Jira 작업). 본문 인접 어절쌍을 `spaced`/`joined` 짝으로 낸다. **AI API 임베딩 배치 3회** |
+| `boundary_sweep.py` | `_is_word_query` 정의 6종을 같은 행렬에 걸어 비교한다. **DB 도 AI API 도 부르지 않는다** |
 | `layer_probe.py` | 질의가 **어느 층에서** 몇 건을 잃는지. 후보·LIMIT·τ·r·**실서버**를 한 줄에 놓는다 |
-| `rank_score.py` | 검색 **순위** 지표 baseline(P48 0단계, I52). 컷 기준 지표로는 순위 변화가 안 보여서 따로 둔다. Hit·Recall·MRR·nDCG 를 컷 전/후 · 단어형/문장형 · 정답/무관으로 갈라 낸다. **DB 도 GMS 도 부르지 않는다** |
-| `fusion.py` | keyword 신호 fusion **순수 로직**(P48 1단계). DB·GMS·파일을 읽지 않고 인자만 받는다 — `tests/test_search_fusion.py` 가 픽스처로 검증한다 |
-| `keyword_matrix.py` | keyword 신호 artifact 생성 — 질의별 전체 활성 Preset 코사인 + Context 별 keyword·confidence·상태. **GMS 임베딩 배치 1회 + DB 읽기** |
-| `fusion_sweep.py` | fusion 방식(binary·confidence·idf·RRF)×가중치×floor×RRF cutoff 격자 — **P48 구조**(후보 합집합 후 병합 점수에 컷). `keyword_matrix.json` 과 행렬 셋만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
-| `fusion_rerank_sweep.py` | keyword 재정렬 전용 병합 격자 — **P49 §4 구조**(컷 통과 집합 고정·순서만 조정). BASE·binary(floor×weight)·RRF 비교. 같은 파일만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
-| `rerank_verify_live.py` | keyword 재정렬의 **실서버 on/off 대조** — 플래그만 다른 두 서버의 실응답으로 다섯 계약(후보 불변·재정렬 정확성·무관 무노출·정답 무퇴행·off 현행 동일)을 판정한다. **GMS 임베딩 질의당·서버당 1회** |
-| `lexical_matrix.py` | 문자열 매치 artifact — 본문에 질의가 그대로 있는지를 (질의×소유자×Record)로 굳힌다. 본문은 저장하지 않는다. **스냅샷 DB(:25432) 읽기 · GMS 0회** |
-| `lexical_sweep.py` | 문자열 병합 규칙 격자 — 게이트 3단×병합 3종. `lexical_matrix.json` 과 행렬 셋만 읽는다 — **DB 도 GMS 도 부르지 않는다** |
+| `rank_score.py` | 검색 **순위** 지표 baseline(P48 0단계, I52). 컷 기준 지표로는 순위 변화가 안 보여서 따로 둔다. Hit·Recall·MRR·nDCG 를 컷 전/후 · 단어형/문장형 · 정답/무관으로 갈라 낸다. **DB 도 AI API 도 부르지 않는다** |
+| `fusion.py` | keyword 신호 fusion **순수 로직**(P48 1단계). DB·AI API·파일을 읽지 않고 인자만 받는다 — `tests/test_search_fusion.py` 가 픽스처로 검증한다 |
+| `keyword_matrix.py` | keyword 신호 artifact 생성 — 질의별 전체 활성 Preset 코사인 + Context 별 keyword·confidence·상태. **AI API 임베딩 배치 1회 + DB 읽기** |
+| `fusion_sweep.py` | fusion 방식(binary·confidence·idf·RRF)×가중치×floor×RRF cutoff 격자 — **P48 구조**(후보 합집합 후 병합 점수에 컷). `keyword_matrix.json` 과 행렬 셋만 읽는다 — **DB 도 AI API 도 부르지 않는다** |
+| `fusion_rerank_sweep.py` | keyword 재정렬 전용 병합 격자 — **P49 §4 구조**(컷 통과 집합 고정·순서만 조정). BASE·binary(floor×weight)·RRF 비교. 같은 파일만 읽는다 — **DB 도 AI API 도 부르지 않는다** |
+| `rerank_verify_live.py` | keyword 재정렬의 **실서버 on/off 대조** — 플래그만 다른 두 서버의 실응답으로 다섯 계약(후보 불변·재정렬 정확성·무관 무노출·정답 무퇴행·off 현행 동일)을 판정한다. **AI API 임베딩 질의당·서버당 1회** |
+| `lexical_matrix.py` | 문자열 매치 artifact — 본문에 질의가 그대로 있는지를 (질의×소유자×Record)로 굳힌다. 본문은 저장하지 않는다. **스냅샷 DB(:25432) 읽기 · AI API 0회** |
+| `lexical_sweep.py` | 문자열 병합 규칙 격자 — 게이트 3단×병합 3종. `lexical_matrix.json` 과 행렬 셋만 읽는다 — **DB 도 AI API 도 부르지 않는다** |
 
 `matrix.json` · `recall_probe.json` · `word_grid.json` · `keyword_matrix.json` 은 **커밋한다.**
-다시 뜨려면 GMS 를 부르고, `tau_grid` 의 것과 달리 Context 본문을 담지 않는다(장소명까지).
+다시 뜨려면 AI API 를 부르고, `tau_grid` 의 것과 달리 Context 본문을 담지 않는다(장소명까지).
 
-## 단어형 컷 격자 (`S15P11A705-266`)
+## 단어형 컷 격자 (Jira 작업)
 
 `recall_probe.py` 와 대상이 다르다 — 저쪽은 **세 이슈의 원인을 가르려고** 질의 표현을
 바꿔 가며 같은 Record 를 추적하고, 이쪽은 **컷 값을 정하려고** 질의를 늘려 대역을 잰다.
@@ -50,14 +50,14 @@
 어디까지 올라오는가」가 전부이므로 그 대역을 1점으로 재면 안 된다.
 
 ```bash
-.venv/Scripts/python.exe tools/search_cut/word_matrix.py    # GMS 배치 1회. DB 를 읽는다
+.venv/Scripts/python.exe tools/search_cut/word_matrix.py    # AI API 배치 1회. DB 를 읽는다
 .venv/Scripts/python.exe tools/search_cut/word_sweep.py     # 파일 둘만 읽는다
 ```
 
 `word_sweep.py` 는 `word_grid.json`(단어형)과 `matrix.json`(문장형)을 **함께** 읽는다.
 따로 내면 「한 값이 둘 다를 만족하는가」에 답할 수 없기 때문이다.
 
-`word_matrix.py` 는 재기 전에 둘을 확인하고 **어긋나면 GMS 를 부르지 않고 멈춘다.**
+`word_matrix.py` 는 재기 전에 둘을 확인하고 **어긋나면 AI API 를 부르지 않고 멈춘다.**
 
 ```
 무관 통제가 본문에 있다             그 행은 통제가 아니라 정답 있는 질의다
@@ -89,7 +89,7 @@
 
 결론은 [구현 리포트](../../docs/implements/2026-08-03-word-query-cut.md)에 있다.
 
-## 단어형 경계 정의 (`S15P11A705-273`)
+## 단어형 경계 정의 (Jira 작업)
 
 `word_matrix.py` 와 대상이 다르다 — 저쪽은 **컷 값**을 정하려고 1어절 질의의 대역을
 재고, 이쪽은 **경계 정의**(글자 수인가 어절 수인가)를 가르려고 **공백만 다른 짝**을
@@ -97,8 +97,8 @@
 스스로 후속으로 남겼다.
 
 ```bash
-.venv/Scripts/python.exe tools/search_cut/boundary_matrix.py --dry   # 대역 분포만. GMS 미호출
-.venv/Scripts/python.exe tools/search_cut/boundary_matrix.py         # GMS 배치 3회. DB 를 읽는다
+.venv/Scripts/python.exe tools/search_cut/boundary_matrix.py --dry   # 대역 분포만. AI API 미호출
+.venv/Scripts/python.exe tools/search_cut/boundary_matrix.py         # AI API 배치 3회. DB 를 읽는다
 .venv/Scripts/python.exe tools/search_cut/boundary_sweep.py --focus  # 파일 둘만 읽는다
 ```
 
@@ -124,26 +124,26 @@
 
 결론은 [구현 리포트](../../docs/implements/2026-08-05-short-query-boundary.md)에 있다.
 
-## 재현율 프로브 (`S15P11A705-255`)
+## 재현율 프로브 (Jira 작업)
 
 `matrix.py` 와 대상이 다르다 — 저쪽은 **격자를 훑기 위해** 검증 질의 12건의 전량 유사도를
 굳히고, 이쪽은 **질의 표현을 바꿔 가며** 같은 Record 가 어떻게 움직이는지 본다.
 
 ```bash
-.venv/Scripts/python.exe tools/search_cut/recall_probe.py                          # GMS 배치 1회
+.venv/Scripts/python.exe tools/search_cut/recall_probe.py                          # AI API 배치 1회
 .venv/Scripts/python.exe tools/search_cut/recall_probe.py --replay .search/recall_probe.json
 .venv/Scripts/python.exe tools/search_cut/recall_probe.py --lengths .search/recall_probe.json
 ```
 
-`--replay` 는 **판정 규칙만** 다시 낸다(DB·GMS 미호출). 컷도 판정도 유사도에 걸릴 뿐
-임베딩에 걸리지 않으므로, `RECOVER_RANK` 나 컷 값을 바꿔 볼 때 GMS 를 다시 부르지 않는다.
+`--replay` 는 **판정 규칙만** 다시 낸다(DB·AI API 미호출). 컷도 판정도 유사도에 걸릴 뿐
+임베딩에 걸리지 않으므로, `RECOVER_RANK` 나 컷 값을 바꿔 볼 때 AI API 를 다시 부르지 않는다.
 
 **`--replay` 는 기본적으로 파일을 쓰지 않는다.** 재판정은 화면으로 읽는 것이 목적이고,
 기본 출력 경로를 두면 위 명령을 그대로 돌린 사람이 **커밋된 행렬을 판정 결과로 덮어쓴다** —
-행렬은 GMS 를 불러야 다시 뜨므로 그 손실이 판정보다 무겁다. 남기려면 `--out` 에 **다른**
+행렬은 AI API 를 불러야 다시 뜨므로 그 손실이 판정보다 무겁다. 남기려면 `--out` 에 **다른**
 경로를 준다(입력과 같으면 쓰지 않고 멈춘다).
 
-이 프로브의 질의는 **단어형**이라 `τ_abs` 가 질의별로 갈린다(`S15P11A705-266`). 단일 하한을
+이 프로브의 질의는 **단어형**이라 `τ_abs` 가 질의별로 갈린다(Jira 작업). 단일 하한을
 쓰면 이미 고쳐진 증상(`ai#87` 의 `그네`·`스팟`)을 계속 「① 컷이 잘랐다」로 보고한다 —
 **진단 도구가 닫힌 증상을 미해결로 읽는다.**
 `--lengths` 는 본문 길이와 유사도의 순위 상관을 낸다(DB 만 읽는다 — 행렬이 본문을 담지
@@ -157,7 +157,7 @@
 cd ai
 export DATABASE_URL="postgresql://pinlog:pinlog-local@localhost:15432/pinlog"
 
-.venv/Scripts/python.exe tools/search_cut/matrix.py   # GMS 임베딩 1배치. DB 를 읽는다
+.venv/Scripts/python.exe tools/search_cut/matrix.py   # AI API 임베딩 1배치. DB 를 읽는다
 .venv/Scripts/python.exe tools/search_cut/sweep.py    # 파일만 읽는다
 ```
 
@@ -170,13 +170,13 @@ export DATABASE_URL="postgresql://pinlog:pinlog-local@localhost:15432/pinlog"
 **worktree 에서 돌린다면 `.env` 를 그쪽에도 둔다.** `get_settings()` 의 `env_file` 은
 CWD 기준이고 `.env` 는 gitignore 라 worktree 에 없다 — `GMS_API_KEY` 부터 없어서 죽는다(T41).
 
-### keyword fusion (P48 1단계, `S15P11A705-336` 실측)
+### keyword fusion (P48 1단계, Jira 작업 실측)
 
 ```bash
 .venv/Scripts/python.exe -m pytest tests/test_search_fusion.py tests/test_keyword_matrix_parse.py -q
-                                                          # 픽스처 검증. DB·GMS 0회
+                                                          # 픽스처 검증. DB·AI API 0회
 .venv/Scripts/python.exe tools/search_cut/rank_score.py   # 순위 baseline. 파일만 읽는다
-.venv/Scripts/python.exe tools/search_cut/keyword_matrix.py   # GMS 배치 1회 + DB 읽기
+.venv/Scripts/python.exe tools/search_cut/keyword_matrix.py   # AI API 배치 1회 + DB 읽기
 .venv/Scripts/python.exe tools/search_cut/fusion_sweep.py --rrf-cutoff-grid "0,0.004,0.008,0.016" --floor 0.35
                                                           # 파일만 읽는다
 ```
@@ -187,7 +187,7 @@ CWD 기준이고 `.env` 는 gitignore 라 worktree 에 없다 — `GMS_API_KEY` 
 행렬이면 `fusion_sweep.py` 의 가드가 재지 않고 멈춘다. 결과 판정 기준은 P48 §6.1,
 실측 기록은 [구현 리포트 I53](../../docs/implements/2026-08-05-fusion-measurement.md).
 
-### keyword 재정렬 전용 병합 (P49 작업 4, `S15P11A705-339`)
+### keyword 재정렬 전용 병합 (P49 작업 4, Jira 작업)
 
 ```bash
 .venv/Scripts/python.exe tools/search_cut/fusion_rerank_sweep.py   # 파일만 읽는다
@@ -220,7 +220,7 @@ profile·preset_version 이 현행과 어긋나도 멈춘다(`--expect-*` 로 �
 
 ```bash
 export DATABASE_URL="postgresql://pinlog:pinlog-local@localhost:25432/pinlog"   # 스냅샷 DB
-.venv/Scripts/python.exe tools/search_cut/lexical_matrix.py   # DB 읽기. GMS 0회
+.venv/Scripts/python.exe tools/search_cut/lexical_matrix.py   # DB 읽기. AI API 0회
 .venv/Scripts/python.exe tools/search_cut/lexical_sweep.py    # 파일만 읽는다
 ```
 
@@ -241,11 +241,11 @@ export DATABASE_URL="postgresql://pinlog:pinlog-local@localhost:25432/pinlog"   
 
 `word_grid.json` 이 있으면 단어형도 함께 던진다 — 다만 **두 하한(단어형·문장형)에서
 결과가 갈리는 행만** 고른다. 갈리지 않는 행은 서버가 분기를 타든 안 타든 통과하므로
-GMS 호출만 늘고 재는 값이 늘지 않는다. 재구성 쪽에도 길이 분기를 **다시 적어** 두었다 —
+AI API 호출만 늘고 재는 값이 늘지 않는다. 재구성 쪽에도 길이 분기를 **다시 적어** 두었다 —
 구현을 `import` 하면 서버가 옛 단일값 경로를 돌아도 검증이 통과한다.
 
 로그는 파이프가 아니라 리디렉션으로 받는다 — 파이프는 프로세스가 사는 동안 0바이트다(T30).
-질의 수만큼 GMS 임베딩을 부른다(요청당 1회).
+질의 수만큼 AI API 임베딩을 부른다(요청당 1회).
 
 ## 데이터가 바뀌면
 
@@ -253,4 +253,4 @@ GMS 호출만 늘고 재는 값이 늘지 않는다. 재구성 쪽에도 길이 
 `sweep.py` 가 **재지 않고 멈춘다**(라벨과 행렬의 대조를 먼저 한다). 그때는 `matrix.py` 를
 다시 돌리고 `label_sheet.py` 로 본문을 보며 라벨을 다시 맞춘다.
 
-라벨에 이의가 있으면 해당 행만 고치고 `sweep.py` 를 다시 돌리면 된다. GMS 는 부르지 않는다.
+라벨에 이의가 있으면 해당 행만 고치고 `sweep.py` 를 다시 돌리면 된다. AI API 는 부르지 않는다.

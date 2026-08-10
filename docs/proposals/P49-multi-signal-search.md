@@ -4,7 +4,7 @@
 - **날짜**: 2026-08-05
 - **주도(Driver)**: AI
 - **관련 PR/커밋**: ai#114(P48 하네스·I52·I53 인수, base `search-upgrade`, 병합 대기) · `39dba0d`(-337 질의 재작성 런타임 구현) · `8a79628`(문자열 병합 규칙 오프라인 확정 — I54. back 런타임은 미구현)
-- **관련 문서**: [P48](P48-search-signal-expansion.md)(`origin/leo`, 인수 예정) · 근거 실측 기록 [2026-08-05-multi-signal-investigation.md](../troubleshooting/2026-08-05-multi-signal-investigation.md)(T73~T78 잠정) · 관련 트랙 `S15P11A705-336`
+- **관련 문서**: [P48](P48-search-signal-expansion.md)(`origin/leo`, 인수 예정) · 근거 실측 기록 [2026-08-05-multi-signal-investigation.md](../troubleshooting/2026-08-05-multi-signal-investigation.md)(T73~T78 잠정) · 관련 트랙 Jira 작업
 - **번호는 잠정이다.** P48 은 `origin/leo` 브랜치가 사용 중이다. 병합 직전에 번호를 재확인해 확정한다(T48·T60 규칙).
 
 > 이 문서의 실측 수치는 2026-08-05 측정 시점의 관측값이다. 현행 상수의 정본은 `app/core/config.py` 이고, 측정 기록의 정본은 `-336` 실측 리포트로 정식화할 예정이다. 부록 D 에 근거 문서의 좌표를 모아 두었다.
@@ -148,7 +148,7 @@ CI 는 확인이 필요하다. 대상 브랜치가 `search-upgrade` 인 PR 에�
 - **작업 0. leo 인수.** leo 브랜치를 rebase 해 하네스·테스트·문서를 통합 브랜치에 들인다. 발견된 버그 2건(T76·T77) 수정, 리포트 번호 충돌(I51→I52) 해소, artifact 커밋, 실측 리포트 작성, 통합 브랜치 생성과 CI 확인, DB 스냅샷 준비를 포함한다. 모든 후속 작업의 기반이므로 유일한 전면 선행 작업이다.
 - **작업 1. LLM 재작성 (병렬).** Preset 과 무관하므로 기다릴 이유가 없다. 실패 사례 3건 중 2건을 해소하는, 시연 가치 대비 위험이 가장 낮은 작업이다. 관련 없는 질의 15건의 재측정을 채택 조건으로 포함한다.
 - **작업 3. 문자열 병합 규칙 실측 (병렬).** 측정 artifact 에 본문 매치 정보를 추가해, 병합 방식과 경계 검사 조합을 오프라인으로 훑는다. back 이 구현을 시작하기 전에 규칙을 확정해서 넘기기 위한 작업이다. 파트 간 재작업을 줄이는 것이 목적이다.
-- **작업 4. 키워드 재정렬 구현·채택값 확정.** 두 부분이다. **측정** — 현행 Preset·현행 측정 자료로, §4 의 재정렬 전용 규칙에서 BASE·binary 재정렬·RRF 재정렬을 비교하고 floor·weight 를 확정한다(GMS·DB 호출 없음). 오프라인 결정성 회차(같은 자료·같은 인자에서 출력 일치)와 artifact 신선도 가드(profile·preset_version 불일치 시 실패)를 포함한다. **런타임 구현** — 컷 통과 후보의 `context_keyword` 조회, `keyword_status=COMPLETED` 만 신호 사용, PUBLIC+PRIVATE_ONLY 사용·BLOCKED 제외(P48 §1-b·1-c 그대로), 채택값으로 순서만 변경, 기본 off 플래그, 오류 시 벡터 순서 복귀, on/off 후보 집합 불변 계약 테스트, 채택값의 `app/core/config.py` 반영. 이 구현이 없으면 채택값이 있어도 세 번째 검색 신호가 런타임에 존재하지 않는다.
+- **작업 4. 키워드 재정렬 구현·채택값 확정.** 두 부분이다. **측정** — 현행 Preset·현행 측정 자료로, §4 의 재정렬 전용 규칙에서 BASE·binary 재정렬·RRF 재정렬을 비교하고 floor·weight 를 확정한다(AI API·DB 호출 없음). 오프라인 결정성 회차(같은 자료·같은 인자에서 출력 일치)와 artifact 신선도 가드(profile·preset_version 불일치 시 실패)를 포함한다. **런타임 구현** — 컷 통과 후보의 `context_keyword` 조회, `keyword_status=COMPLETED` 만 신호 사용, PUBLIC+PRIVATE_ONLY 사용·BLOCKED 제외(P48 §1-b·1-c 그대로), 채택값으로 순서만 변경, 기본 off 플래그, 오류 시 벡터 순서 복귀, on/off 후보 집합 불변 계약 테스트, 채택값의 `app/core/config.py` 반영. 이 구현이 없으면 채택값이 있어도 세 번째 검색 신호가 런타임에 존재하지 않는다.
 - **작업 5. back 구현.** 문자열 검색과 병합을 작업 3 의 확정 규칙대로 구현한다. 유일한 타 파트 의존 작업이라 일정 위험이 가장 크다.
 - **작업 6. 검증.** §7 기준 전부 통과 후 dev 병합, 시연 DB 반영, 리허설.
 

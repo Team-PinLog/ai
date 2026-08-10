@@ -1,4 +1,4 @@
-# E2E 검증 — 실제 GMS 경로를 전수 확인했다. 파이프라인·검색은 통과했고, 문서만으로는 기동할 수 없었다
+# E2E 검증 — 실제 AI API 경로를 전수 확인했다. 파이프라인·검색은 통과했고, 문서만으로는 기동할 수 없었다
 
 - **상태**: 완료
 - **날짜**: 2026-07-27
@@ -9,7 +9,7 @@
 
 ## 무엇을 검증했나
 
-ai#5·#6·#11·#14·#16·#17·#18 로 구현이 끝났지만, 그 시점까지 검증된 것은 Fake 기반 테스트 46개(계약 위반·경합 방어)뿐이었다. 실제 GMS 호출, 프리셋 실제 적재, 실제 임베딩 기반의 검색 품질은 한 번도 실행된 적이 없었다.
+ai#5·#6·#11·#14·#16·#17·#18 로 구현이 끝났지만, 그 시점까지 검증된 것은 Fake 기반 테스트 46개(계약 위반·경합 방어)뿐이었다. 실제 AI API 호출, 프리셋 실제 적재, 실제 임베딩 기반의 검색 품질은 한 번도 실행된 적이 없었다.
 
 이 세션은 구현에 참여하지 않은 시각에서 `README.md` 와 `docs/spec/` 만 보고 로컬 기동을 재현했다. 절차를 미리 알려주지 않은 것은 의도적이다. 문서만으로 기동이 가능한지가 검증 대상이었기 때문이다. 따라서 막힌 지점 자체가 이 검증의 주 산출물이다.
 
@@ -68,7 +68,7 @@ README 에 `docker build` 만 있고 `docker run` 예시가 없다. 이미지는
 
 ### 프리셋 적재 — 통과
 
-`python -m app.bootstrap.load_presets` 를 실행했다(실제 GMS 임베딩 1배치 호출).
+`python -m app.bootstrap.load_presets` 를 실행했다(실제 AI API 임베딩 1배치 호출).
 
 ```
 total | embedding_null | profile_kinds |                   profile                    | dims | active
@@ -229,11 +229,11 @@ INSERT INTO core.boundary_probe VALUES (1); -- INSERT 0 1
 
 "FastAPI 는 `core.*` 에 접근하지 않는다"(README:10, [architecture.md](../spec/architecture.md) §7)는 계약이 로컬에서 검증되지 않는다는 뜻이다. 위반해도 성공하기 때문이다. 이 계약은 현재 코드 리뷰로만 지켜지고 있으며 DB 가 강제하지 않는다.
 
-`search_path = ai, public` 이 `core` 를 검색 경로 밖에 두는 1차 방어선이지만, 스키마를 한정한 참조(`core.foo`)는 그대로 통과한다. 인프라 티켓 `S15P11A705-61`(ai 전용 DB role)의 실증 근거다. 프로브 테이블은 즉시 DROP 했다.
+`search_path = ai, public` 이 `core` 를 검색 경로 밖에 두는 1차 방어선이지만, 스키마를 한정한 참조(`core.foo`)는 그대로 통과한다. 인프라 티켓 Jira 작업(ai 전용 DB role)의 실증 근거다. 프로브 테이블은 즉시 DROP 했다.
 
 ## Docker
 
-빌드 결과는 360MB, 기동은 정상이며, 기동 로그에 `preset cache loaded: 27 presets` 가 찍혔다. 컨테이너 경유 실제 호출까지 확인했다. `/search` 200(실제 GMS 임베딩), Profile 불일치 422, 시크릿 누락 401.
+빌드 결과는 360MB, 기동은 정상이며, 기동 로그에 `preset cache loaded: 27 presets` 가 찍혔다. 컨테이너 경유 실제 호출까지 확인했다. `/search` 200(실제 AI API 임베딩), Profile 불일치 422, 시크릿 누락 401.
 
 README 에 없어 이번에 구성해 검증한 명령이다(F5 발견으로 -59 에 인계했다).
 
@@ -295,7 +295,7 @@ ValueError: could not convert string to float: '[0.05609131,0.008399963,...]'
 | F6 `PRESET_CACHE_TTL_SEC` 미사용 | 문서-구현 불일치 | -59 → 설정·문서·`.env.example`에서 제거(ai#24) | **해결됨** (ai#24) |
 | F4 검색 하한 실측 근거 | 근거 보강 | -59 → `personal-search.md` §6에 0.3143·간격 +0.2120 기재 | **반영됨** (ai#22) |
 | 판정 비결정성 | 계약 명시 필요 | 현행 유지(허용) 결정 + -59 → `keyword-preset.md` §4.4 신설 | **반영됨** (ai#22) |
-| **F2b 권한 경계 미검증** | 인프라 | **`S15P11A705-61`** (ai 전용 DB role) — 근거는 이 문서 | **미해소** |
+| **F2b 권한 경계 미검증** | 인프라 | **Jira 작업** (ai 전용 DB role) — 근거는 이 문서 | **미해소** |
 | 하네스-운영 코드 분리 | 구조 | 실측상 결과 차이 없음. 프롬프트 사본 3개는 잔존하며 통합은 별건 | 기록 |
 | BLOCKED 제외 실데이터 미검증 | 커버리지 갭 | 프리셋에 BLOCKED 가 생기면 자연 해소 | 기록 |
 | T22~T24 환경 이슈 | 재현 가능 | [troubleshooting](../troubleshooting/2026-07-27-e2e-env-issues.md) | 이 PR |
@@ -304,12 +304,12 @@ ValueError: could not convert string to float: '[0.05609131,0.008399963,...]'
 
 ```
 pytest -q                                    46 passed
-python -m app.bootstrap.load_presets         OK: 27 presets upserted (실제 GMS)
+python -m app.bootstrap.load_presets         OK: 27 presets upserted (실제 AI API)
 uvicorn app.main:app --port 8000             preset cache loaded: 27 presets, /health 200
 Context 8건 → /context/process               6.0s에 두 status 전부 COMPLETED
 후보 밖 keyword_id                            0건
 docker build -t pinlog-ai .                  360MB
-docker run (위 명령)                          /health 200, /search 200(실 GMS), 422, 401
+docker run (위 명령)                          /health 200, /search 200(실 AI API), 422, 401
 ```
 
 ## 남은 것

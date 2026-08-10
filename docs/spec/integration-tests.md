@@ -1,4 +1,4 @@
-> 구현 완료. 하네스·저수준 계층(단위·저장소·API, ai#14·#16)과 파이프라인 계층(§3 시나리오, `test_pipeline.py`, ai#18)이 모두 구현됨([../../tests/README.md](../../tests/README.md), `pytest tests/` **181 passed**). 이후 합류분: 배포 게이트 14건(2026-07-29), client 재시도·오류 분류 `S15P11A705-121`, 부트스트랩·기동 계층과 coverage 게이트 `S15P11A705-110`(2026-07-30). 리포트: [implements/2026-07-24-e3-test-harness.md](../implements/2026-07-24-e3-test-harness.md), [implements/2026-07-30-coverage-gate.md](../implements/2026-07-30-coverage-gate.md).
+> 구현 완료. 하네스·저수준 계층(단위·저장소·API, ai#14·#16)과 파이프라인 계층(§3 시나리오, `test_pipeline.py`, ai#18)이 모두 구현됨([../../tests/README.md](../../tests/README.md), `pytest tests/` **181 passed**). 이후 합류분: 배포 게이트 14건(2026-07-29), client 재시도·오류 분류와 부트스트랩·기동 계층, coverage 게이트 관련 Jira 작업(2026-07-30). 리포트: [implements/2026-07-24-e3-test-harness.md](../implements/2026-07-24-e3-test-harness.md), [implements/2026-07-30-coverage-gate.md](../implements/2026-07-30-coverage-gate.md).
 > 공용 계약은 Team-PinLog/docs의 `static/05_AI_설계.md`를 따릅니다.
 
 # AI 파트 통합 테스트
@@ -262,10 +262,10 @@ client 단위 테스트가 묻는 것은 *"상태 코드가 어떤 오류 타입
 정의상 인터페이스 레벨 Fake로 검증할 수 없습니다. Fake는 이미 `TransientError`/`PermanentError`를
 받아서 던지므로, 상태 코드에서 오류 타입으로 가는 매핑 자체가 Fake의 입력에 숨어 버립니다.
 바로 그 공백이 **429를 영구 오류로, LLM 401을 일시 오류로** 둔 채 남긴 원인이었습니다
-(`S15P11A705-121`).
+(Jira 작업).
 
 이 구분을 명시적으로 적어 둡니다. 이 절이 *"HTTP 레벨 목이 아니라 인터페이스 레벨 Fake를
-씁니다"*라고만 말해서, client 단위 테스트의 HTTP 목이 명세 위반인지가 `S15P11A705-121`
+씁니다"*라고만 말해서, client 단위 테스트의 HTTP 목이 명세 위반인지가 Jira 작업
 작업 중 두 번 질문으로 올라왔습니다. 판정은 **충돌이 아니라 층이 다름**이었고,
 명세에 없었다는 것이 같은 질문이 반복된 이유입니다.
 
@@ -342,4 +342,4 @@ preset = make_preset(code="WITH_FRIEND", visibility="PUBLIC")
 부트스트랩·기동 계층은 시나리오가 아니라 **전제**를 지킵니다. 둘 다 요청 경로 밖이라
 파이프라인 테스트로는 한 줄도 실행되지 않고(`test_api.py`는 lifespan을 우회합니다),
 여기가 비면 서버는 Preset 없이 또는 잘못된 Profile로 떠서 그 사실을 판정 단계에서야
-드러냅니다. `S15P11A705-110` 기준선에서 두 계층 모두 커버리지 0%였습니다.
+드러냅니다. Jira 작업 기준선에서 두 계층 모두 커버리지 0%였습니다.

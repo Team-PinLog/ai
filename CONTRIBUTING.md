@@ -117,7 +117,7 @@ CI는 Ruff, compile 검사, pytest/Testcontainers, coverage 게이트, PR 컨테
 수행한다.
 
 `app`의 **line과 branch coverage는 각각 80% 이상**이어야 하며 미달이면 `ai-ci / check`가
-실패한다(`S15P11A705-110`에서 활성화). 판정은 `tools/check_coverage_gate.py`가 하고
+실패한다. 판정은 `tools/check_coverage_gate.py`가 하고
 임계값은 그 파일의 상수다 — CI에서 인자로 덮을 수 없다.
 
 `--cov-fail-under`를 쓰지 않는 이유는 그것이 두 지표를 **합산한 하나의 비율**이기
@@ -158,8 +158,7 @@ ai-ci / embedding profile parity
 
 위 검사 이름은 GitHub branch protection의 required status checks와 문자열까지
 일치해야 한다. 검사를 추가하거나 이름을 바꿀 때는 **이 절을 먼저 고치고** 하위 문서와
-GitHub 설정을 거기에 맞춘다 — 순서가 뒤집히면 낡은 값이 하위 문서로 퍼진다
-(`S15P11A705-158` 실측).
+GitHub 설정을 거기에 맞춘다 — 순서가 뒤집히면 낡은 값이 하위 문서로 퍼진다.
 
 ## Feed 협업 경계
 
@@ -169,7 +168,7 @@ GitHub 설정을 거기에 맞춘다 — 순서가 뒤집히면 낡은 값이 �
   범위, 개인정보 경계, 후보·필터·fallback·impression 의미, Feed 관련 계약 리뷰.
 - 백엔드 파트는 구현을 소유한다 — 후보 조회, scoring 실행, API와 cursor,
   requestId, DB·Redis·트랜잭션, impression 저장과 중복 처리, 백엔드 테스트.
-- Feed 구현은 `S15P11A705-111` 산하 Task와 `back` 레포 PR로 추적한다.
+- Feed 구현은 Jira 작업과 `back` 레포 PR로 추적한다.
   레포가 다르면 티켓·브랜치·PR도 분리하고 서로 연결한다.
 - Feed 계약 변경은 병합 전에 AI 계약 리뷰어에게, 백엔드 런타임 변경은 백엔드
   담당자와 AI 계약 리뷰어에게 요청한다.
