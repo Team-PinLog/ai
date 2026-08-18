@@ -9,7 +9,7 @@ LEGACY_WORKFLOW = ROOT / ".github" / "workflows" / "seal-ai-secrets.yml"
 AI_CI = ROOT / ".github" / "workflows" / "ai-ci.yml"
 ACTION = (
     "Team-PinLog/infra/.github/actions/sealedsecret-infra-pr@"
-    "4b0c200928f59784e2330115c20c0186ed563bc5"
+    "9e3b3c98fdaa83c78ad31b6f9e3a4894249ca238"
 )
 SECRET_KEYS = {
     "GMS_API_KEY",
